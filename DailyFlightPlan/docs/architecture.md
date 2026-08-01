@@ -57,7 +57,8 @@ enum DaySection: String, CaseIterable, Codable
     night      // 8:00pm+
 
 enum ItemStatus: String, Codable
-    pending | completed | canceled | deferred
+    pending | completed | canceled
+    // Deferring is a date mutation (item.date = tomorrow), not a status
 ```
 
 "Missed" items (past-due and still `.pending`) are computed dynamically — no extra DB field.

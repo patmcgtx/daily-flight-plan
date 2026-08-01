@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		69917BBD301E444B00109086 /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = 69917BBC301E444B00109086 /* Flow */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		69B470A13013A307005A13D5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				69917BBD301E444B00109086 /* Flow in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = DailyFlightPlan;
 			packageProductDependencies = (
+				69917BBC301E444B00109086 /* Flow */,
 			);
 			productName = DailyFlightPlan;
 			productReference = 69B4708F3013A306005A13D5 /* DailyFlightPlan.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = 69B470863013A306005A13D5;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				69917BBB301E444B00109086 /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 69B470903013A306005A13D5 /* Products */;
 			projectDirPath = "";
@@ -630,6 +639,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		69917BBB301E444B00109086 /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/tevelee/SwiftUI-Flow";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		69917BBC301E444B00109086 /* Flow */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 69917BBB301E444B00109086 /* XCRemoteSwiftPackageReference "SwiftUI-Flow" */;
+			productName = Flow;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 69B470873013A306005A13D5 /* Project object */;
 }
