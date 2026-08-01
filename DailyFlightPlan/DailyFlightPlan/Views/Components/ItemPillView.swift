@@ -17,6 +17,10 @@ struct ItemPillView: View {
 
     var body: some View {
         pillContent
+            .overlay(alignment: .top) {
+                flickHint
+                    .offset(y: -20)
+            }
             .offset(x: dragOffset)
             .opacity(dragOffset == 0 ? 1 : max(0.5, 1 - abs(dragOffset) / 250))
             .gesture(
@@ -114,6 +118,21 @@ struct ItemPillView: View {
             Button { } label: {
                 Label("Edit…", systemImage: "pencil")
             }
+        }
+    }
+
+    @ViewBuilder
+    private var flickHint: some View {
+        if dragOffset < -8 {
+            Text("Cancel")
+                .font(.caption2.bold())
+                .foregroundStyle(.red)
+                .opacity(min(1, (abs(dragOffset) - 8) / 50))
+        } else if dragOffset > 8 {
+            Text("Defer")
+                .font(.caption2.bold())
+                .foregroundStyle(.green)
+                .opacity(min(1, (dragOffset - 8) / 50))
         }
     }
 
