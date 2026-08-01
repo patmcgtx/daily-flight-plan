@@ -10,6 +10,15 @@ struct DailyFlightPlanApp: App {
 
     @AppStorage(AppStorageKeys.theme.rawValue)
     private var theme: DFPTheme = .cupertino
+    private let modelContainer: ModelContainer
+
+    init() {
+        do {
+            modelContainer = try ModelContainer.persistentContainer()
+        } catch {
+            fatalError("Failed to initialize persistent model container: \(error)")
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -17,6 +26,6 @@ struct DailyFlightPlanApp: App {
                 .injectLiveServices()
                 .apply(theme: theme)
         }
-        .modelContainer(try! ModelContainer.persistentContainer())
+        .modelContainer(modelContainer)
     }
 }
