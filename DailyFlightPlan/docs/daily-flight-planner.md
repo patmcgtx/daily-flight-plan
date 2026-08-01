@@ -3,9 +3,9 @@
 	Location:	Summer Moon Coffee, Austin, Texas, United States
 
 # Daily Flight Planner app Figma UX mock and specs
-This is rough, and the style is off, but hits al the bases. Woohoo! 
+This is rough, and the style is off, but hits all the bases. Woohoo! 
 
-This is literally inspired by a real flight plan, low-level, plus ym own experience with DayOne daily plans.
+This is literally inspired by a real flight plan, low-level, plus my own experience with DayOne daily plans.
 
 And no AI lol.
 
@@ -25,7 +25,7 @@ Here are the specs it brought out:
 ### Feature specs
 This is a daily planner app. It combines items added for to day specifically and recurring items. It’s based on an airplane flight plan checklist for inspiration, so today is a trip to a destination, and this is the checklist.
 
-Let’s and SwiftUI and Liquid Glass for the UI.
+Let’s use SwiftUI and Liquid Glass for the UI.
 
 #### Main “TODAY” view
 The main view is a time-based view of today’s checklist.
@@ -49,7 +49,7 @@ The day view is broken into visible, **collapsible** “day sections” with a r
 There is also an “any time” non-section section for items specially not associated with a time, sort of like the “all day” section of the Calendar app. The “any time” section should not have a border or background. This area should be at the bottom of the view but scroll with the rest of the sections.
 
 ### Items
-The following kinds fo items are displayed not the day view.
+The following kinds of items are displayed on the day view.
 
 - **Calendar events** imported from the Calendar app. Tapping a calendar item links to the event in the Calendar app. Each calendar item has its own “line”, aka fills the view horizontally, and has a little calendar item.
 - **A horizontal “now” bar** indicating the current time in the day
@@ -59,7 +59,7 @@ The following kinds fo items are displayed not the day view.
 - All items (except calendar events) have an “info” icon to link to view its notes.
 
 ### Recurring items 
-We also want a way to add recruiting items. These are items that appear automatically every day. They are internally flagged as recurring and visually indicated as such with a small “infinity” icon.
+We also want a way to add recurring items. These are items that appear automatically every day. They are internally flagged as recurring and visually indicated as such with a small “infinity” icon.
 
 ### Creating items
 Floating at the bottom of the view is a prominent “add item” button, centered horizontally.  When tapped, you can add an item with the following information:
@@ -67,13 +67,13 @@ Floating at the bottom of the view is a prominent “add item” button, centere
 - Notes
 - An “flag” to indicate this item is important (off by default)
 - Date (default to today) and optional deadline time
-- Whether the item is recurring or not - and all the user to pick which days of the week it recurs on.
+- Whether the item is recurring or not - and allow the user to pick which days of the week it recurs on.
 - Zero or more categories (like we do for Landmarks in MapsPlus)
 - We will want a way to add and edit categories like in MapsPlus)
 
 ### Item day-view behavior
 On the day view, items have a “complete” checkbox. Let’s also give a quick gesture to:
-- Cancel the item rather than complete it (long press menu or swipe It left)
+- Cancel the item rather than complete it (long press menu or swipe it left)
 - Defer the item to tomorrow (long press menu of swipe it right)
 - The long-press menu also has an “edit” option  to edit the item.
 
@@ -88,14 +88,14 @@ The day view can be filtered as follows. Ideally, each toggle is a button with o
 
 All filtering prefs are saved to @AppStorage.
 
-- **Show only flagged items** - if toggled on, show only flagged/important items and hooded all others. Off by default.
+- **Show only flagged items** - if toggled on, show only flagged/important items and hide all others. Off by default.
 - **Show completed items** - if toggled on, show completed and canceled items along with everything else. By default, do not show items once they are completed or canceled. 
-- **Show recurring items** - If toggled on, show recurring items. If off show only non-recutting items. This one is *on* by default.
+- **Show recurring items** - If toggled on, show recurring items. If off show only non-recurring items. This one is *on* by default.
 
-**Filter by categories** - let’s add a way to show selected categories like in MapsPlus. It might make sense to add a horizontal scroll view to select categories in one line? And/or this one could be a special  button you tap to popup a category selector like in MapsPus.
+**Filter by categories** - let’s add a way to show selected categories like in MapsPlus. It might make sense to add a horizontal scroll view to select categories in one line? And/or this one could be a special button you tap to popup a category selector like in MapsPlus.
 
 ### Global day view items
-On the main day view, we also want the followings items presented ideally with one tap, similar to MapsPlus.
+On the main day view, we also want the following items presented ideally with one tap, similar to MapsPlus.
 
 - ​**Progress indicator:**​ It would be really nice to have some simple visual progress indicator, maybe like a small exercise ring, of how the day’s going. Are you on track? Are you behind on a lot of stuff? Keep it light and friendly. I’m leaning towards an exercise ring or donut that fills up and had a “mood” color. Keep it simple and intuitive. This probably belong at the top somewhere.
 - **Settings button** -  a buttons that brings up preferences, where we will later add things like customizing the times for day sections or even adding/removing/editing day sections. Just a placeholder for now, though.
