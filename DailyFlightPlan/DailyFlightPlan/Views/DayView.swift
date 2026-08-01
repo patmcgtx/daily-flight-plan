@@ -135,7 +135,7 @@ struct DayView: View {
 
     private var dayScrollView: some View {
         let selectedDateItems = itemsForSelectedDate
-        ScrollViewReader { proxy in
+        return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
                     ForEach(DaySection.allCases) { section in
