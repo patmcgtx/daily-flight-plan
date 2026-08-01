@@ -23,11 +23,11 @@ struct ProgressRingView: View {
         ZStack {
             Circle()
                 .stroke(.secondary.opacity(0.2),
-                        style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round))
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(ringColor,
-                        style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(.spring(duration: 0.4), value: progress)
         }
