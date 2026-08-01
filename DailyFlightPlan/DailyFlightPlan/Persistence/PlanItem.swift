@@ -24,8 +24,8 @@ class PlanItem {
 
     var isRecurring: Bool
 
-    /// Weekday indices on which this item recurs (Sun=1 … Sat=7)
-    var recurringDays: [Int]
+    /// The weekdays on which this item recurs
+    var recurringWeekdays: [Locale.Weekday]
 
     var status: ItemStatus
 
@@ -40,7 +40,7 @@ class PlanItem {
         deadline: Date? = nil,
         daySection: DaySection? = nil,
         isRecurring: Bool = false,
-        recurringDays: [Int] = [],
+        recurringWeekdays: [Locale.Weekday] = [],
         status: ItemStatus = .pending,
         categories: [PlanCategory] = []
     ) {
@@ -51,7 +51,7 @@ class PlanItem {
         self.deadline = deadline
         self.daySection = daySection
         self.isRecurring = isRecurring
-        self.recurringDays = recurringDays
+        self.recurringWeekdays = recurringWeekdays
         self.status = status
         self.categories = categories
     }
