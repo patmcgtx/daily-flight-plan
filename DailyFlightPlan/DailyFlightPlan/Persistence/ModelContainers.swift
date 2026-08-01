@@ -50,7 +50,11 @@ extension ModelContainer {
         ]
 
         for item in items { context.insert(item) }
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("Failed to seed sample data: \(error)")
+        }
     }
 
     /// Creates an in-memory container seeded with sample data for previews and tests.

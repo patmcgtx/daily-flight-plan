@@ -38,7 +38,7 @@ struct ItemPillView: View {
                         } else if predicted > flickThreshold {
                             flickAway(leading: false) {
                                 let cal = Calendar.current
-                                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now))!
+                                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
                                 item.date = tomorrow
                                 if let deadline = item.deadline {
                                     item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
@@ -54,6 +54,7 @@ struct ItemPillView: View {
     private var pillContent: some View {
         HStack(spacing: 5) {
             Button {
+                guard item.status != .canceled else { return }
                 withAnimation(.spring(duration: 0.2)) {
                     item.status = item.status == .completed ? .pending : .completed
                 }
@@ -107,7 +108,7 @@ struct ItemPillView: View {
             }
             Button {
                 let cal = Calendar.current
-                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now))!
+                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
                 item.date = tomorrow
                 if let deadline = item.deadline {
                     item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
@@ -140,7 +141,7 @@ struct ItemPillView: View {
         withAnimation(.easeOut(duration: 0.25)) {
             dragOffset = leading ? -500 : 500
         }
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.3))
             action()
             dragOffset = 0
