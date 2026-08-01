@@ -4,7 +4,7 @@
 A daily planner iOS app inspired by a flight plan checklist. Today is a "trip"; the checklist is your flight plan. Combines one-off and recurring tasks, organized by time-of-day sections.
 
 ## Key docs
-- **Specs**: `DailyFlightPlan/docs/daily-flight-planner.md` — original feature and UX specs
+- **Specs**: `DailyFlightPlan/docs/project-spec-prompt.md` — original feature and UX specs
 - **Architecture**: `DailyFlightPlan/docs/architecture.md` — folder structure, data models, services, UI direction
 - **Build plan**: `DailyFlightPlan/docs/implementation-plan.md` — phased implementation order
 
