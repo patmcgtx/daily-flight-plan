@@ -39,48 +39,87 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Validate and save via `modelContext`
 - Mock service + preview
 
-## Phase 5 — Calendar Integration
-- `CalendarService` protocol + `EventKitCalendarService` live implementation
-- `MockCalendarService` (#if DEBUG)
-- EventKit permission request on first launch
-- Display `CalendarEvent` rows in day sections
-- Tap to open Calendar app
-
-## Phase 6 — Filtering + Categories
+## Phase 5 — Filtering + Categories
 - Wire up filter toggle pills (flagged / completed / recurring) to `@AppStorage`
 - Horizontally scrollable `CategoryCapsule` row in filter sub-bar
 - `CategorySelectionService` (adapted from MapsPlus)
 - `CategoriesEditView` for adding/editing categories
 
-## Phase 7 — Progress Indicator
+## Phase 6 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right
 - Computed from: completed / (total non-canceled items for today)
 - Color changes with completion ratio (green → yellow → red)
 
-## Phase 8 — Settings Placeholder
+## Phase 7 — Calendar Integration
+- `CalendarService` protocol + `EventKitCalendarService` live implementation
+- `MockCalendarService` (#if DEBUG)
+- EventKit permission request on first launch
+- Let user select which calendars to show (stored in `@AppStorage`); UI in Settings
+- Display `CalendarEvent` rows in day sections for selected calendars only
+- Tap to open Calendar app
+
+## Phase 8 — Reminders Integration
+- `RemindersService` protocol + `EventKitRemindersService` live implementation (shares `EKEventStore` with CalendarService)
+- `MockRemindersService` (#if DEBUG)
+- Request Reminders permission (`EKEntityType.reminder`) separately from Calendar permission
+- Let user select which Reminders lists to sync (stored in `@AppStorage`); UI in Settings
+- Add `reminderIdentifier: String?` to `PlanItem` to track origin (preserves option for two-way sync)
+- Display synced reminders as native `PlanItem`s in the day view (not a separate row type)
+- **TBD**: two-way completion sync — marking complete/canceled could write back to `EKReminder.isCompleted`; deferring could update `EKReminder.dueDateComponents`. Decide when we get here.
+
+## Phase 9 — Settings Placeholder
 - `SettingsView` stub (empty, navigated to from ⚙ button)
 - Placeholder text: "Customization coming soon"
 
-## Phase 9 — Date Picker
+## Phase 10 — Date Picker
 - Implement the `calendar.circle` date-picker placeholder in the header
 - Let the user jump to any date directly (not just ±1 day)
-
-## Phase 10 — Local Notifications
-- Request notification permission on first use of a deadline item
-- Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
-- Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
 
 ## Phase 11 — Customizable Day Sections
 - `SettingsView` section for editing day section time boundaries
 - Store custom start/end hours in `@AppStorage` (or SwiftData)
 - `DaySection.containing(_:)` reads from stored boundaries instead of hardcoded values
 
-## Phase 12 — Aviation UI Experiment
+## Phase 12 — Local Notifications
+- Request notification permission on first use of a deadline item
+- Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
+- Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
+- Notification times respect custom day section boundaries from Phase 11
+
+## Phase 13 — Aviation UI Experiment
 - Explore a dedicated "flight plan" visual style beyond color themes — e.g. monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log table rows, checklist-style item rendering
-- Could be a new `DFPTheme` case, a separate `UIStyle` dimension orthogonal to color theme, or a full alternate view mode
+- Could be a new `DFPTheme` case, a separate `UIStyle` dimension orthogonal to color theme, or a full alternate view mode. Possibly something retro like "TWA" or "Pan Am"
+- Don't overdo it, or at least make it optional.
 - Treat as a design spike: prototype freely, keep what feels right, discard the rest
 
-## Phase 13 — iCloud Sync
+## Phase 14 — iPad Support
+- Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
+- Verify `HFlow` pill layouts scale well on wider screens
+- Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
+- Test with Stage Manager and multitasking split views
+- Pointer/cursor hover states for trackpad users
+
+## Phase 15 — Mac Support
+- Enable Mac Catalyst or SwiftUI native Mac target
+- Replace glass pill buttons and swipe gestures with Mac-native equivalents (context menus, toolbar buttons)
+- Menu bar integration: keyboard shortcuts for common actions (new item, next/previous day, go to today)
+- Appropriate window minimum size and resizable layout
+- Test full keyboard navigation and VoiceOver on macOS
+
+## Phase 16 — Widget + Live Activity
+- Home screen widget: show today's next upcoming item or a compact progress ring + item count
+- Lock screen widget: minimal glanceable version (next item, section, time)
+- Live Activity (Dynamic Island + Lock Screen): show the current/next item during the day, update as items are completed
+- Uses `WidgetKit` + `ActivityKit`; shares SwiftData read access via App Group container
+
+## Phase 17 — Apple Watch App
+- Companion Watch app showing today's items in a scrollable list
+- Complication showing progress ring or next item title
+- Tap to complete items directly from the wrist
+- Syncs via Watch Connectivity (`WCSession`) or shared CloudKit container (depends on iCloud sync status)
+- Keep it read + complete only; add/edit stays on iPhone
+
+## Phase 18 — iCloud Sync
 - Enable CloudKit capability in entitlements
 - Switch `ModelConfiguration` to use a CloudKit container identifier
 - Handle merge conflicts and sync errors gracefully
