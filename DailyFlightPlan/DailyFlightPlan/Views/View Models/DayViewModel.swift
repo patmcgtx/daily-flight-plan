@@ -23,11 +23,13 @@ final class DayViewModel {
     }
 
     func goToYesterday() {
-        selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!
+        guard let date = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) else { return }
+        selectedDate = date
     }
 
     func goToTomorrow() {
-        selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate)!
+        guard let date = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) else { return }
+        selectedDate = date
     }
 
     // MARK: Section collapse

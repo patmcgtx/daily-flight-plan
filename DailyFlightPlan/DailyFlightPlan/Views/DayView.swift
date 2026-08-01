@@ -48,6 +48,7 @@ struct DayView: View {
                     .frame(width: 20)
             }
             .buttonStyle(.glass)
+            .accessibilityLabel("Previous Day")
 
             Spacer()
 
@@ -64,6 +65,7 @@ struct DayView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Select Date")
                 }
             }
 
@@ -73,6 +75,7 @@ struct DayView: View {
                 progressRingPlaceholder
                 Button { } label: { Image(systemName: "gearshape") }
                     .buttonStyle(.glass)
+                    .accessibilityLabel("Settings")
                 Menu {
                     ForEach(DFPTheme.allCases) { option in
                         Button { theme = option } label: {
@@ -83,11 +86,13 @@ struct DayView: View {
                     Image(systemName: theme.menuIconName)
                 }
                 .buttonStyle(.glass)
+                .accessibilityLabel("Theme")
                 Button { viewModel.goToTomorrow() } label: {
                     Image(systemName: "chevron.right")
                         .frame(width: 20)
                 }
                 .buttonStyle(.glass)
+                .accessibilityLabel("Next Day")
             }
         }
         .padding(.horizontal)
@@ -100,6 +105,7 @@ struct DayView: View {
             .foregroundStyle(.secondary.opacity(0.3))
             .frame(width: 26, height: 26)
             .rotationEffect(.degrees(-90))
+            .accessibilityHidden(true)
     }
 
     private var filterRow: some View {
@@ -128,14 +134,15 @@ struct DayView: View {
     // MARK: Scrollable day content
 
     private var dayScrollView: some View {
+        let selectedDateItems = itemsForSelectedDate
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
                     ForEach(DaySection.allCases) { section in
                         DaySectionView(
                             section: section,
-                            sectionPills: viewModel.sectionPills(section, from: itemsForSelectedDate),
-                            deadlineRows: viewModel.deadlineRows(section, from: itemsForSelectedDate),
+                            sectionPills: viewModel.sectionPills(section, from: selectedDateItems),
+                            deadlineRows: viewModel.deadlineRows(section, from: selectedDateItems),
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
                             onToggle: {
@@ -147,7 +154,7 @@ struct DayView: View {
                         .id(section)
                     }
 
-                    anyTimeSection
+                    anyTimeSection(items: selectedDateItems)
                 }
                 .padding(.horizontal)
                 .padding(.top, 12)
@@ -165,17 +172,17 @@ struct DayView: View {
 
     // MARK: Any time section
 
-    private var anyTimeSection: some View {
-        let items = viewModel.anyTimeItems(from: itemsForSelectedDate)
+    private func anyTimeSection(items: [PlanItem]) -> some View {
+        let anyTimeItems = viewModel.anyTimeItems(from: items)
         return Group {
-            if !items.isEmpty {
+            if !anyTimeItems.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Any Time")
                         .font(.subheadline.bold())
                         .foregroundStyle(.secondary)
                         .padding(.leading, 4)
                     HFlow(itemSpacing: 8, rowSpacing: 8) {
-                        ForEach(items) { item in
+                        ForEach(anyTimeItems) { item in
                             ItemPillView(item: item)
                         }
                     }
