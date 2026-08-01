@@ -9,6 +9,7 @@ final class DayViewModel {
 
     var selectedDate: Date = Calendar.current.startOfDay(for: .now)
     var collapsedSections: Set<DaySection> = []
+    private(set) var forwardNavigation: Bool = true
 
     // MARK: Date helpers
 
@@ -24,12 +25,20 @@ final class DayViewModel {
 
     func goToYesterday() {
         guard let date = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) else { return }
+        forwardNavigation = false
         selectedDate = date
     }
 
     func goToTomorrow() {
         guard let date = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) else { return }
+        forwardNavigation = true
         selectedDate = date
+    }
+
+    func goToToday() {
+        let today = Calendar.current.startOfDay(for: .now)
+        forwardNavigation = selectedDate < today
+        selectedDate = today
     }
 
     // MARK: Section collapse

@@ -26,7 +26,16 @@ struct DayView: View {
             headerView
             Divider()
             dayScrollView
+                .id(viewModel.selectedDate)
+                .transition(dayTransition)
         }
+        .clipped()
+    }
+
+    private var dayTransition: AnyTransition {
+        viewModel.forwardNavigation
+            ? .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))
+            : .asymmetric(insertion: .move(edge: .leading),  removal: .move(edge: .trailing))
     }
 
     // MARK: Sticky header
@@ -43,7 +52,9 @@ struct DayView: View {
 
     private var dateNavRow: some View {
         HStack(spacing: 8) {
-            Button { viewModel.goToYesterday() } label: {
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToYesterday() }
+            } label: {
                 Image(systemName: "chevron.left")
                     .frame(width: 20)
             }
@@ -59,13 +70,16 @@ struct DayView: View {
                 HStack(spacing: 6) {
                     Text(viewModel.selectedDate, format: .dateTime.month(.abbreviated).day())
                         .font(.title2.bold())
-                    // Date picker placeholder (not yet implemented)
-                    Button { } label: {
-                        Image(systemName: "calendar.circle")
-                            .foregroundStyle(.secondary)
+                    if !viewModel.isToday {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
+                        } label: {
+                            Image(systemName: "scope")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Go to Today")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Select Date")
                 }
             }
 
@@ -87,7 +101,9 @@ struct DayView: View {
                 }
                 .buttonStyle(.glass)
                 .accessibilityLabel("Theme")
-                Button { viewModel.goToTomorrow() } label: {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToTomorrow() }
+                } label: {
                     Image(systemName: "chevron.right")
                         .frame(width: 20)
                 }
