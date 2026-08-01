@@ -40,6 +40,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - `CategoriesEditView` + `CategoriesEditViewModel` for adding/renaming/deleting categories
 - `@Environment(\.categorySelectionService)` injected via `InjectLiveServicesModifier` / `InjectMockServicesModifier`
 - Filter toggles show active state (accentColor fill) vs. inactive (regularMaterial)
+- Follow-up polish: recurring items remain visible by default, add/rename/delete category actions now only clear UI state after a successful SwiftData save, and category item counts pluralize correctly
 
 ## Phase 5 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right

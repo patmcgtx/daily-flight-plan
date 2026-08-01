@@ -25,9 +25,14 @@ final class CategoriesEditViewModel {
         guard !trimmed.isEmpty else { return false }
         guard !allCategories.contains(where: { $0.name.lowercased() == trimmed.lowercased() }) else { return false }
         modelContext.insert(PlanCategory(name: trimmed))
-        try? modelContext.save()
-        newCategoryName = ""
-        return true
+        do {
+            try modelContext.save()
+            newCategoryName = ""
+            return true
+        } catch {
+            modelContext.rollback()
+            return false
+        }
     }
 
     func startEditing(_ category: PlanCategory) {
@@ -43,9 +48,14 @@ final class CategoriesEditViewModel {
             $0.id != category.id && $0.name.lowercased() == trimmed.lowercased()
         }) else { return false }
         category.name = trimmed
-        try? modelContext.save()
-        cancelEdit()
-        return true
+        do {
+            try modelContext.save()
+            cancelEdit()
+            return true
+        } catch {
+            modelContext.rollback()
+            return false
+        }
     }
 
     func cancelEdit() {
@@ -56,7 +66,12 @@ final class CategoriesEditViewModel {
     @discardableResult
     func deleteCategory(_ category: PlanCategory) -> Bool {
         modelContext.delete(category)
-        try? modelContext.save()
-        return true
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            modelContext.rollback()
+            return false
+        }
     }
 }

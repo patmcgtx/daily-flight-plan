@@ -53,7 +53,7 @@ struct CategoriesEditView: View {
                         } else {
                             HStack {
                                 Text(category.name)
-                                Text("\(category.items.count) items")
+                                Text("\(category.items.count) item\(category.items.count == 1 ? "" : "s")")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()

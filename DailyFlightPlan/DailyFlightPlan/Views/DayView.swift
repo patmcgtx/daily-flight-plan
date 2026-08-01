@@ -22,7 +22,7 @@ struct DayView: View {
     private var showCompleted: Bool = false
 
     @AppStorage(AppStorageKeys.showRecurring.rawValue)
-    private var showRecurring: Bool = false
+    private var showRecurring: Bool = true
 
     @Environment(\.categorySelectionService)
     private var categorySelectionService: CategorySelectionService?
@@ -37,7 +37,7 @@ struct DayView: View {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && (showCompleted || ($0.status != .completed && $0.status != .canceled))
             && (!showFlaggedOnly || $0.isFlagged)
-            && (!showRecurring || $0.isRecurring)
+            && (showRecurring || !$0.isRecurring)
         }
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
