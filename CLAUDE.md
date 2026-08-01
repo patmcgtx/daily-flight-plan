@@ -16,6 +16,9 @@ Use `gh api repos/patmcgtx/mapplus/git/trees/main?recursive=1` to browse, and
 
 Key files to copy/adapt: `Theming/`, `Views/Components/CategoryCapsule.swift`, `Views/Components/CategoriesSelectFlow.swift`, `Common/Environment.swift`, `Persistence/ModelContainers.swift`, `Preferences/AppStorageKeys.swift`, `Test Support/`
 
+## Working conventions
+- After completing a phase (or a meaningful chunk of one), mark it ✅ in `DailyFlightPlan/docs/implementation-plan.md` and note any deviations or additions made during implementation. Do this automatically, without being asked.
+
 ## Core tech
 - SwiftUI + Liquid Glass (`.glassEffect()`, `GlassEffectContainer`)
 - SwiftData for persistence (iCloud sync deferred)

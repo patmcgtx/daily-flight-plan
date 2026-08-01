@@ -2,7 +2,7 @@
 
 See `architecture.md` for folder structure, data models, and UI direction.
 
-## Phase 1 — Skeleton + Models
+## ✅ Phase 1 — Skeleton + Models
 - Set up folder structure mirroring MapsPlus
 - Copy and rename `Theming/` from MapsPlus (`MapPlusTheme` → `DFPTheme`)
 - Copy `Common/Environment.swift` pattern
@@ -12,16 +12,19 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Remove Xcode template boilerplate (`Item.swift`, placeholder `ContentView`)
 - Add SwiftUI-Flow package dependency
 
-## Phase 2 — Day View (read-only)
+## ✅ Phase 2 — Day View (read-only)
 - `DayViewModel` — computes sections, filters items, tracks selected date
 - `DayView` — sticky header (date nav, filter row stub), scrollable section cards
 - `DaySectionView` — collapsible rounded-rect card
-- `ItemRow` — deadline item row (checkbox placeholder, clock icon, title)
-- `CategoryCapsule` — day-section item pill (adapted from MapsPlus)
-- `NowBar` — red line placed in the correct section
+- `ItemPillView` — day-section item pill (HFlow layout)
+- `DeadlineItemRow` — deadline item row (clock icon, formatted time, title)
+- `NowBarView` — red line placed in the correct section
 - "Any time" section at bottom (no border)
 - Scroll-to-now on appear
 - SwiftUI previews with in-memory sample data
+- Theme menu wired up (`@AppStorage`, applied at root via `ThemeViewModifier`)
+- "Go to today" button (`scope` icon, visible only when not on today)
+- Directional slide animation on day navigation (< / > / scope)
 
 ## Phase 3 — Item Interactions
 - Completion checkbox (toggle `.completed`)
@@ -51,9 +54,33 @@ See `architecture.md` for folder structure, data models, and UI direction.
 
 ## Phase 7 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right
-- Computed from: completed / (total non-canceled, non-deferred items for today)
+- Computed from: completed / (total non-canceled items for today)
 - Color changes with completion ratio (green → yellow → red)
 
 ## Phase 8 — Settings Placeholder
 - `SettingsView` stub (empty, navigated to from ⚙ button)
 - Placeholder text: "Customization coming soon"
+
+## Phase 9 — Date Picker
+- Implement the `calendar.circle` date-picker placeholder in the header
+- Let the user jump to any date directly (not just ±1 day)
+
+## Phase 10 — Local Notifications
+- Request notification permission on first use of a deadline item
+- Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
+- Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
+
+## Phase 11 — Customizable Day Sections
+- `SettingsView` section for editing day section time boundaries
+- Store custom start/end hours in `@AppStorage` (or SwiftData)
+- `DaySection.containing(_:)` reads from stored boundaries instead of hardcoded values
+
+## Phase 12 — Aviation UI Experiment
+- Explore a dedicated "flight plan" visual style beyond color themes — e.g. monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log table rows, checklist-style item rendering
+- Could be a new `DFPTheme` case, a separate `UIStyle` dimension orthogonal to color theme, or a full alternate view mode
+- Treat as a design spike: prototype freely, keep what feels right, discard the rest
+
+## Phase 13 — iCloud Sync
+- Enable CloudKit capability in entitlements
+- Switch `ModelConfiguration` to use a CloudKit container identifier
+- Handle merge conflicts and sync errors gracefully
