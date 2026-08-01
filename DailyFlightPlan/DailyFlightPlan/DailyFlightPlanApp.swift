@@ -2,31 +2,21 @@
 //  DailyFlightPlanApp.swift
 //  DailyFlightPlan
 //
-//  Created by Patrick McGonigle on 7/24/26.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct DailyFlightPlanApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @AppStorage(AppStorageKeys.theme.rawValue)
+    private var theme: DFPTheme = .cupertino
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .injectLiveServices()
+                .apply(theme: theme)
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(try! ModelContainer.persistentContainer())
     }
 }
