@@ -26,7 +26,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - "Go to today" button (`scope` icon, visible only when not on today)
 - Directional slide animation on day navigation (< / > / scope)
 
-## Phase 3 — Item Interactions
+## ✅ Phase 3 — Item Interactions
 - Completion checkbox (toggle `.completed`)
 - Swipe left → cancel; swipe right → defer to tomorrow
 - Long-press menu: cancel / defer / edit
