@@ -25,6 +25,13 @@ struct DailyFlightPlanApp: App {
             ContentView()
                 .injectLiveServices()
                 .apply(theme: theme)
+                .onAppear {
+                    #if DEBUG
+                    ModelContainer.seedSampleDataIfNeeded(
+                        in: modelContainer.mainContext
+                    )
+                    #endif
+                }
         }
         .modelContainer(modelContainer)
     }

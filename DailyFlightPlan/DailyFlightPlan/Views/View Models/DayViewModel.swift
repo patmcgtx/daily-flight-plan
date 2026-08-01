@@ -55,25 +55,43 @@ final class DayViewModel {
         }
     }
 
-    // MARK: Item grouping
+    // MARK: Missed item logic
 
-    /// Items assigned to this section via their daySection property
-    func sectionPills(_ section: DaySection, from items: [PlanItem]) -> [PlanItem] {
-        items.filter { $0.daySection == section }
+    /// True when viewing today and the item's scheduled time has passed but it's still pending.
+    /// Missed items are pulled out of their section and shown in the "any time" area with a warning style.
+    func isMissed(_ item: PlanItem) -> Bool {
+        guard isToday, item.status == .pending else { return false }
+        if let deadline = item.deadline {
+            return deadline < .now
+        }
+        if let section = item.daySection,
+           let sectionEnd = Calendar.current.date(bySettingHour: section.endHour, minute: 59, second: 59, of: .now) {
+            return sectionEnd < .now
+        }
+        return false
     }
 
-    /// Items with a deadline clock time that falls within this section
+    // MARK: Item grouping
+
+    /// Items assigned to this section (excluding missed items, which fall to "any time")
+    func sectionPills(_ section: DaySection, from items: [PlanItem]) -> [PlanItem] {
+        items.filter { $0.daySection == section && !isMissed($0) }
+    }
+
+    /// Deadline items whose clock time falls within this section (excluding missed items)
     func deadlineRows(_ section: DaySection, from items: [PlanItem]) -> [PlanItem] {
         items
             .filter { item in
-                guard let deadline = item.deadline, item.daySection == nil else { return false }
+                guard let deadline = item.deadline, item.daySection == nil, !isMissed(item) else { return false }
                 return DaySection.containing(deadline) == section
             }
             .sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
     }
 
-    /// Items with no section and no deadline (explicitly "any time")
+    /// Items with no section and no deadline, plus any missed items from earlier in the day
     func anyTimeItems(from items: [PlanItem]) -> [PlanItem] {
-        items.filter { $0.daySection == nil && $0.deadline == nil }
+        let noTimeItems = items.filter { $0.daySection == nil && $0.deadline == nil }
+        let missedItems = items.filter { isMissed($0) }
+        return noTimeItems + missedItems
     }
 }

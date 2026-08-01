@@ -15,9 +15,13 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.theme.rawValue)
     private var theme: DFPTheme = .cupertino
 
+    @AppStorage(AppStorageKeys.showCompleted.rawValue)
+    private var showCompleted: Bool = false
+
     private var itemsForSelectedDate: [PlanItem] {
         allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
+            && (showCompleted || ($0.status != .completed && $0.status != .canceled))
         }
     }
 
@@ -199,10 +203,12 @@ struct DayView: View {
                         .padding(.leading, 4)
                     HFlow(itemSpacing: 8, rowSpacing: 8) {
                         ForEach(anyTimeItems) { item in
-                            ItemPillView(item: item)
+                            ItemPillView(item: item, isMissed: viewModel.isMissed(item))
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
             }
         }
