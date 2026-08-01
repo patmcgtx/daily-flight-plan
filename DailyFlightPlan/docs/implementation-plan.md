@@ -33,11 +33,13 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Missed item logic: past-due `.pending` items move to "any time" area with orange/red tint
 - Struck-through deadline on missed items
 
-## Phase 4 — Filtering + Categories
+## ✅ Phase 4 — Filtering + Categories
 - Wire up filter toggle pills (flagged / completed / recurring) to `@AppStorage`
 - Horizontally scrollable `CategoryCapsule` row in filter sub-bar
-- `CategorySelectionService` (adapted from MapsPlus)
-- `CategoriesEditView` for adding/editing categories
+- `CategorySelectionService` (adapted from MapsPlus) — SwiftData-backed `SelectedCategories` singleton
+- `CategoriesEditView` + `CategoriesEditViewModel` for adding/renaming/deleting categories
+- `@Environment(\.categorySelectionService)` injected via `InjectLiveServicesModifier` / `InjectMockServicesModifier`
+- Filter toggles show active state (accentColor fill) vs. inactive (regularMaterial)
 
 ## Phase 5 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right
