@@ -151,7 +151,7 @@ struct DayView: View {
     private var filterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                filterToggle("Flagged", icon: "star.fill", isActive: showFlaggedOnly) {
+                filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
                     showFlaggedOnly.toggle()
                 }
                 filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
