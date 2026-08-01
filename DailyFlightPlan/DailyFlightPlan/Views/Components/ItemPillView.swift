@@ -10,7 +10,44 @@ struct ItemPillView: View {
     let item: PlanItem
     var isMissed: Bool = false
 
+    @State private var dragOffset: CGFloat = 0
+
+    // Minimum predicted end translation (pt) to commit a flick
+    private let flickThreshold: CGFloat = 80
+
     var body: some View {
+        pillContent
+            .offset(x: dragOffset)
+            .opacity(dragOffset == 0 ? 1 : max(0.5, 1 - abs(dragOffset) / 250))
+            .gesture(
+                DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        let h = abs(value.translation.width)
+                        let v = abs(value.translation.height)
+                        guard h > v else { return }
+                        dragOffset = value.translation.width
+                    }
+                    .onEnded { value in
+                        let predicted = value.predictedEndTranslation.width
+                        if predicted < -flickThreshold {
+                            flickAway(leading: true) { item.status = .canceled }
+                        } else if predicted > flickThreshold {
+                            flickAway(leading: false) {
+                                let cal = Calendar.current
+                                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now))!
+                                item.date = tomorrow
+                                if let deadline = item.deadline {
+                                    item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
+                                }
+                            }
+                        } else {
+                            withAnimation(.spring(duration: 0.4)) { dragOffset = 0 }
+                        }
+                    }
+            )
+    }
+
+    private var pillContent: some View {
         HStack(spacing: 5) {
             Button {
                 withAnimation(.spring(duration: 0.2)) {
@@ -65,13 +102,11 @@ struct ItemPillView: View {
                 Label("Cancel Item", systemImage: "xmark.circle")
             }
             Button {
-                let tomorrow = Calendar.current.date(
-                    byAdding: .day, value: 1,
-                    to: Calendar.current.startOfDay(for: .now)
-                )!
+                let cal = Calendar.current
+                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now))!
                 item.date = tomorrow
                 if let deadline = item.deadline {
-                    item.deadline = Calendar.current.date(byAdding: .day, value: 1, to: deadline)
+                    item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
                 }
             } label: {
                 Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
@@ -79,6 +114,17 @@ struct ItemPillView: View {
             Button { } label: {
                 Label("Edit…", systemImage: "pencil")
             }
+        }
+    }
+
+    private func flickAway(leading: Bool, action: @escaping () -> Void) {
+        withAnimation(.easeOut(duration: 0.25)) {
+            dragOffset = leading ? -500 : 500
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(0.3))
+            action()
+            dragOffset = 0
         }
     }
 
