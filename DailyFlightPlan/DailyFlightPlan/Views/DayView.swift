@@ -73,8 +73,16 @@ struct DayView: View {
                 progressRingPlaceholder
                 Button { } label: { Image(systemName: "gearshape") }
                     .buttonStyle(.glass)
-                Button { } label: { Image(systemName: theme.menuIconName) }
-                    .buttonStyle(.glass)
+                Menu {
+                    ForEach(DFPTheme.allCases) { option in
+                        Button { theme = option } label: {
+                            Label(option.localizedName, systemImage: option.menuIconName)
+                        }
+                    }
+                } label: {
+                    Image(systemName: theme.menuIconName)
+                }
+                .buttonStyle(.glass)
                 Button { viewModel.goToTomorrow() } label: {
                     Image(systemName: "chevron.right")
                         .frame(width: 20)
