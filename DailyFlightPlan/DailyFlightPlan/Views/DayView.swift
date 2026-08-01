@@ -206,7 +206,9 @@ struct DayView: View {
                             ItemPillView(item: item, isMissed: viewModel.isMissed(item))
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
             }
         }
