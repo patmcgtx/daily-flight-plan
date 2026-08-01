@@ -23,7 +23,7 @@ Here are the specs it brought out:
 - Use [SwiftUI-Flow](https://github.com/tevelee/SwiftUI-Flow) for all flow views
 
 ### Feature specs
-This is a daily planner app. It combines items added for to day specifically and recurring items. It’s based on an airplane flight plan checklist for inspiration, so today is a trip to a destination, and this is the checklist.
+This is a daily planner app. It combines items added for today specifically and recurring items. It’s based on an airplane flight plan checklist for inspiration, so today is a trip to a destination, and this is the checklist.
 
 Let’s use SwiftUI and Liquid Glass for the UI.
 
@@ -53,7 +53,7 @@ The following kinds of items are displayed on the day view.
 
 - **Calendar events** imported from the Calendar app. Tapping a calendar item links to the event in the Calendar app. Each calendar item has its own “line”, aka fills the view horizontally, and has a little calendar item.
 - **A horizontal “now” bar** indicating the current time in the day
-- ​**Deadline-based items**​: these items have specific time associated with time and a little “clock” icon. These items have a checkbox to indicate completion. Deadline-based items have their own “line” like calendar events. (We’ll want to add local notifications for these later.)
+- ​**Deadline-based items**​: these items have a specific associated time and a little “clock” icon. These items have a checkbox to indicate completion. Deadline-based items have their own “line” like calendar events. (We’ll want to add local notifications for these later.)
 - ​**Day-section items**​: Items which are associated with a day section are displayed within that day section, at the top of it, in a horizontal flow layout. They have checkboxes too to indicate completion.
 - ​**Any-time items**​: These items are similar to day-section items (horizontal flow) but are displayed in the “any time” non-section.
 - All items (except calendar events) have an “info” icon to link to view its notes.
@@ -65,7 +65,7 @@ We also want a way to add recurring items. These are items that appear automatic
 Floating at the bottom of the view is a prominent “add item” button, centered horizontally.  When tapped, you can add an item with the following information:
 - Short title
 - Notes
-- An “flag” to indicate this item is important (off by default)
+- A “flag” to indicate this item is important (off by default)
 - Date (default to today) and optional deadline time
 - Whether the item is recurring or not - and allow the user to pick which days of the week it recurs on.
 - Zero or more categories (like we do for Landmarks in MapsPlus)
@@ -74,7 +74,7 @@ Floating at the bottom of the view is a prominent “add item” button, centere
 ### Item day-view behavior
 On the day view, items have a “complete” checkbox. Let’s also give a quick gesture to:
 - Cancel the item rather than complete it (long press menu or swipe it left)
-- Defer the item to tomorrow (long press menu of swipe it right)
+- Defer the item to tomorrow (long press menu or swipe it right)
 - The long-press menu also has an “edit” option  to edit the item.
 
 ### Day-view progression
@@ -97,7 +97,6 @@ All filtering prefs are saved to @AppStorage.
 ### Global day view items
 On the main day view, we also want the following items presented ideally with one tap, similar to MapsPlus.
 
-- ​**Progress indicator:**​ It would be really nice to have some simple visual progress indicator, maybe like a small exercise ring, of how the day’s going. Are you on track? Are you behind on a lot of stuff? Keep it light and friendly. I’m leaning towards an exercise ring or donut that fills up and had a “mood” color. Keep it simple and intuitive. This probably belong at the top somewhere.
-- **Settings button** -  a buttons that brings up preferences, where we will later add things like customizing the times for day sections or even adding/removing/editing day sections. Just a placeholder for now, though.
+- ​**Progress indicator:**​ It would be really nice to have some simple visual progress indicator, maybe like a small exercise ring, of how the day’s going. Are you on track? Are you behind on a lot of stuff? Keep it light and friendly. I’m leaning towards an exercise ring or donut that fills up and has a “mood” color. Keep it simple and intuitive. This probably belongs at the top somewhere.
+- **Settings button** -  a button that brings up preferences, where we will later add things like customizing the times for day sections or even adding/removing/editing day sections. Just a placeholder for now, though.
 - **Theme selector** - A menu to select the theme, like in MapsPlus.
-
