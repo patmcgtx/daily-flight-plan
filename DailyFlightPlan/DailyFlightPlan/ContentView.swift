@@ -3,15 +3,15 @@
 //  DailyFlightPlan
 //
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     var body: some View {
-        Text("Day View — Phase 2")
-            .font(.title2)
-            .foregroundStyle(.secondary)
+        DayView()
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
