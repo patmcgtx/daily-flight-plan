@@ -42,10 +42,11 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Filter toggles show active state (accentColor fill) vs. inactive (regularMaterial)
 - Follow-up polish: recurring items remain visible by default, add/rename/delete category actions now only clear UI state after a successful SwiftData save, and category item counts pluralize correctly
 
-## Phase 5 — Progress Indicator
+## ✅ Phase 5 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right
 - Computed from: completed / (total non-canceled items for today)
-- Color changes with completion ratio (green → yellow → red)
+- Color transitions red → yellow → green via HSB hue sweep as progress increases
+- Animates with spring when completion changes
 
 ## Phase 6 — Add / Edit Item
 - `ItemForm` sheet with: title, notes, flagged toggle, date + optional deadline time, recurring toggle + day-of-week picker, category selector
