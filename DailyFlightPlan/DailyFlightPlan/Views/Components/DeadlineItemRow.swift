@@ -87,9 +87,9 @@ struct DeadlineItemRow: View {
                     .foregroundStyle(.secondary)
             }
             if item.isFlagged {
-                Image(systemName: "star.fill")
+                Image(systemName: "flag.fill")
                     .font(.caption2)
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(.red)
             }
 
             Image(systemName: "info.circle")

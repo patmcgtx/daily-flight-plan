@@ -15,14 +15,31 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.theme.rawValue)
     private var theme: DFPTheme = .cupertino
 
+    @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
+    private var showFlaggedOnly: Bool = false
+
     @AppStorage(AppStorageKeys.showCompleted.rawValue)
     private var showCompleted: Bool = false
 
+    @AppStorage(AppStorageKeys.showRecurring.rawValue)
+    private var showRecurring: Bool = true
+
+    @Environment(\.categorySelectionService)
+    private var categorySelectionService: CategorySelectionService?
+
+    @Query(sort: \PlanCategory.name)
+    private var allCategories: [PlanCategory]
+
+    @State private var isShowingCategoriesEdit = false
+
     private var itemsForSelectedDate: [PlanItem] {
-        allItems.filter {
+        let filtered = allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && (showCompleted || ($0.status != .completed && $0.status != .canceled))
+            && (!showFlaggedOnly || $0.isFlagged)
+            && (showRecurring || !$0.isRecurring)
         }
+        return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
     var body: some View {
@@ -34,6 +51,9 @@ struct DayView: View {
                 .transition(dayTransition)
         }
         .clipped()
+        .sheet(isPresented: $isShowingCategoriesEdit) {
+            CategoriesEditView()
+        }
     }
 
     private var dayTransition: AnyTransition {
@@ -131,24 +151,54 @@ struct DayView: View {
     private var filterRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                filterToggle("Flagged", icon: "star.fill")
-                filterToggle("Done", icon: "checkmark")
-                filterToggle("Recurring", icon: "infinity")
-                // Category capsules come in Phase 6
+                filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
+                    showFlaggedOnly.toggle()
+                }
+                filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
+                    showCompleted.toggle()
+                }
+                filterToggle("Recurring", icon: "infinity", isActive: showRecurring) {
+                    showRecurring.toggle()
+                }
+                if !allCategories.isEmpty {
+                    Divider().frame(height: 20)
+                    ForEach(allCategories) { category in
+                        CategoryCapsule(category: category)
+                    }
+                }
+                Button {
+                    isShowingCategoriesEdit = true
+                } label: {
+                    Image(systemName: "tag")
+                        .font(.caption.bold())
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.glass)
+                .accessibilityLabel("Manage Categories")
             }
             .padding(.horizontal)
         }
     }
 
-    private func filterToggle(_ title: String, icon: String) -> some View {
-        // Stubs for Phase 6 — no action yet
-        Button { } label: {
+    private func filterToggle(
+        _ title: String, icon: String, isActive: Bool, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             Label(title, systemImage: icon)
                 .font(.caption.bold())
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
+                .foregroundStyle(isActive ? Color.white : Color.primary)
         }
-        .buttonStyle(.glass)
+        .background {
+            if isActive {
+                Capsule().fill(Color.accentColor)
+            } else {
+                Capsule().fill(.regularMaterial)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Scrollable day content
@@ -230,5 +280,6 @@ struct DayView: View {
 
 #Preview {
     DayView()
+        .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }

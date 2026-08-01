@@ -12,7 +12,7 @@ extension ModelContainer {
     static func persistentContainer() throws -> ModelContainer {
         let config = ModelConfiguration()
         return try ModelContainer(
-            for: PlanItem.self, PlanCategory.self,
+            for: PlanItem.self, PlanCategory.self, SelectedCategories.self,
             configurations: config
         )
     }
@@ -62,7 +62,7 @@ extension ModelContainer {
     static func inMemorySampleContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
-            for: PlanItem.self, PlanCategory.self,
+            for: PlanItem.self, PlanCategory.self, SelectedCategories.self,
             configurations: config
         )
 

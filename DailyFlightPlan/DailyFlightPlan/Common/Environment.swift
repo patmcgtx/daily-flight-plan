@@ -3,15 +3,19 @@
 //  DailyFlightPlan
 //
 import SwiftUI
+import SwiftData
 
 extension EnvironmentValues {
 
     // MARK: Service dependency injection
     //
     // Services are injected via InjectLiveServicesModifier (or InjectMockServicesModifier in
-    // DEBUG). Crashing on nil is intentional — a missing service means the app cannot function.
+    // DEBUG). Views that use a service should declare it as an optional @Environment property;
+    // the service will be nil only in previews that don't call injectMockServices().
 
-    // Phase 5: CalendarService will be added here
+    @Entry var categorySelectionService: CategorySelectionService? = nil
+
+    // Phase 7: CalendarService will be added here
 
     // MARK: Default settings
 
@@ -26,18 +30,22 @@ extension View {
 
 /// Injects all live services into the environment. Add new services here as phases are completed.
 struct InjectLiveServicesModifier: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
+
     func body(content: Content) -> some View {
         content
-        // Additional services injected in later phases
+            .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
     }
 }
 
 #if DEBUG
 
 struct InjectMockServicesModifier: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
+
     func body(content: Content) -> some View {
         content
-        // Mock services injected in later phases
+            .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
     }
 }
 

@@ -68,15 +68,20 @@ struct ItemPillView: View {
             Text(item.title)
                 .font(.subheadline)
                 .lineLimit(1)
-                .foregroundStyle(isMissed ? .orange : .primary)
+                .foregroundStyle(.primary)
                 .strikethrough(item.status == .canceled, color: .secondary)
 
             if isMissed, let deadline = item.deadline {
                 Text(deadline, format: .dateTime.hour().minute())
                     .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.secondary)
                     .strikethrough()
                     .monospacedDigit()
+            }
+            if isMissed {
+                Image(systemName: "clock.badge.exclamationmark")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
             }
 
             if item.isRecurring {
@@ -85,9 +90,9 @@ struct ItemPillView: View {
                     .foregroundStyle(.secondary)
             }
             if item.isFlagged {
-                Image(systemName: "star.fill")
+                Image(systemName: "flag.fill")
                     .font(.caption2)
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(.red)
             }
 
             Image(systemName: "info.circle")
@@ -98,7 +103,6 @@ struct ItemPillView: View {
         .padding(.vertical, 6)
         .background {
             Capsule().fill(.regularMaterial)
-            if isMissed { Capsule().fill(.orange.opacity(0.15)) }
         }
         .contextMenu {
             Button(role: .destructive) {
@@ -160,7 +164,7 @@ struct ItemPillView: View {
         switch item.status {
         case .completed: .green
         case .canceled:  .secondary
-        case .pending:   isMissed ? .orange : .secondary
+        case .pending:   .secondary
         }
     }
 }
