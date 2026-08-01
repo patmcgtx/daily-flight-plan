@@ -33,22 +33,22 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Missed item logic: past-due `.pending` items move to "any time" area with orange/red tint
 - Struck-through deadline on missed items
 
-## Phase 4 — Add / Edit Item
-- `ItemForm` sheet with: title, notes, flagged toggle, date + optional deadline time, recurring toggle + day-of-week picker, category selector
-- `ItemFormViewModel`
-- Validate and save via `modelContext`
-- Mock service + preview
-
-## Phase 5 — Filtering + Categories
+## Phase 4 — Filtering + Categories
 - Wire up filter toggle pills (flagged / completed / recurring) to `@AppStorage`
 - Horizontally scrollable `CategoryCapsule` row in filter sub-bar
 - `CategorySelectionService` (adapted from MapsPlus)
 - `CategoriesEditView` for adding/editing categories
 
-## Phase 6 — Progress Indicator
+## Phase 5 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right
 - Computed from: completed / (total non-canceled items for today)
 - Color changes with completion ratio (green → yellow → red)
+
+## Phase 6 — Add / Edit Item
+- `ItemForm` sheet with: title, notes, flagged toggle, date + optional deadline time, recurring toggle + day-of-week picker, category selector
+- `ItemFormViewModel`
+- Validate and save via `modelContext`
+- Mock service + preview
 
 ## Phase 7 — Calendar Integration
 - `CalendarService` protocol + `EventKitCalendarService` live implementation
