@@ -32,7 +32,7 @@ struct DayView: View {
 
     @State private var isShowingCategoriesEdit = false
 
-    private var todayNonCanceledItems: [PlanItem] {
+    private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && $0.status != .canceled
@@ -146,7 +146,7 @@ struct DayView: View {
     }
 
     private var progressRing: some View {
-        let items = todayNonCanceledItems
+        let items = selectedDateNonCanceledItems
         let completed = items.filter { $0.status == .completed }.count
         let total = items.count
         let progress = total > 0 ? Double(completed) / Double(total) : 0

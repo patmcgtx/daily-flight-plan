@@ -32,7 +32,7 @@ struct ProgressRingView: View {
                 .animation(.spring(duration: 0.4), value: progress)
         }
         .frame(width: 26, height: 26)
-        .accessibilityLabel("\(completed) of \(total) items completed")
+        .accessibilityLabel(total == 0 ? "No items for this day" : "\(completed) of \(total) items completed")
     }
 }
 
