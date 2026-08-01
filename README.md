@@ -51,4 +51,4 @@ DailyFlightPlan/
 
 ## Building
 
-Open `DailyFlightPlan/DailyFlightPlan.xcodeproj` in Xcode 26+, select a simulator or device, and run. No additional setup required — the SwiftUI-Flow package is vendored locally.
+Open `DailyFlightPlan/DailyFlightPlan.xcodeproj` in Xcode 26+, select a simulator or device, and run. No additional setup required — SwiftUI-Flow is fetched via Swift Package Manager.
