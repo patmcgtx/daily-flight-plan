@@ -32,6 +32,13 @@ struct DayView: View {
 
     @State private var isShowingCategoriesEdit = false
 
+    private var todayNonCanceledItems: [PlanItem] {
+        allItems.filter {
+            Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
+            && $0.status != .canceled
+        }
+    }
+
     private var itemsForSelectedDate: [PlanItem] {
         let filtered = allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
@@ -110,7 +117,7 @@ struct DayView: View {
             Spacer()
 
             HStack(spacing: 8) {
-                progressRingPlaceholder
+                progressRing
                 Button { } label: { Image(systemName: "gearshape") }
                     .buttonStyle(.glass)
                     .accessibilityLabel("Settings")
@@ -138,14 +145,12 @@ struct DayView: View {
         .padding(.horizontal)
     }
 
-    private var progressRingPlaceholder: some View {
-        Circle()
-            .trim(from: 0, to: 0.6)
-            .stroke(style: StrokeStyle(lineWidth: 3, lineCap: .round))
-            .foregroundStyle(.secondary.opacity(0.3))
-            .frame(width: 26, height: 26)
-            .rotationEffect(.degrees(-90))
-            .accessibilityHidden(true)
+    private var progressRing: some View {
+        let items = todayNonCanceledItems
+        let completed = items.filter { $0.status == .completed }.count
+        let total = items.count
+        let progress = total > 0 ? Double(completed) / Double(total) : 0
+        return ProgressRingView(progress: progress, completed: completed, total: total)
     }
 
     private var filterRow: some View {
