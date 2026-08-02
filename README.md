@@ -77,7 +77,7 @@ Phases 1–9 are complete. Remaining MVP phases:
 | 12 | Search |
 | 13 | Settings (calendar/reminders selection, section boundaries) |
 | 14 | Local notifications |
-| 15 | Hands-on QA |
+| 15 | Usability testing |
 | 16 | Fit and finish + Aviation UI spike |
 | 17 | Tech debt (unit tests, UI tests, architecture review) |
 

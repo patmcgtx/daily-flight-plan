@@ -323,7 +323,7 @@ struct DayView: View {
         let anyTimeReminders = viewModel.anyTimeReminderItems(from: reminderItems)
         return VStack(alignment: .leading, spacing: 10) {
             if !anyTimeItems.isEmpty || !anyTimeReminders.isEmpty {
-                Text("Any Time")
+                Text("Open")
                     .font(.subheadline.bold())
                     .foregroundStyle(.secondary)
                     .padding(.leading, 4)
@@ -345,11 +345,11 @@ struct DayView: View {
                 }
             } else {
                 // Empty placeholder so the drop target stays hittable even when empty
-                Text("Any Time")
+                Text("Open")
                     .font(.subheadline.bold())
                     .foregroundStyle(isAnyTimeDropTargeted ? Color.accentColor : Color.secondary)
                     .padding(.leading, 4)
-                Text("Drop here to remove time assignment")
+                Text("Drop here to make it open / unscheduled")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .padding(.leading, 4)
@@ -430,7 +430,7 @@ struct DayView: View {
 
     // MARK: Drag to reassign section
 
-    /// Moves a dragged item to `targetSection` (or "Any Time" if nil), clearing any deadline.
+    /// Moves a dragged item to `targetSection` (or "Open" if nil), clearing any deadline.
     private func handlePillDrop(uuidString: String, targetSection: DaySection?) {
         guard let uuid = UUID(uuidString: uuidString),
               let item = allItems.first(where: { $0.uuid == uuid }) else { return }

@@ -98,7 +98,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - ✅ **Calendar / Reminders toggles**: Filter-bar `Calendar` and `Reminders` toggle pills added to the filter row (stored in `@AppStorage` as `showCalendarEvents` / `showReminderItems`, both on by default). When toggled off, events/reminders are hidden from all sections, Past, Missed, and Any Time.
 - Make Reminders items and Calendar events stand out more (or less) from the rest of the items, such as italic font.
 - Make recurring items, aka habits, stand out in some more intuitive way as well. I like the infinity icon. Maybe just lay it out differently?
-- Consider renaming "Any time" to "Still Today"
+- ✅ Renamed "Any Time" → "Open" (works for today and all other dates)
 
 ### Phase 11 — Timeline view
 - A single list of items completed (past) or planned (future), scrolling infinitely
@@ -125,17 +125,18 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
 - Notification times respect custom day section boundaries from Phase 13
 
-### Phase 15 — Hands-On QA
-- Use the app daily for a period of time — real tasks, real calendar events, real reminders
-- Note friction points, readability, missing features, visual rough edges, and anything that feels off
-- Gather a list of changes needed before shipping version 1.0
+### Phase 15 — Usability Testing
+- Use the app daily for a real period of time — real tasks, real calendar events, real reminders
+- Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
+- Gather a prioritized list of changes needed before shipping version 1.0
 
 ### Phase 16 — Fit and Finish
-- Address findings from Phase 15 QA
+- Address findings from Phase 15 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
+- **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
 - Anything that must be right before calling this version 1.0
 
 ### Phase 17 — Tech debt
