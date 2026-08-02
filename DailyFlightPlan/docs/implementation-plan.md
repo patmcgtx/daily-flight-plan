@@ -2,8 +2,6 @@
 
 See `architecture.md` for folder structure, data models, and UI direction.
 
-> **Testing debt**: Unit tests (Swift Testing framework) need to be written for `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, and `CalendarService`. These should be added incrementally as the feature set stabilizes — not blocked on a specific phase.
-
 ## ✅ Phase 1 — Skeleton + Models
 - Set up folder structure mirroring MapsPlus
 - Copy and rename `Theming/` from MapsPlus (`MapPlusTheme` → `DFPTheme`)
@@ -83,61 +81,75 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - **Deferred**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decide in a later phase
 - **Deferred**: reminder list selection UI — moved to Phase 9 (Settings)
 
-## Phase 9 — Settings Placeholder
-- `SettingsView` stub (navigated to from ⚙ button)
+## Phase 9 — Settings
+- `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
-- **Reminders settings** (once Phase 8 is done): similar toggle + list picker
+- **Reminders settings**: similar toggle + list picker for reminder lists
+- **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
 - Any other preferences surfaced here as phases are completed
 
 ## Phase 10 — Date Picker
 - Implement the `calendar.circle` date-picker placeholder in the header
 - Let the user jump to any date directly (not just ±1 day)
 
-## Phase 11 — Customizable Day Sections
-- `SettingsView` section for editing day section time boundaries
-- Store custom start/end hours in `@AppStorage` (or SwiftData)
-- `DaySection.containing(_:)` reads from stored boundaries instead of hardcoded values
-
-## Phase 12 — Local Notifications
+## Phase 11 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 11
+- Notification times respect custom day section boundaries from Phase 9
 
-## Phase 13 — Aviation UI Experiment
-- Explore a dedicated "flight plan" visual style beyond color themes — e.g. monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log table rows, checklist-style item rendering
-- Could be a new `DFPTheme` case, a separate `UIStyle` dimension orthogonal to color theme, or a full alternate view mode. Possibly something retro like "TWA" or "Pan Am"
-- Don't overdo it, or at least make it optional.
-- Treat as a design spike: prototype freely, keep what feels right, discard the rest
+## Phase 12 — Hands-On QA
+- Use the app daily for a period of time — real tasks, real calendar events, real reminders
+- Note friction points, missing features, visual rough edges, and anything that feels off
+- Gather a list of changes needed before shipping version 1.0
+- **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 
-## Phase 14 — iPad Support
+## Phase 13 — 1.0 Polish
+- Address findings from Phase 12 QA
+- Bug fixes, UX tweaks, visual polish
+- Anything that must be right before calling this version 1.0
+
+## Phase 14 — Tech debt
+- Architecture review & refactor
+- Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
+- UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
+
+---
+
+## Version 2.0
+
+### iCloud Sync
+- Enable CloudKit capability in entitlements
+- Switch `ModelConfiguration` to use a CloudKit container identifier
+- Handle merge conflicts and sync errors gracefully
+
+### iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
 - Verify `HFlow` pill layouts scale well on wider screens
 - Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
 - Test with Stage Manager and multitasking split views
 - Pointer/cursor hover states for trackpad users
 
-## Phase 15 — Mac Support
+### Mac Support
 - Enable Mac Catalyst or SwiftUI native Mac target
 - Replace glass pill buttons and swipe gestures with Mac-native equivalents (context menus, toolbar buttons)
 - Menu bar integration: keyboard shortcuts for common actions (new item, next/previous day, go to today)
 - Appropriate window minimum size and resizable layout
 - Test full keyboard navigation and VoiceOver on macOS
 
-## Phase 16 — Widget + Live Activity
+---
+
+## Version 3.0
+
+### Widget + Live Activity
 - Home screen widget: show today's next upcoming item or a compact progress ring + item count
 - Lock screen widget: minimal glanceable version (next item, section, time)
 - Live Activity (Dynamic Island + Lock Screen): show the current/next item during the day, update as items are completed
 - Uses `WidgetKit` + `ActivityKit`; shares SwiftData read access via App Group container
 
-## Phase 17 — Apple Watch App
+### Apple Watch App
 - Companion Watch app showing today's items in a scrollable list
 - Complication showing progress ring or next item title
 - Tap to complete items directly from the wrist
 - Syncs via Watch Connectivity (`WCSession`) or shared CloudKit container (depends on iCloud sync status)
 - Keep it read + complete only; add/edit stays on iPhone
-
-## Phase 18 — iCloud Sync
-- Enable CloudKit capability in entitlements
-- Switch `ModelConfiguration` to use a CloudKit container identifier
-- Handle merge conflicts and sync errors gracefully
