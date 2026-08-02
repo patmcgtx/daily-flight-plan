@@ -77,9 +77,10 @@ final class DayViewModel {
     // MARK: Live clock
 
     /// Starts a per-minute background tick that updates currentTime, keeping the Past area current.
-    func startLiveClock() {
+func startLiveClock() {
         guard clockTask == nil else { return }
         clockTask = Task { @MainActor [weak self] in
+            defer { self?.clockTask = nil }
             while !Task.isCancelled {
                 let now = Date.now
                 var components = Calendar.current.dateComponents(
@@ -199,7 +200,7 @@ final class DayViewModel {
         }
     }
 
-    /// Timed reminders belonging to any past section (shown in the "Past" card)
+    /// Timed reminders belonging to any past section (shown in the "Missed" card)
     func pastReminderItems(from items: [ReminderItem]) -> [ReminderItem] {
         let past = Set(pastSections)
         return items.filter { item in

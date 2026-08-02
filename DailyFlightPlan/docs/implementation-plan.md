@@ -97,7 +97,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - **Drag to reorder**: Drag a section-based pill vertically to reassign it to a different day section (updates `item.daySection`)
 - **Calendar / Reminders toggles**: Filter-bar toggles to show or hide calendar events and Reminders items inline in the day view (stored in `@AppStorage`)
 - Make Reminders items and Calendar events stand out more (or less) from the rest of the items, such as italic font.
-- Make recurring items, aka habits, stand out in some more intuituve way as well. I like the infinity icon. Maybe just lay it out differently?
+- Make recurring items, aka habits, stand out in some more intuitive way as well. I like the infinity icon. Maybe just lay it out differently?
 - Consider renaming "Any time" to "Still Today"
 
 ### Phase 11 — Timeline view
