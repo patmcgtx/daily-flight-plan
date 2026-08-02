@@ -91,46 +91,57 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Store custom start/end hours in `@AppStorage` (or SwiftData)
 - `DaySection.containing(_:)` reads from stored boundaries instead of hardcoded values
 
-## Phase 12 — Local Notifications
+## Phase 12 — Unit Tests
+Add unit tests for all testable classes using the Swift Testing framework.
+Priority targets:
+- `DayViewModel` — section grouping, missed item logic, calendar event section assignment, date navigation
+- `ItemFormViewModel` — validation (`isValid`), create/edit save logic, deadline date alignment
+- `CategoriesEditViewModel` — add/rename/delete, duplicate name prevention
+- `CategorySelectionService` — toggle, filter, persistence round-trip
+- `DaySection` — `containing(_:)` boundary cases, `startHour`/`endHour` correctness
+- `ItemStatus` transitions (if any logic is added)
+- `CalendarService` implementations — mock conformance, event filtering by calendar ID
+
+## Phase 13 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
 - Notification times respect custom day section boundaries from Phase 11
 
-## Phase 13 — Aviation UI Experiment
+## Phase 14 — Aviation UI Experiment
 - Explore a dedicated "flight plan" visual style beyond color themes — e.g. monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log table rows, checklist-style item rendering
 - Could be a new `DFPTheme` case, a separate `UIStyle` dimension orthogonal to color theme, or a full alternate view mode. Possibly something retro like "TWA" or "Pan Am"
 - Don't overdo it, or at least make it optional.
 - Treat as a design spike: prototype freely, keep what feels right, discard the rest
 
-## Phase 14 — iPad Support
+## Phase 15 — iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
 - Verify `HFlow` pill layouts scale well on wider screens
 - Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
 - Test with Stage Manager and multitasking split views
 - Pointer/cursor hover states for trackpad users
 
-## Phase 15 — Mac Support
+## Phase 16 — Mac Support
 - Enable Mac Catalyst or SwiftUI native Mac target
 - Replace glass pill buttons and swipe gestures with Mac-native equivalents (context menus, toolbar buttons)
 - Menu bar integration: keyboard shortcuts for common actions (new item, next/previous day, go to today)
 - Appropriate window minimum size and resizable layout
 - Test full keyboard navigation and VoiceOver on macOS
 
-## Phase 16 — Widget + Live Activity
+## Phase 17 — Widget + Live Activity
 - Home screen widget: show today's next upcoming item or a compact progress ring + item count
 - Lock screen widget: minimal glanceable version (next item, section, time)
 - Live Activity (Dynamic Island + Lock Screen): show the current/next item during the day, update as items are completed
 - Uses `WidgetKit` + `ActivityKit`; shares SwiftData read access via App Group container
 
-## Phase 17 — Apple Watch App
+## Phase 18 — Apple Watch App
 - Companion Watch app showing today's items in a scrollable list
 - Complication showing progress ring or next item title
 - Tap to complete items directly from the wrist
 - Syncs via Watch Connectivity (`WCSession`) or shared CloudKit container (depends on iCloud sync status)
 - Keep it read + complete only; add/edit stays on iPhone
 
-## Phase 18 — iCloud Sync
+## Phase 19 — iCloud Sync
 - Enable CloudKit capability in entitlements
 - Switch `ModelConfiguration` to use a CloudKit container identifier
 - Handle merge conflicts and sync errors gracefully
