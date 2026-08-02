@@ -85,8 +85,12 @@ See `architecture.md` for folder structure, data models, and UI direction.
 
 ### ✅ Phase 9 — Workflow Refinements
 - **Spillover**: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
-- **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their calendar events and timed reminders are collected into a collapsible "Past" card at the top of the day view (starts collapsed). Pending plan items from those sections already appear in the "Any Time" area via the existing missed-item logic.
-- **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the "Past" card grows in real time as sections end during the day.
+- **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their past calendar events appear in a non-section "Past" area at the top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
+- **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the missed time.
+- **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
+- **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the Past/Missed areas grow in real time as sections end during the day.
+- **Projected recurring items**: On future dates, recurring section-based habits that apply to that weekday appear as ghosted (35% opacity, non-interactive) pills in their section — a preview of the expected day, not yet committed items.
+- **Richer seed data**: Recurring habits across all five sections (coffee, journal, run, standup, clear inbox, gym, walk, read, plan tomorrow) plus one-off items and untimed tasks.
 - **Deferred**: Drag to reorder items between sections → Phase 10
 
 ### Phase 10 — UI Refinements

@@ -256,6 +256,7 @@ struct DayView: View {
 
     private var dayScrollView: some View {
         let selectedDateItems = itemsForSelectedDate
+        let projected = viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: allItems)
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
@@ -268,6 +269,7 @@ struct DayView: View {
                             deadlineRows: viewModel.deadlineRows(section, from: selectedDateItems),
                             calendarEvents: viewModel.calendarEventsForSection(section, from: calendarEvents),
                             reminderItems: viewModel.reminderItemsForSection(section, from: reminderItems),
+                            projectedPills: projected.filter { $0.daySection == section },
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
                             onToggle: {

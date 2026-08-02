@@ -142,6 +142,49 @@ final class DayViewModel {
             .sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
     }
 
+    // MARK: Projected recurring items (future dates)
+
+    /// Recurring section-based items that should appear as a ghost preview on a future date.
+    /// De-duplicated by title so the same habit only projects once even if multiple instances exist.
+    /// Items already explicitly stored for that date are excluded to avoid double-showing.
+    func projectedRecurringItems(for date: Date, from allItems: [PlanItem]) -> [PlanItem] {
+        guard Calendar.current.startOfDay(for: date) > Calendar.current.startOfDay(for: .now) else { return [] }
+        guard let weekday = localeWeekday(of: date) else { return [] }
+
+        let titlesAlreadyForDate = Set(
+            allItems.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }.map { $0.title }
+        )
+
+        var seenTitles = Set<String>()
+        var result: [PlanItem] = []
+        for item in allItems.sorted(by: { $0.date > $1.date }) {
+            guard item.isRecurring,
+                  item.daySection != nil,
+                  item.recurringWeekdays.contains(weekday),
+                  !Calendar.current.isDate(item.date, inSameDayAs: date),
+                  !titlesAlreadyForDate.contains(item.title),
+                  !seenTitles.contains(item.title) else { continue }
+            seenTitles.insert(item.title)
+            result.append(item)
+        }
+        return result
+    }
+
+    private func localeWeekday(of date: Date) -> Locale.Weekday? {
+        switch Calendar.current.component(.weekday, from: date) {
+        case 1: return .sunday
+        case 2: return .monday
+        case 3: return .tuesday
+        case 4: return .wednesday
+        case 5: return .thursday
+        case 6: return .friday
+        case 7: return .saturday
+        default: return nil
+        }
+    }
+
+    // MARK: Calendar events
+
     /// Calendar events whose start time falls within this section
     func calendarEventsForSection(_ section: DaySection, from events: [CalendarEvent]) -> [CalendarEvent] {
         events.filter { DaySection.containing($0.startDate) == section }

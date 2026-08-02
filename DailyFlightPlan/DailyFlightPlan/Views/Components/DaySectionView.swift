@@ -13,11 +13,13 @@ struct DaySectionView: View {
     let deadlineRows: [PlanItem]
     let calendarEvents: [CalendarEvent]
     let reminderItems: [ReminderItem]
+    var projectedPills: [PlanItem] = []
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
 
     private var totalCount: Int {
+        // Projected pills are not counted — they're not committed items
         sectionPills.count + deadlineRows.count + calendarEvents.count + reminderItems.count
     }
 
@@ -74,10 +76,15 @@ struct DaySectionView: View {
                     .padding(.vertical, 8)
             }
 
-            if !sectionPills.isEmpty {
+            if !sectionPills.isEmpty || !projectedPills.isEmpty {
                 HFlow(itemSpacing: 8, rowSpacing: 8) {
                     ForEach(sectionPills) { item in
                         ItemPillView(item: item)
+                    }
+                    ForEach(projectedPills) { item in
+                        ItemPillView(item: item)
+                            .opacity(0.35)
+                            .allowsHitTesting(false)
                     }
                 }
                 .padding(.horizontal, 14)
