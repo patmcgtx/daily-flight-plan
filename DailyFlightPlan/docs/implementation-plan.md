@@ -124,8 +124,10 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Gather a list of changes needed before shipping version 1.0
 
 ### Phase 15 — Fit and Finish
-- Address findings from Phase 12 QA
+- Address findings from Phase 14 QA
 - Bug fixes, UX tweaks, visual polish
+- **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector
+- **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - Anything that must be right before calling this version 1.0
 
