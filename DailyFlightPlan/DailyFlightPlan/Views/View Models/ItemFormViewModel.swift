@@ -56,12 +56,21 @@ import SwiftData
         let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
         guard !trimmedTitle.isEmpty else { return }
 
+        let cal = Calendar.current
+        let day = cal.startOfDay(for: date)
+        let alignedDeadline: Date? = {
+            guard hasDeadline else { return nil }
+            let hour = cal.component(.hour, from: deadline)
+            let minute = cal.component(.minute, from: deadline)
+            return cal.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
+        }()
+
         if let item = editingItem {
             item.title = trimmedTitle
             item.notes = notes
             item.isFlagged = isFlagged
-            item.date = date
-            item.deadline = hasDeadline ? deadline : nil
+            item.date = day
+            item.deadline = alignedDeadline
             item.daySection = hasDeadline ? nil : daySection
             item.isRecurring = isRecurring
             item.recurringWeekdays = isRecurring ? recurringWeekdays : []
@@ -71,8 +80,8 @@ import SwiftData
                 title: trimmedTitle,
                 notes: notes,
                 isFlagged: isFlagged,
-                date: date,
-                deadline: hasDeadline ? deadline : nil,
+                date: day,
+                deadline: alignedDeadline,
                 daySection: hasDeadline ? nil : daySection,
                 isRecurring: isRecurring,
                 recurringWeekdays: isRecurring ? recurringWeekdays : []
