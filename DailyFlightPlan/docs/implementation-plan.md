@@ -95,7 +95,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 
 ### Phase 10 — UI Refinements
 - ✅ **Drag to reassign section**: Long-press any section pill or deadline row to drag it to a different day section card. Dropping onto a section sets `item.daySection` and clears any deadline. Dragging to "Any Time" clears both (`daySection = nil`, `deadline = nil`). Each section highlights with an accent-colored border while a drag is over it. Added `uuid: UUID` to `PlanItem` as a stable drag token. "Any Time" also acts as a drop target, with an empty placeholder shown when it has no items.
-- **Calendar / Reminders toggles**: Filter-bar toggles to show or hide calendar events and Reminders items inline in the day view (stored in `@AppStorage`)
+- ✅ **Calendar / Reminders toggles**: Filter-bar `Calendar` and `Reminders` toggle pills added to the filter row (stored in `@AppStorage` as `showCalendarEvents` / `showReminderItems`, both on by default). When toggled off, events/reminders are hidden from all sections, Past, Missed, and Any Time.
 - Make Reminders items and Calendar events stand out more (or less) from the rest of the items, such as italic font.
 - Make recurring items, aka habits, stand out in some more intuitive way as well. I like the infinity icon. Maybe just lay it out differently?
 - Consider renaming "Any time" to "Still Today"

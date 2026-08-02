@@ -25,6 +25,12 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.showRecurring.rawValue)
     private var showRecurring: Bool = true
 
+    @AppStorage(AppStorageKeys.showCalendarEvents.rawValue)
+    private var showCalendarEvents: Bool = true
+
+    @AppStorage(AppStorageKeys.showReminderItems.rawValue)
+    private var showReminderItems: Bool = true
+
     @Environment(\.categorySelectionService)
     private var categorySelectionService: CategorySelectionService?
 
@@ -212,6 +218,12 @@ struct DayView: View {
                 filterToggle("Recurring", icon: "infinity", isActive: showRecurring) {
                     showRecurring.toggle()
                 }
+                filterToggle("Calendar", icon: "calendar", isActive: showCalendarEvents) {
+                    showCalendarEvents.toggle()
+                }
+                filterToggle("Reminders", icon: "bell", isActive: showReminderItems) {
+                    showReminderItems.toggle()
+                }
                 if !allCategories.isEmpty {
                     Divider().frame(height: 20)
                     ForEach(allCategories) { category in
@@ -258,18 +270,20 @@ struct DayView: View {
     private var dayScrollView: some View {
         let selectedDateItems = itemsForSelectedDate
         let projected = viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: allItems)
+        let visibleEvents = showCalendarEvents ? calendarEvents : []
+        let visibleReminders = showReminderItems ? reminderItems : []
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    pastSectionCard(calendarEvents: calendarEvents)
+                    pastSectionCard(calendarEvents: visibleEvents)
 
                     ForEach(viewModel.activeSections) { section in
                         DaySectionView(
                             section: section,
                             sectionPills: viewModel.sectionPills(section, from: selectedDateItems),
                             deadlineRows: viewModel.deadlineRows(section, from: selectedDateItems),
-                            calendarEvents: viewModel.calendarEventsForSection(section, from: calendarEvents),
-                            reminderItems: viewModel.reminderItemsForSection(section, from: reminderItems),
+                            calendarEvents: viewModel.calendarEventsForSection(section, from: visibleEvents),
+                            reminderItems: viewModel.reminderItemsForSection(section, from: visibleReminders),
                             projectedPills: projected.filter { $0.daySection == section },
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
@@ -285,7 +299,7 @@ struct DayView: View {
                         .id(section)
                     }
 
-                    missedSection(items: selectedDateItems, reminderItems: reminderItems)
+                    missedSection(items: selectedDateItems, reminderItems: visibleReminders)
                     anyTimeSection(items: selectedDateItems)
                 }
                 .padding(.horizontal)
