@@ -93,6 +93,19 @@ final class DayViewModel {
         events.filter { DaySection.containing($0.startDate) == section }
     }
 
+    /// Reminders with a specific due time that falls within this section
+    func reminderItemsForSection(_ section: DaySection, from items: [ReminderItem]) -> [ReminderItem] {
+        items.filter { item in
+            guard let dueDate = item.dueDate else { return false }
+            return DaySection.containing(dueDate) == section
+        }
+    }
+
+    /// Reminders with no specific due time (shown in the "Any Time" area)
+    func anyTimeReminderItems(from items: [ReminderItem]) -> [ReminderItem] {
+        items.filter { $0.dueDate == nil }
+    }
+
     /// Items with no section and no deadline, plus any missed items from earlier in the day
     func anyTimeItems(from items: [PlanItem]) -> [PlanItem] {
         let noTimeItems = items.filter { $0.daySection == nil && $0.deadline == nil }

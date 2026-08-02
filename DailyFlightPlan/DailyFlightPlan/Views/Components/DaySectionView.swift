@@ -12,11 +12,14 @@ struct DaySectionView: View {
     let sectionPills: [PlanItem]
     let deadlineRows: [PlanItem]
     let calendarEvents: [CalendarEvent]
+    let reminderItems: [ReminderItem]
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
 
-    private var totalCount: Int { sectionPills.count + deadlineRows.count + calendarEvents.count }
+    private var totalCount: Int {
+        sectionPills.count + deadlineRows.count + calendarEvents.count + reminderItems.count
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -99,6 +102,15 @@ struct DaySectionView: View {
                 .padding(.top, (sectionPills.isEmpty && deadlineRows.isEmpty) ? 4 : 0)
             }
 
+            if !reminderItems.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(reminderItems) { item in
+                        ReminderItemRow(item: item)
+                    }
+                }
+                .padding(.top, (sectionPills.isEmpty && deadlineRows.isEmpty && calendarEvents.isEmpty) ? 4 : 0)
+            }
+
             if totalCount == 0 && !showNowBar {
                 Text("Nothing scheduled")
                     .font(.caption)
@@ -122,6 +134,15 @@ struct DaySectionView: View {
         calendarTitle: "Work",
         calendarColor: .blue
     )
+    let reminder = ReminderItem(
+        id: "mock-r1",
+        title: "Send status update",
+        notes: nil,
+        dueDate: Calendar.current.date(bySettingHour: 9, minute: 45, second: 0, of: now)!,
+        listTitle: "Work",
+        listColor: .blue,
+        isCompleted: false
+    )
     return VStack(spacing: 12) {
         DaySectionView(
             section: .morning,
@@ -133,6 +154,7 @@ struct DaySectionView: View {
                 PlanItem(title: "Doctor appt", deadline: deadline, isRecurring: true),
             ],
             calendarEvents: [calEvent],
+            reminderItems: [reminder],
             showNowBar: true,
             isCollapsed: false,
             onToggle: {}
@@ -142,6 +164,7 @@ struct DaySectionView: View {
             sectionPills: [],
             deadlineRows: [],
             calendarEvents: [],
+            reminderItems: [],
             showNowBar: false,
             isCollapsed: true,
             onToggle: {}

@@ -15,6 +15,7 @@ extension EnvironmentValues {
 
     @Entry var categorySelectionService: CategorySelectionService? = nil
     @Entry var calendarService: CalendarService? = nil
+    @Entry var remindersService: RemindersService? = nil
 
     // MARK: Actions
 
@@ -40,6 +41,7 @@ struct InjectLiveServicesModifier: ViewModifier {
         content
             .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
             .environment(\.calendarService, EventKitCalendarService())
+            .environment(\.remindersService, EventKitRemindersService())
     }
 }
 
@@ -52,6 +54,7 @@ struct InjectMockServicesModifier: ViewModifier {
         content
             .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
             .environment(\.calendarService, MockCalendarService())
+            .environment(\.remindersService, MockRemindersService())
     }
 }
 

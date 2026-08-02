@@ -34,6 +34,12 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.selectedCalendarIDs.rawValue)
     private var selectedCalendarIDsRaw: String = ""
 
+    @Environment(\.remindersService)
+    private var remindersService: RemindersService?
+
+    @AppStorage(AppStorageKeys.selectedReminderListIDs.rawValue)
+    private var selectedReminderListIDsRaw: String = ""
+
     @Query(sort: \PlanCategory.name)
     private var allCategories: [PlanCategory]
 
@@ -41,6 +47,7 @@ struct DayView: View {
     @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
+    @State private var reminderItems: [ReminderItem] = []
 
     private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
@@ -69,9 +76,15 @@ struct DayView: View {
         }
         .clipped()
         .environment(\.editItem) { item in itemToEdit = item }
-        .task(id: viewModel.selectedDate) { await fetchCalendarEvents() }
+        .task(id: viewModel.selectedDate) {
+            await fetchCalendarEvents()
+            await fetchReminderItems()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
-            Task { await fetchCalendarEvents() }
+            Task {
+                await fetchCalendarEvents()
+                await fetchReminderItems()
+            }
         }
         .sheet(isPresented: $isShowingCategoriesEdit) {
             CategoriesEditView()
@@ -240,6 +253,7 @@ struct DayView: View {
                             sectionPills: viewModel.sectionPills(section, from: selectedDateItems),
                             deadlineRows: viewModel.deadlineRows(section, from: selectedDateItems),
                             calendarEvents: viewModel.calendarEventsForSection(section, from: calendarEvents),
+                            reminderItems: viewModel.reminderItemsForSection(section, from: reminderItems),
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
                             onToggle: {
@@ -271,19 +285,30 @@ struct DayView: View {
 
     private func anyTimeSection(items: [PlanItem]) -> some View {
         let anyTimeItems = viewModel.anyTimeItems(from: items)
+        let anyTimeReminders = viewModel.anyTimeReminderItems(from: reminderItems)
         return Group {
-            if !anyTimeItems.isEmpty {
+            if !anyTimeItems.isEmpty || !anyTimeReminders.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Any Time")
                         .font(.subheadline.bold())
                         .foregroundStyle(.secondary)
                         .padding(.leading, 4)
-                    HFlow(itemSpacing: 8, rowSpacing: 8) {
-                        ForEach(anyTimeItems) { item in
-                            ItemPillView(item: item, isMissed: viewModel.isMissed(item))
+                    if !anyTimeItems.isEmpty {
+                        HFlow(itemSpacing: 8, rowSpacing: 8) {
+                            ForEach(anyTimeItems) { item in
+                                ItemPillView(item: item, isMissed: viewModel.isMissed(item))
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    if !anyTimeReminders.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(anyTimeReminders) { item in
+                                ReminderItemRow(item: item)
+                            }
+                        }
+                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
@@ -300,6 +325,17 @@ struct DayView: View {
         }
         let ids = Set(selectedCalendarIDsRaw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
         calendarEvents = await service.events(for: viewModel.selectedDate, calendarIDs: ids)
+    }
+
+    // MARK: Reminders fetching
+
+    private func fetchReminderItems() async {
+        guard let service = remindersService else { return }
+        if !service.hasAccess() {
+            _ = await service.requestAccess()
+        }
+        let ids = Set(selectedReminderListIDsRaw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
+        reminderItems = await service.reminders(for: viewModel.selectedDate, listIDs: ids)
     }
 
     // MARK: Add button

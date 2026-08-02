@@ -4,6 +4,8 @@
 <dict>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Daily Flight Plan displays your calendar events alongside your tasks to give you a complete picture of your day.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Daily Flight Plan displays your reminders alongside your tasks so nothing falls through the cracks.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
