@@ -53,6 +53,7 @@ struct DayView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var isShowingCategoriesEdit = false
+    @State private var isShowingTimeline = false
     @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
@@ -108,6 +109,14 @@ struct DayView: View {
         .sheet(isPresented: $isShowingCategoriesEdit) {
             CategoriesEditView()
         }
+        .sheet(isPresented: $isShowingTimeline) {
+            TimelineView { date in
+                isShowingTimeline = false
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    viewModel.navigate(to: date)
+                }
+            }
+        }
         .sheet(isPresented: $isAddingItem) {
             ItemForm(date: viewModel.selectedDate)
         }
@@ -144,6 +153,14 @@ struct DayView: View {
             }
             .buttonStyle(.glass)
             .accessibilityLabel("Previous Day")
+
+            Button {
+                isShowingTimeline = true
+            } label: {
+                Image(systemName: "calendar.day.timeline.left")
+            }
+            .buttonStyle(.glass)
+            .accessibilityLabel("Timeline")
 
             Spacer()
 

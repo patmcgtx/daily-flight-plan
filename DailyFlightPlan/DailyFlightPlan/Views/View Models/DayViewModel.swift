@@ -60,6 +60,12 @@ final class DayViewModel {
         selectedDate = today
     }
 
+    func navigate(to date: Date) {
+        let target = Calendar.current.startOfDay(for: date)
+        forwardNavigation = target >= selectedDate
+        selectedDate = target
+    }
+
     // MARK: Section collapse
 
     func isCollapsed(_ section: DaySection) -> Bool {
