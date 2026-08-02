@@ -103,7 +103,8 @@ See `architecture.md` for folder structure, data models, and UI direction.
 ### Phase 11 — Timeline view
 - A single list of items completed (past) or planned (future), scrolling infinitely
 - A "today" indicator
-- Helpful for planning or reporting and possible later exporting
+- For now, this is a read-only view
+- May later support future planning (add-item) and export features
 
 ### Phase 12 — Search
 - Search bar (`.searchable`) in the day view header or as a dedicated screen
