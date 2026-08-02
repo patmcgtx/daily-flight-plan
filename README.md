@@ -14,7 +14,7 @@ I took an app idea in my mind, sketched it out in Figma, broke that into a detai
 
 ## Concept
 
-Combines one-off and recurring tasks, organized into time-of-day sections (Morning, Midday, Afternoon, Evening, Night). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Any Time" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks.
+Combines one-off and recurring tasks, organized into time-of-day sections (Morning, Midday, Afternoon, Evening, Night). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Any Time" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. Sections whose time has passed are removed from view; their content is reorganized into "Past" (calendar events), "Missed" (deadline items and timed reminders), and "Any Time" (untimed items). Navigate to a future date to see a ghosted preview of your expected recurring habits.
 
 ## Tech stack
 
@@ -34,7 +34,6 @@ Combines one-off and recurring tasks, organized into time-of-day sections (Morni
 - Swipe to cancel or defer an item to tomorrow; long-press for a context menu
 - Recurring items with weekday picker
 - Deadline-based items with clock-time rows
-- "Any time" section for untimed items, including missed past-due items
 - Scroll-to-now on appear
 - Progress ring showing completed/total items for the day
 - Filter bar: flagged, done, recurring, and category filters
@@ -42,6 +41,9 @@ Combines one-off and recurring tasks, organized into time-of-day sections (Morni
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
 - Calendar events from EventKit shown inline in each day section
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
+- **Spillover**: pending items from previous days automatically move to today on launch or at midnight
+- **Live day structure**: past sections disappear in real time as their time window ends; their content redistributes into "Past" (calendar events), "Missed" (deadline items + timed reminders), and "Any Time" (untimed/section-missed items)
+- **Future date preview**: recurring habits for a future weekday appear ghosted in their section — not yet committed, just a projection
 
 ## Project structure
 
@@ -66,16 +68,17 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–8 are complete. Remaining MVP phases:
+Phases 1–9 are complete. Remaining MVP phases:
 
 | Phase | Description |
 |-------|-------------|
-| 9 | Settings (calendar/reminders toggles, calendar selection, day section boundaries) |
-| 10 | Date picker (jump to any date) |
-| 11 | Local notifications |
-| 12 | Hands-on QA + Aviation UI spike |
-| 13 | 1.0 Polish |
-| 14 | Tech debt (unit tests, UI tests, architecture review) |
+| 10 | UI refinements (drag to reorder, calendar/reminders toggles, visual polish) |
+| 11 | Timeline view |
+| 12 | Settings (calendar/reminders selection, section boundaries) |
+| 13 | Local notifications |
+| 14 | Hands-on QA |
+| 15 | Fit and finish + Aviation UI spike |
+| 16 | Tech debt (unit tests, UI tests, architecture review) |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
 

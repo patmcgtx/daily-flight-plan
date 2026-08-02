@@ -83,41 +83,55 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - **Deferred**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decide in a later phase
 - **Deferred**: reminder list selection UI — moved to Phase 9 (Settings)
 
-### Phase 9 — Workflow Refinments
-- Spillover logic: today -> tomorrow @ midnight 
-- Spillover logic as a day secion passes
-- Be able to drag itens vertically from one day section to another 
+### ✅ Phase 9 — Workflow Refinements
+- **Spillover**: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
+- **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their past calendar events appear in a non-section "Past" area at the top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
+- **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the missed time.
+- **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
+- **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the Past/Missed areas grow in real time as sections end during the day.
+- **Projected recurring items**: On future dates, recurring section-based habits that apply to that weekday appear as ghosted (35% opacity, non-interactive) pills in their section — a preview of the expected day, not yet committed items.
+- **Richer seed data**: Recurring habits across all five sections (coffee, journal, run, standup, clear inbox, gym, walk, read, plan tomorrow) plus one-off items and untimed tasks.
+- **Deferred**: Drag to reorder items between sections → Phase 10
 
-### Phase 10 — Timeline view
+### Phase 10 — UI Refinements
+- **Drag to reorder**: Drag a section-based pill vertically to reassign it to a different day section (updates `item.daySection`)
+- **Calendar / Reminders toggles**: Filter-bar toggles to show or hide calendar events and Reminders items inline in the day view (stored in `@AppStorage`)
+- Make Reminders items and Calendar events stand out more (or less) from the rest of the items, such as italic font.
+- Make recurring items, aka habits, stand out in some more intuitive way as well. I like the infinity icon. Maybe just lay it out differently?
+- Consider renaming "Any time" to "Still Today"
+
+### Phase 11 — Timeline view
 - A single list of items completed (past) or planned (future), scrolling infinitely
 - A "today" indicator
 - Helpful for planning or reporting and possible later exporting
 
-### Phase 11 — Settings
+### Phase 12 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
 - **Reminders settings**: similar toggle + list picker for reminder lists
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
 - Any other preferences surfaced here as phases are completed
 
-### Phase 12 — Local Notifications
+### Phase 13 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
 - Notification times respect custom day section boundaries from Phase 11
 
-### Phase 13 — Hands-On QA
+### Phase 14 — Hands-On QA
 - Use the app daily for a period of time — real tasks, real calendar events, real reminders
 - Note friction points, readability, missing features, visual rough edges, and anything that feels off
 - Gather a list of changes needed before shipping version 1.0
 
-### Phase 14 — Fit and Finish
-- Address findings from Phase 12 QA
+### Phase 15 — Fit and Finish
+- Address findings from Phase 14 QA
 - Bug fixes, UX tweaks, visual polish
+- **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector
+- **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - Anything that must be right before calling this version 1.0
 
-### Phase 15 — Tech debt
+### Phase 16 — Tech debt
 - Architecture review & refactor
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings

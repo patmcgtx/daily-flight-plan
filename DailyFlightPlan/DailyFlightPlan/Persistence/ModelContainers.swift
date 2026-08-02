@@ -24,27 +24,50 @@ extension ModelContainer {
 
         let today = Date.now
         let cal = Calendar.current
-        let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
         let everyday: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
+        let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
+        let mwf: [Locale.Weekday] = [.monday, .wednesday, .friday]
 
         let items: [PlanItem] = [
-            PlanItem(title: "Morning run", date: today, daySection: .morning,
-                     isRecurring: true, recurringWeekdays: weekdays),
+            // Morning habits
             PlanItem(title: "Coffee", date: today, daySection: .morning,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Review emails", date: today, daySection: .morning),
+            PlanItem(title: "Journal", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Morning run", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: mwf),
+            PlanItem(title: "Review today's plan", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: weekdays),
+
+            // Timed recurring
             PlanItem(title: "Team standup", date: today,
                      deadline: cal.date(bySettingHour: 9, minute: 30, second: 0, of: today),
                      isRecurring: true, recurringWeekdays: weekdays),
+
+            // Midday
             PlanItem(title: "Lunch with Alex", date: today, daySection: .midday),
-            PlanItem(title: "Expense report", notes: "Submit before end of month",
-                     isFlagged: true, date: today, daySection: .afternoon),
+
+            // Afternoon
+            PlanItem(title: "Clear inbox", date: today, daySection: .afternoon,
+                     isRecurring: true, recurringWeekdays: weekdays),
             PlanItem(title: "1:1 with manager", date: today,
                      deadline: cal.date(bySettingHour: 14, minute: 0, second: 0, of: today)),
+            PlanItem(title: "Expense report", notes: "Submit before end of month",
+                     isFlagged: true, date: today, daySection: .afternoon),
+
+            // Evening habits
             PlanItem(title: "Gym", date: today, daySection: .evening,
-                     isRecurring: true, recurringWeekdays: [.monday, .wednesday, .friday]),
-            PlanItem(title: "Read", date: today, daySection: .evening,
+                     isRecurring: true, recurringWeekdays: mwf),
+            PlanItem(title: "Walk", date: today, daySection: .evening,
                      isRecurring: true, recurringWeekdays: everyday),
+
+            // Night habits
+            PlanItem(title: "Read", date: today, daySection: .night,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Plan tomorrow", date: today, daySection: .night,
+                     isRecurring: true, recurringWeekdays: weekdays),
+
+            // Untimed one-offs
             PlanItem(title: "Buy groceries", date: today),
             PlanItem(title: "Call Mom", isFlagged: true, date: today),
         ]
@@ -68,21 +91,34 @@ extension ModelContainer {
 
         let today = Date.now
         let cal = Calendar.current
-        let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
         let everyday: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
+        let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
+        let mwf: [Locale.Weekday] = [.monday, .wednesday, .friday]
 
         let sampleItems: [PlanItem] = [
-            PlanItem(title: "Morning run", date: today, daySection: .morning,
-                     isRecurring: true, recurringWeekdays: weekdays),
             PlanItem(title: "Coffee", date: today, daySection: .morning,
                      isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Journal", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Morning run", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: mwf),
             PlanItem(title: "Team standup", date: today,
                      deadline: cal.date(bySettingHour: 9, minute: 30, second: 0, of: today),
                      isRecurring: true, recurringWeekdays: weekdays),
             PlanItem(title: "Lunch with Alex", date: today, daySection: .midday),
+            PlanItem(title: "Clear inbox", date: today, daySection: .afternoon,
+                     isRecurring: true, recurringWeekdays: weekdays),
             PlanItem(title: "Expense report", isFlagged: true, date: today, daySection: .afternoon),
-            PlanItem(title: "Read", date: today, daySection: .evening,
+            PlanItem(title: "Gym", date: today, daySection: .evening,
+                     isRecurring: true, recurringWeekdays: mwf),
+            PlanItem(title: "Walk", date: today, daySection: .evening,
                      isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Read", date: today, daySection: .night,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Plan tomorrow", date: today, daySection: .night,
+                     isRecurring: true, recurringWeekdays: weekdays),
+            PlanItem(title: "Buy groceries", date: today),
+            PlanItem(title: "Call Mom", isFlagged: true, date: today),
         ]
 
         for item in sampleItems {
