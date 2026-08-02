@@ -10,6 +10,10 @@ final class EventKitCalendarService: CalendarService {
     private let store = EKEventStore()
 
     func requestAccess() async -> Bool {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        guard status == .notDetermined else {
+            return status == .fullAccess
+        }
         do {
             return try await store.requestFullAccessToEvents()
         } catch {

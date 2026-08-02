@@ -298,7 +298,7 @@ struct DayView: View {
         if !service.hasAccess() {
             _ = await service.requestAccess()
         }
-        let ids = Set(selectedCalendarIDsRaw.split(separator: ",").map(String.init).filter { !$0.isEmpty })
+        let ids = Set(selectedCalendarIDsRaw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
         calendarEvents = await service.events(for: viewModel.selectedDate, calendarIDs: ids)
     }
 
