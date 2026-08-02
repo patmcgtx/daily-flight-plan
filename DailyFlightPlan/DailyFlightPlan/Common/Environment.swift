@@ -14,8 +14,7 @@ extension EnvironmentValues {
     // the service will be nil only in previews that don't call injectMockServices().
 
     @Entry var categorySelectionService: CategorySelectionService? = nil
-
-    // Phase 7: CalendarService will be added here
+    @Entry var calendarService: CalendarService? = nil
 
     // MARK: Actions
 
@@ -40,6 +39,7 @@ struct InjectLiveServicesModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
+            .environment(\.calendarService, EventKitCalendarService())
     }
 }
 
@@ -51,6 +51,7 @@ struct InjectMockServicesModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
+            .environment(\.calendarService, MockCalendarService())
     }
 }
 

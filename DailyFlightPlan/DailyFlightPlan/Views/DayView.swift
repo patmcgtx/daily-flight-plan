@@ -4,6 +4,7 @@
 //
 import SwiftUI
 import SwiftData
+import EventKit
 import Flow
 
 struct DayView: View {
@@ -27,12 +28,19 @@ struct DayView: View {
     @Environment(\.categorySelectionService)
     private var categorySelectionService: CategorySelectionService?
 
+    @Environment(\.calendarService)
+    private var calendarService: CalendarService?
+
+    @AppStorage(AppStorageKeys.selectedCalendarIDs.rawValue)
+    private var selectedCalendarIDsRaw: String = ""
+
     @Query(sort: \PlanCategory.name)
     private var allCategories: [PlanCategory]
 
     @State private var isShowingCategoriesEdit = false
     @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
+    @State private var calendarEvents: [CalendarEvent] = []
 
     private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
@@ -61,6 +69,10 @@ struct DayView: View {
         }
         .clipped()
         .environment(\.editItem) { item in itemToEdit = item }
+        .task(id: viewModel.selectedDate) { await fetchCalendarEvents() }
+        .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
+            Task { await fetchCalendarEvents() }
+        }
         .sheet(isPresented: $isShowingCategoriesEdit) {
             CategoriesEditView()
         }
@@ -227,6 +239,7 @@ struct DayView: View {
                             section: section,
                             sectionPills: viewModel.sectionPills(section, from: selectedDateItems),
                             deadlineRows: viewModel.deadlineRows(section, from: selectedDateItems),
+                            calendarEvents: viewModel.calendarEventsForSection(section, from: calendarEvents),
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
                             onToggle: {
@@ -276,6 +289,17 @@ struct DayView: View {
                 .padding(.vertical, 8)
             }
         }
+    }
+
+    // MARK: Calendar event fetching
+
+    private func fetchCalendarEvents() async {
+        guard let service = calendarService else { return }
+        if !service.hasAccess() {
+            _ = await service.requestAccess()
+        }
+        let ids = Set(selectedCalendarIDsRaw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })
+        calendarEvents = await service.events(for: viewModel.selectedDate, calendarIDs: ids)
     }
 
     // MARK: Add button

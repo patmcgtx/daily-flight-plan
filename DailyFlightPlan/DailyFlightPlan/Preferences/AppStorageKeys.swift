@@ -18,5 +18,8 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// Filter: show recurring items (on by default)
     case showRecurring
 
+    /// Comma-separated EKCalendar identifiers to display (empty = show all calendars)
+    case selectedCalendarIDs
+
     var id: String { rawValue }
 }

@@ -88,6 +88,11 @@ final class DayViewModel {
             .sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
     }
 
+    /// Calendar events whose start time falls within this section
+    func calendarEventsForSection(_ section: DaySection, from events: [CalendarEvent]) -> [CalendarEvent] {
+        events.filter { DaySection.containing($0.startDate) == section }
+    }
+
     /// Items with no section and no deadline, plus any missed items from earlier in the day
     func anyTimeItems(from items: [PlanItem]) -> [PlanItem] {
         let noTimeItems = items.filter { $0.daySection == nil && $0.deadline == nil }

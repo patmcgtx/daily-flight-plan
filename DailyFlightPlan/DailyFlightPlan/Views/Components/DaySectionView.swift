@@ -11,11 +11,12 @@ struct DaySectionView: View {
     let section: DaySection
     let sectionPills: [PlanItem]
     let deadlineRows: [PlanItem]
+    let calendarEvents: [CalendarEvent]
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
 
-    private var totalCount: Int { sectionPills.count + deadlineRows.count }
+    private var totalCount: Int { sectionPills.count + deadlineRows.count + calendarEvents.count }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -89,6 +90,15 @@ struct DaySectionView: View {
                 .padding(.top, sectionPills.isEmpty ? 4 : 6)
             }
 
+            if !calendarEvents.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(calendarEvents) { event in
+                        CalendarEventRow(event: event)
+                    }
+                }
+                .padding(.top, (sectionPills.isEmpty && deadlineRows.isEmpty) ? 4 : 0)
+            }
+
             if totalCount == 0 && !showNowBar {
                 Text("Nothing scheduled")
                     .font(.caption)
@@ -104,7 +114,15 @@ struct DaySectionView: View {
 #Preview {
     let now = Date.now
     let deadline = Calendar.current.date(bySettingHour: 9, minute: 30, second: 0, of: now)!
-    VStack(spacing: 12) {
+    let calEvent = CalendarEvent(
+        id: "mock-1",
+        title: "Team Standup",
+        startDate: Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: now)!,
+        endDate: Calendar.current.date(bySettingHour: 9, minute: 30, second: 0, of: now)!,
+        calendarTitle: "Work",
+        calendarColor: .blue
+    )
+    return VStack(spacing: 12) {
         DaySectionView(
             section: .morning,
             sectionPills: [
@@ -112,8 +130,9 @@ struct DaySectionView: View {
                 PlanItem(title: "Coffee", isRecurring: true),
             ],
             deadlineRows: [
-                PlanItem(title: "Team standup", deadline: deadline, isRecurring: true),
+                PlanItem(title: "Doctor appt", deadline: deadline, isRecurring: true),
             ],
+            calendarEvents: [calEvent],
             showNowBar: true,
             isCollapsed: false,
             onToggle: {}
@@ -122,6 +141,7 @@ struct DaySectionView: View {
             section: .midday,
             sectionPills: [],
             deadlineRows: [],
+            calendarEvents: [],
             showNowBar: false,
             isCollapsed: true,
             onToggle: {}
