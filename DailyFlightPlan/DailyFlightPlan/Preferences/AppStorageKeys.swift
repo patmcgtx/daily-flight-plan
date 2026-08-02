@@ -24,5 +24,11 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// Comma-separated EKCalendar (reminder list) identifiers to display (empty = show all lists)
     case selectedReminderListIDs
 
+    /// Filter: show calendar events inline (on by default)
+    case showCalendarEvents
+
+    /// Filter: show Reminders items inline (on by default)
+    case showReminderItems
+
     var id: String { rawValue }
 }

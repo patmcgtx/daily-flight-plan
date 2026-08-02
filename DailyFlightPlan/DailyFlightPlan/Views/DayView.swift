@@ -25,6 +25,12 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.showRecurring.rawValue)
     private var showRecurring: Bool = true
 
+    @AppStorage(AppStorageKeys.showCalendarEvents.rawValue)
+    private var showCalendarEvents: Bool = true
+
+    @AppStorage(AppStorageKeys.showReminderItems.rawValue)
+    private var showReminderItems: Bool = true
+
     @Environment(\.categorySelectionService)
     private var categorySelectionService: CategorySelectionService?
 
@@ -51,6 +57,7 @@ struct DayView: View {
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
+    @State private var isAnyTimeDropTargeted = false
 
     private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
@@ -211,6 +218,12 @@ struct DayView: View {
                 filterToggle("Recurring", icon: "infinity", isActive: showRecurring) {
                     showRecurring.toggle()
                 }
+                filterToggle("Calendar", icon: "calendar", isActive: showCalendarEvents) {
+                    showCalendarEvents.toggle()
+                }
+                filterToggle("Reminders", icon: "bell", isActive: showReminderItems) {
+                    showReminderItems.toggle()
+                }
                 if !allCategories.isEmpty {
                     Divider().frame(height: 20)
                     ForEach(allCategories) { category in
@@ -257,18 +270,20 @@ struct DayView: View {
     private var dayScrollView: some View {
         let selectedDateItems = itemsForSelectedDate
         let projected = viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: allItems)
+        let visibleEvents = showCalendarEvents ? calendarEvents : []
+        let visibleReminders = showReminderItems ? reminderItems : []
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    pastSectionCard(calendarEvents: calendarEvents)
+                    pastSectionCard(calendarEvents: visibleEvents)
 
                     ForEach(viewModel.activeSections) { section in
                         DaySectionView(
                             section: section,
                             sectionPills: viewModel.sectionPills(section, from: selectedDateItems),
                             deadlineRows: viewModel.deadlineRows(section, from: selectedDateItems),
-                            calendarEvents: viewModel.calendarEventsForSection(section, from: calendarEvents),
-                            reminderItems: viewModel.reminderItemsForSection(section, from: reminderItems),
+                            calendarEvents: viewModel.calendarEventsForSection(section, from: visibleEvents),
+                            reminderItems: viewModel.reminderItemsForSection(section, from: visibleReminders),
                             projectedPills: projected.filter { $0.daySection == section },
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
@@ -276,12 +291,15 @@ struct DayView: View {
                                 withAnimation(.spring(duration: 0.25)) {
                                     viewModel.toggleCollapsed(section)
                                 }
+                            },
+                            onDropItem: { uuidString in
+                                handlePillDrop(uuidString: uuidString, targetSection: section)
                             }
                         )
                         .id(section)
                     }
 
-                    missedSection(items: selectedDateItems, reminderItems: reminderItems)
+                    missedSection(items: selectedDateItems, reminderItems: visibleReminders)
                     anyTimeSection(items: selectedDateItems)
                 }
                 .padding(.horizontal)
@@ -302,35 +320,58 @@ struct DayView: View {
 
     private func anyTimeSection(items: [PlanItem]) -> some View {
         let anyTimeItems = viewModel.anyTimeItems(from: items)
-        let anyTimeReminders = viewModel.anyTimeReminderItems(from: reminderItems)
-        return Group {
+        let anyTimeReminders = viewModel.anyTimeReminderItems(from: showReminderItems ? reminderItems : [])
+        return VStack(alignment: .leading, spacing: 10) {
             if !anyTimeItems.isEmpty || !anyTimeReminders.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Any Time")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, 4)
-                    if !anyTimeItems.isEmpty {
-                        HFlow(itemSpacing: 8, rowSpacing: 8) {
-                            ForEach(anyTimeItems) { item in
-                                ItemPillView(item: item, isMissed: viewModel.isMissed(item))
-                            }
+                Text("Open")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
+                if !anyTimeItems.isEmpty {
+                    HFlow(itemSpacing: 8, rowSpacing: 8) {
+                        ForEach(anyTimeItems) { item in
+                            ItemPillView(item: item, isMissed: viewModel.isMissed(item))
+                                .draggable(item.uuid.uuidString)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    if !anyTimeReminders.isEmpty {
-                        VStack(spacing: 0) {
-                            ForEach(anyTimeReminders) { item in
-                                ReminderItemRow(item: item)
-                            }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if !anyTimeReminders.isEmpty {
+                    VStack(spacing: 0) {
+                        ForEach(anyTimeReminders) { item in
+                            ReminderItemRow(item: item)
                         }
-                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
+            } else {
+                // Empty placeholder so the drop target stays hittable even when empty
+                Text("Open")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(isAnyTimeDropTargeted ? Color.accentColor : Color.secondary)
+                    .padding(.leading, 4)
+                Text("Drop here to make it open / unscheduled")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .padding(.leading, 4)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+        .padding(4)
+        .overlay {
+            if isAnyTimeDropTargeted {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.accentColor, lineWidth: 2)
+            }
+        }
+        .dropDestination(for: String.self) { dropItems, _ in
+            guard let uuidString = dropItems.first else { return false }
+            handlePillDrop(uuidString: uuidString, targetSection: nil)
+            return true
+        } isTargeted: { targeted in
+            isAnyTimeDropTargeted = targeted
+        }
+        .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
     }
 
     // MARK: Past section (calendar events only — reminders go to Missed)
@@ -349,7 +390,6 @@ struct DayView: View {
                         CalendarEventRow(event: event)
                     }
                 }
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 8)
@@ -374,7 +414,6 @@ struct DayView: View {
                             DeadlineItemRow(item: item)
                         }
                     }
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
                 }
                 if !pastReminders.isEmpty {
                     VStack(spacing: 0) {
@@ -382,12 +421,25 @@ struct DayView: View {
                             ReminderItemRow(item: item)
                         }
                     }
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 8)
         }
+    }
+
+    // MARK: Drag to reassign section
+
+    /// Moves a dragged item to `targetSection` (or "Open" if nil), clearing any deadline.
+    private func handlePillDrop(uuidString: String, targetSection: DaySection?) {
+        guard let uuid = UUID(uuidString: uuidString),
+              let item = allItems.first(where: { $0.uuid == uuid }) else { return }
+        guard item.daySection != targetSection || item.deadline != nil else { return }
+        withAnimation(.spring(duration: 0.3)) {
+            item.daySection = targetSection
+            item.deadline = nil
+        }
+        try? modelContext.save()
     }
 
     // MARK: Spillover

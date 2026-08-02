@@ -18,33 +18,36 @@ struct CalendarEventRow: View {
                 openURL(url)
             }
         } label: {
-            HStack(spacing: 10) {
-                Circle()
+            HStack(spacing: 0) {
+                Rectangle()
                     .fill(event.calendarColor)
-                    .frame(width: 9, height: 9)
+                    .frame(width: 3)
 
-                Image(systemName: "calendar")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Image(systemName: "calendar")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
-                Text(event.startDate, format: .dateTime.hour().minute())
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                    Text(event.startDate, format: .dateTime.hour().minute())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
 
-                Text(event.title)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    Text(event.title)
+                        .font(.subheadline)
+                        .italic()
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
 
-                Spacer()
+                    Spacer()
 
-                Image(systemName: "arrow.up.right.square")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
         }
         .buttonStyle(.plain)
     }

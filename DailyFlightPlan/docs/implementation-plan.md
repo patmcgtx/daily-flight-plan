@@ -94,44 +94,55 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - **Deferred**: Drag to reorder items between sections → Phase 10
 
 ### Phase 10 — UI Refinements
-- **Drag to reorder**: Drag a section-based pill vertically to reassign it to a different day section (updates `item.daySection`)
-- **Calendar / Reminders toggles**: Filter-bar toggles to show or hide calendar events and Reminders items inline in the day view (stored in `@AppStorage`)
+- ✅ **Drag to reassign section**: Long-press any section pill or deadline row to drag it to a different day section card. Dropping onto a section sets `item.daySection` and clears any deadline. Dragging to "Open" clears both (`daySection = nil`, `deadline = nil`). Each section highlights with an accent-colored border while a drag is over it. Added `uuid: UUID` to `PlanItem` as a stable drag token. "Open" also acts as a drop target, with an empty placeholder shown when it has no items.
+- ✅ **Calendar / Reminders toggles**: Filter-bar `Calendar` and `Reminders` toggle pills added to the filter row (stored in `@AppStorage` as `showCalendarEvents` / `showReminderItems`, both on by default). When toggled off, events/reminders are hidden from all sections, Past, Missed, and Open.
 - Make Reminders items and Calendar events stand out more (or less) from the rest of the items, such as italic font.
 - Make recurring items, aka habits, stand out in some more intuitive way as well. I like the infinity icon. Maybe just lay it out differently?
-- Consider renaming "Any time" to "Still Today"
+- ✅ Renamed "Any Time" → "Open" (works for today and all other dates)
 
 ### Phase 11 — Timeline view
 - A single list of items completed (past) or planned (future), scrolling infinitely
 - A "today" indicator
 - Helpful for planning or reporting and possible later exporting
 
-### Phase 12 — Settings
+### Phase 12 — Search
+- Search bar (`.searchable`) in the day view header or as a dedicated screen
+- Search across all items (title, notes) regardless of date
+- Results grouped by date, showing section and status
+- Tapping a result navigates to that day and scrolls to the item
+- Filter results by status (pending / completed / canceled)
+
+### Phase 13 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
 - **Reminders settings**: similar toggle + list picker for reminder lists
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
 - Any other preferences surfaced here as phases are completed
 
-### Phase 13 — Local Notifications
+### Phase 14 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 11
+- Notification times respect custom day section boundaries from Phase 13
 
-### Phase 14 — Hands-On QA
-- Use the app daily for a period of time — real tasks, real calendar events, real reminders
-- Note friction points, readability, missing features, visual rough edges, and anything that feels off
-- Gather a list of changes needed before shipping version 1.0
+### Phase 15 — Usability Testing
+- Use the app daily for a real period of time — real tasks, real calendar events, real reminders
+- Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
+- Gather a prioritized list of changes needed before shipping version 1.0
+- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer.
+  Drqagging to/from sections would remain like it its.
 
-### Phase 15 — Fit and Finish
-- Address findings from Phase 14 QA
+### Phase 16 — Fit and Finish
+- Address findings from Phase 15 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
+- **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
+- Add an app icon
 - Anything that must be right before calling this version 1.0
 
-### Phase 16 — Tech debt
+### Phase 17 — Tech debt
 - Architecture review & refactor
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
