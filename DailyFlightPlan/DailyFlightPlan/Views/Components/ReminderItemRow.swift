@@ -10,32 +10,35 @@ struct ReminderItemRow: View {
     let item: ReminderItem
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
+        HStack(spacing: 0) {
+            Rectangle()
                 .fill(item.listColor)
-                .frame(width: 9, height: 9)
+                .frame(width: 3)
 
-            Image(systemName: "bell")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if let dueDate = item.dueDate {
-                Text(dueDate, format: .dateTime.hour().minute())
+            HStack(spacing: 10) {
+                Image(systemName: "bell")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .monospacedDigit()
+
+                if let dueDate = item.dueDate {
+                    Text(dueDate, format: .dateTime.hour().minute())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+
+                Text(item.title)
+                    .font(.subheadline)
+                    .italic()
+                    .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                    .strikethrough(item.isCompleted)
+                    .lineLimit(1)
+
+                Spacer()
             }
-
-            Text(item.title)
-                .font(.subheadline)
-                .foregroundStyle(item.isCompleted ? .secondary : .primary)
-                .strikethrough(item.isCompleted)
-                .lineLimit(1)
-
-            Spacer()
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
     }
 }
 

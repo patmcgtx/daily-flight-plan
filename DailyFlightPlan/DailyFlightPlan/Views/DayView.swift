@@ -342,7 +342,6 @@ struct DayView: View {
                             ReminderItemRow(item: item)
                         }
                     }
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
                 }
             } else {
                 // Empty placeholder so the drop target stays hittable even when empty
@@ -391,7 +390,6 @@ struct DayView: View {
                         CalendarEventRow(event: event)
                     }
                 }
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 8)
@@ -416,7 +414,6 @@ struct DayView: View {
                             DeadlineItemRow(item: item)
                         }
                     }
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
                 }
                 if !pastReminders.isEmpty {
                     VStack(spacing: 0) {
@@ -424,7 +421,6 @@ struct DayView: View {
                             ReminderItemRow(item: item)
                         }
                     }
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
