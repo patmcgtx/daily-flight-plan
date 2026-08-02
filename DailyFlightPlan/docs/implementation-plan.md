@@ -2,7 +2,9 @@
 
 See `architecture.md` for folder structure, data models, and UI direction.
 
-## ✅ Phase 1 — Skeleton + Models
+## Version 1.0
+
+### ✅ Phase 1 — Skeleton + Models
 - Set up folder structure mirroring MapsPlus
 - Copy and rename `Theming/` from MapsPlus (`MapPlusTheme` → `DFPTheme`)
 - Copy `Common/Environment.swift` pattern
@@ -12,7 +14,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Remove Xcode template boilerplate (`Item.swift`, placeholder `ContentView`)
 - Add SwiftUI-Flow package dependency
 
-## ✅ Phase 2 — Day View (read-only)
+### ✅ Phase 2 — Day View (read-only)
 - `DayViewModel` — computes sections, filters items, tracks selected date
 - `DayView` — sticky header (date nav, filter row stub), scrollable section cards
 - `DaySectionView` — collapsible rounded-rect card
@@ -26,14 +28,14 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - "Go to today" button (`scope` icon, visible only when not on today)
 - Directional slide animation on day navigation (< / > / scope)
 
-## ✅ Phase 3 — Item Interactions
+### ✅ Phase 3 — Item Interactions
 - Completion checkbox (toggle `.completed`)
 - Swipe left → cancel; swipe right → defer to tomorrow
 - Long-press menu: cancel / defer / edit
 - Missed item logic: past-due `.pending` items move to "any time" area with orange/red tint
 - Struck-through deadline on missed items
 
-## ✅ Phase 4 — Filtering + Categories
+### ✅ Phase 4 — Filtering + Categories
 - Wire up filter toggle pills (flagged / completed / recurring) to `@AppStorage`
 - Horizontally scrollable `CategoryCapsule` row in filter sub-bar
 - `CategorySelectionService` (adapted from MapsPlus) — SwiftData-backed `SelectedCategories` singleton
@@ -42,13 +44,13 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Filter toggles show active state (accentColor fill) vs. inactive (regularMaterial)
 - Follow-up polish: recurring items remain visible by default, add/rename/delete category actions now only clear UI state after a successful SwiftData save, and category item counts pluralize correctly
 
-## ✅ Phase 5 — Progress Indicator
+### ✅ Phase 5 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right
 - Computed from: completed / (total non-canceled items for today)
 - Color transitions red → yellow → green via HSB hue sweep as progress increases
 - Animates with spring when completion changes
 
-## ✅ Phase 6 — Add / Edit Item
+### ✅ Phase 6 — Add / Edit Item
 - `ItemForm` sheet with: title, notes, flagged toggle, date + optional deadline time, recurring toggle + day-of-week picker, category selector
 - `ItemFormViewModel` (`@Observable @MainActor`)
 - Validate and save via `modelContext`; both create and edit modes
@@ -56,7 +58,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Add Item button in `DayView` presents `ItemForm(date:)`; "Edit…" presents `ItemForm(item:)`
 - Bindings use `Bindable(viewModel).property` pattern since ViewModel is `@Observable @MainActor`
 
-## ✅ Phase 7 — Calendar Integration
+### ✅ Phase 7 — Calendar Integration
 - `CalendarService` protocol + `EventKitCalendarService` live implementation (EventKit full access)
 - `MockCalendarService` (#if DEBUG) — returns mock events for today only
 - `CalendarEvent` and `CalendarInfo` DTOs in `Services/Calendar/`
@@ -67,7 +69,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Calendar events rendered in each `DaySectionView` (below deadline rows) via `calendarEventsForSection(_:from:)` on `DayViewModel`
 - Calendar selection UI deferred to Phase 9 (Settings); all calendars shown by default
 
-## ✅ Phase 8 — Reminders Integration
+### ✅ Phase 8 — Reminders Integration
 - `RemindersService` protocol + `EventKitRemindersService` live implementation (separate `EKEventStore` from calendar service)
 - `MockRemindersService` (#if DEBUG) — returns two mock items for today: one timed, one undated
 - Reminders permission requested lazily on first fetch (`requestFullAccessToReminders()`, iOS 17+)
@@ -81,35 +83,41 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - **Deferred**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decide in a later phase
 - **Deferred**: reminder list selection UI — moved to Phase 9 (Settings)
 
-## Phase 9 — Settings
+### Phase 9 — Workflow Refinments
+- Spillover logic: today -> tomorrow @ midnight 
+- Spillover logic as a day secion passes
+- Be able to drag itens vertically from one day section to another 
+
+### Phase 10 — Timeline view
+- A single list of items completed (past) or planned (future), scrolling infinitely
+- A "today" indicator
+- Helpful for planning or reporting and possible later exporting
+
+### Phase 11 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
 - **Reminders settings**: similar toggle + list picker for reminder lists
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
 - Any other preferences surfaced here as phases are completed
 
-## Phase 10 — Date Picker
-- Implement the `calendar.circle` date-picker placeholder in the header
-- Let the user jump to any date directly (not just ±1 day)
-
-## Phase 11 — Local Notifications
+### Phase 12 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 9
+- Notification times respect custom day section boundaries from Phase 11
 
-## Phase 12 — Hands-On QA
+### Phase 13 — Hands-On QA
 - Use the app daily for a period of time — real tasks, real calendar events, real reminders
-- Note friction points, missing features, visual rough edges, and anything that feels off
+- Note friction points, readability, missing features, visual rough edges, and anything that feels off
 - Gather a list of changes needed before shipping version 1.0
-- **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 
-## Phase 13 — 1.0 Polish
+### Phase 14 — Fit and Finish
 - Address findings from Phase 12 QA
 - Bug fixes, UX tweaks, visual polish
+- **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - Anything that must be right before calling this version 1.0
 
-## Phase 14 — Tech debt
+### Phase 15 — Tech debt
 - Architecture review & refactor
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
@@ -122,6 +130,11 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Enable CloudKit capability in entitlements
 - Switch `ModelConfiguration` to use a CloudKit container identifier
 - Handle merge conflicts and sync errors gracefully
+
+
+### Import / Export
+- Export a day or the timeline view
+- Import (ideally from Things as) probably from markdwon like DayOne does, possibly local AI-assisted
 
 ### iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
@@ -140,6 +153,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 ---
 
 ## Version 3.0
+
 
 ### Widget + Live Activity
 - Home screen widget: show today's next upcoming item or a compact progress ring + item count
