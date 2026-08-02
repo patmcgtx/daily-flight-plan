@@ -154,6 +154,10 @@ See `architecture.md` for folder structure, data models, and UI direction.
 
 ## Version 3.0
 
+### Siri & AI
+- Support Siri for adding items and asking specific questions 
+- Opt into iOS AI support so Siri can knwo about my daily plan
+
 
 ### Widget + Live Activity
 - Home screen widget: show today's next upcoming item or a compact progress ring + item count
