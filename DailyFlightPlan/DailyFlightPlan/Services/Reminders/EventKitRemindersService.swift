@@ -46,7 +46,6 @@ final class EventKitRemindersService: RemindersService {
             store.fetchReminders(matching: predicate) { ekReminders in
                 let items = (ekReminders ?? [])
                     .compactMap { reminder -> ReminderItem? in
-                        guard !reminder.isCompleted else { return nil }
                         guard let components = reminder.dueDateComponents,
                               let dueDate = cal.date(from: components) else { return nil }
                         guard cal.isDate(dueDate, inSameDayAs: date) else { return nil }
