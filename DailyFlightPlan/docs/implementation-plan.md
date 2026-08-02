@@ -129,6 +129,8 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Use the app daily for a real period of time — real tasks, real calendar events, real reminders
 - Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
 - Gather a prioritized list of changes needed before shipping version 1.0
+- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer.
+  Drqagging to/from sections would remain like it its.
 
 ### Phase 16 — Fit and Finish
 - Address findings from Phase 15 usability testing
