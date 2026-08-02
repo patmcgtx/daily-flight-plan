@@ -318,6 +318,8 @@ struct DayView: View {
 
     // MARK: Any time section
 
+    private func anyTimeSection(items: [PlanItem]) -> some View {
+        let anyTimeItems = viewModel.anyTimeItems(from: items)
         let anyTimeReminders = viewModel.anyTimeReminderItems(from: showReminderItems ? reminderItems : [])
         return VStack(alignment: .leading, spacing: 10) {
             if !anyTimeItems.isEmpty || !anyTimeReminders.isEmpty {
