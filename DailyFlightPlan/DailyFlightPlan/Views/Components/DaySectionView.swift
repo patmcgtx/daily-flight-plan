@@ -47,8 +47,8 @@ struct DaySectionView: View {
             }
         }
         .dropDestination(for: String.self) { items, _ in
-            guard let uuidString = items.first else { return false }
-            onDropItem?(uuidString)
+            guard let uuidString = items.first, let onDropItem else { return false }
+            onDropItem(uuidString)
             return true
         } isTargeted: { targeted in
             isDropTargeted = targeted
