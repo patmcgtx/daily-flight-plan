@@ -9,6 +9,8 @@ struct DeadlineItemRow: View {
 
     let item: PlanItem
 
+    @Environment(\.editItem) private var editItem
+
     @State private var dragOffset: CGFloat = 0
 
     private let flickThreshold: CGFloat = 80
@@ -114,7 +116,7 @@ struct DeadlineItemRow: View {
             } label: {
                 Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
             }
-            Button { } label: {
+            Button { editItem?(item) } label: {
                 Label("Edit…", systemImage: "pencil")
             }
         }
