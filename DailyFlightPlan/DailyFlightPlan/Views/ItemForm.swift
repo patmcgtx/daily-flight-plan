@@ -83,7 +83,7 @@ struct ItemForm: View {
                 DatePicker("Time", selection: Bindable(viewModel).deadline, displayedComponents: .hourAndMinute)
             } else {
                 Picker("Section", selection: Bindable(viewModel).daySection) {
-                    Text("Any Time").tag(Optional<DaySection>.none)
+                    Text("Open").tag(Optional<DaySection>.none)
                     ForEach(DaySection.allCases) { section in
                         Text(section.displayName).tag(Optional(section))
                     }
