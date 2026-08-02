@@ -56,13 +56,16 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Add Item button in `DayView` presents `ItemForm(date:)`; "Edit…" presents `ItemForm(item:)`
 - Bindings use `Bindable(viewModel).property` pattern since ViewModel is `@Observable @MainActor`
 
-## Phase 7 — Calendar Integration
-- `CalendarService` protocol + `EventKitCalendarService` live implementation
-- `MockCalendarService` (#if DEBUG)
-- EventKit permission request on first launch
-- Let user select which calendars to show (stored in `@AppStorage`); UI in Settings
-- Display `CalendarEvent` rows in day sections for selected calendars only
-- Tap to open Calendar app
+## ✅ Phase 7 — Calendar Integration
+- `CalendarService` protocol + `EventKitCalendarService` live implementation (EventKit full access)
+- `MockCalendarService` (#if DEBUG) — returns mock events for today only
+- `CalendarEvent` and `CalendarInfo` DTOs in `Services/Calendar/`
+- Permission requested on first event fetch in `DayView.fetchCalendarEvents()`
+- `NSCalendarsFullAccessUsageDescription` added to `Info.plist`
+- `selectedCalendarIDs` added to `AppStorageKeys` (comma-separated; empty = all calendars)
+- `CalendarEventRow` — read-only row with colored calendar dot; tap opens Calendar app via `calshow:` URL
+- Calendar events rendered in each `DaySectionView` (below deadline rows) via `calendarEventsForSection(_:from:)` on `DayViewModel`
+- Calendar selection UI deferred to Phase 9 (Settings); all calendars shown by default
 
 ## Phase 8 — Reminders Integration
 - `RemindersService` protocol + `EventKitRemindersService` live implementation (shares `EKEventStore` with CalendarService)
@@ -74,8 +77,10 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - **TBD**: two-way completion sync — marking complete/canceled could write back to `EKReminder.isCompleted`; deferring could update `EKReminder.dueDateComponents`. Decide when we get here.
 
 ## Phase 9 — Settings Placeholder
-- `SettingsView` stub (empty, navigated to from ⚙ button)
-- Placeholder text: "Customization coming soon"
+- `SettingsView` stub (navigated to from ⚙ button)
+- **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
+- **Reminders settings** (once Phase 8 is done): similar toggle + list picker
+- Any other preferences surfaced here as phases are completed
 
 ## Phase 10 — Date Picker
 - Implement the `calendar.circle` date-picker placeholder in the header
