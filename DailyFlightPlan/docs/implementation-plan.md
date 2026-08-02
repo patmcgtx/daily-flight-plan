@@ -69,14 +69,19 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Calendar events rendered in each `DaySectionView` (below deadline rows) via `calendarEventsForSection(_:from:)` on `DayViewModel`
 - Calendar selection UI deferred to Phase 9 (Settings); all calendars shown by default
 
-## Phase 8 — Reminders Integration
-- `RemindersService` protocol + `EventKitRemindersService` live implementation (shares `EKEventStore` with CalendarService)
-- `MockRemindersService` (#if DEBUG)
-- Request Reminders permission (`EKEntityType.reminder`) separately from Calendar permission
-- Let user select which Reminders lists to sync (stored in `@AppStorage`); UI in Settings
-- Add `reminderIdentifier: String?` to `PlanItem` to track origin (preserves option for two-way sync)
-- Display synced reminders as native `PlanItem`s in the day view (not a separate row type)
-- **TBD**: two-way completion sync — marking complete/canceled could write back to `EKReminder.isCompleted`; deferring could update `EKReminder.dueDateComponents`. Decide when we get here.
+## ✅ Phase 8 — Reminders Integration
+- `RemindersService` protocol + `EventKitRemindersService` live implementation (separate `EKEventStore` from calendar service)
+- `MockRemindersService` (#if DEBUG) — returns two mock items for today: one timed, one undated
+- Reminders permission requested lazily on first fetch (`requestFullAccessToReminders()`, iOS 17+)
+- `NSRemindersFullAccessUsageDescription` added to `Info.plist`
+- `selectedReminderListIDs` added to `AppStorageKeys` (comma-separated; empty = all lists)
+- `reminderIdentifier: String?` added to `PlanItem` for future two-way sync tracking
+- `ReminderItemRow` — read-only row with list color dot + bell icon + optional time + title
+- Timed reminders appear in their matching day section (via `reminderItemsForSection(_:from:)` on `DayViewModel`)
+- Undated reminders appear in the "Any Time" area as a grouped card of `ReminderItemRow`s
+- `EKEventStoreChanged` notification re-fetches both calendar events and reminders on any store change
+- **Deferred**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decide in a later phase
+- **Deferred**: reminder list selection UI — moved to Phase 9 (Settings)
 
 ## Phase 9 — Settings Placeholder
 - `SettingsView` stub (navigated to from ⚙ button)

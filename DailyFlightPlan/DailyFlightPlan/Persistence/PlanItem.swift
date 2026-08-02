@@ -32,6 +32,9 @@ class PlanItem {
     @Relationship(deleteRule: .nullify, inverse: \PlanCategory.items)
     var categories: [PlanCategory]
 
+    /// The EventKit reminder identifier this item was synced from, if any.
+    var reminderIdentifier: String?
+
     init(
         title: String,
         notes: String = "",
