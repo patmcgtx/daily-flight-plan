@@ -2,6 +2,12 @@
 
 A daily planning and execution app for iOS, inspired by an airplane flight plan checklist. Today is your trip; this is your checklist.
 
+I took an app idea in my mind, sketched it out in Figma, broke that into a detailed requirements spec, and fed to that Claude agent to make an architecture and a plan.
+
+- [`docs/project-spec-prompt.md`](DailyFlightPlan/docs/project-spec-prompt.md) — original feature and UX specs
+- [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) — phased build plan and progress
+- [`docs/architecture.md`](DailyFlightPlan/docs/architecture.md) — folder structure, data models, services, UI direction
+
 ## The original idea
 
 ![Initial "back of a napkin" Figma sketch](DailyFlightPlan/docs/daily-flight-plan-figma.png)
@@ -42,12 +48,6 @@ DailyFlightPlan/
     ├── View Models/  — DayViewModel
     └── DayView.swift
 ```
-
-## Docs
-
-- [`docs/project-spec-prompt.md`](DailyFlightPlan/docs/project-spec-prompt.md) — original feature and UX specs
-- [`docs/architecture.md`](DailyFlightPlan/docs/architecture.md) — folder structure, data models, services, UI direction
-- [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) — phased build plan and progress
 
 ## Building
 
