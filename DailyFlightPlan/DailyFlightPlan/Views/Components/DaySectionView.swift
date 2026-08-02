@@ -17,6 +17,10 @@ struct DaySectionView: View {
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
+    /// Called with the item's UUID string when a pill is dropped onto this section.
+    var onDropItem: ((String) -> Void)? = nil
+
+    @State private var isDropTargeted = false
 
     private var totalCount: Int {
         // Projected pills are not counted — they're not committed items
@@ -36,6 +40,20 @@ struct DaySectionView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(.separator, lineWidth: 0.5)
         }
+        .overlay {
+            if isDropTargeted {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.accentColor, lineWidth: 2)
+            }
+        }
+        .dropDestination(for: String.self) { items, _ in
+            guard let uuidString = items.first else { return false }
+            onDropItem?(uuidString)
+            return true
+        } isTargeted: { targeted in
+            isDropTargeted = targeted
+        }
+        .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
     }
 
     // MARK: Header
@@ -80,6 +98,7 @@ struct DaySectionView: View {
                 HFlow(itemSpacing: 8, rowSpacing: 8) {
                     ForEach(sectionPills) { item in
                         ItemPillView(item: item)
+                            .draggable(item.uuid.uuidString)
                     }
                     ForEach(projectedPills) { item in
                         ItemPillView(item: item)
@@ -95,6 +114,7 @@ struct DaySectionView: View {
                 VStack(spacing: 0) {
                     ForEach(deadlineRows) { item in
                         DeadlineItemRow(item: item)
+                            .draggable(item.uuid.uuidString)
                     }
                 }
                 .padding(.top, sectionPills.isEmpty ? 4 : 6)

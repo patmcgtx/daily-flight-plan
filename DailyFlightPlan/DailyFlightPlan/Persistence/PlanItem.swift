@@ -8,6 +8,9 @@ import Foundation
 @Model
 class PlanItem {
 
+    /// Stable identifier used for drag-and-drop payload. Separate from SwiftData's persistentModelID.
+    var uuid: UUID = UUID()
+
     var title: String
     var notes: String
     var isFlagged: Bool
