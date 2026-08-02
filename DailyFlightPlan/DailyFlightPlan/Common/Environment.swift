@@ -17,6 +17,11 @@ extension EnvironmentValues {
 
     // Phase 7: CalendarService will be added here
 
+    // MARK: Actions
+
+    /// Invoke to open the edit form for the given item. Set by DayView via .environment(\.editItem, ...).
+    @Entry var editItem: ((PlanItem) -> Void)? = nil
+
     // MARK: Default settings
 
     @Entry var dfpTheme: DFPTheme = .cupertino

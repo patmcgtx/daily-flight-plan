@@ -48,11 +48,13 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Color transitions red → yellow → green via HSB hue sweep as progress increases
 - Animates with spring when completion changes
 
-## Phase 6 — Add / Edit Item
+## ✅ Phase 6 — Add / Edit Item
 - `ItemForm` sheet with: title, notes, flagged toggle, date + optional deadline time, recurring toggle + day-of-week picker, category selector
-- `ItemFormViewModel`
-- Validate and save via `modelContext`
-- Mock service + preview
+- `ItemFormViewModel` (`@Observable @MainActor`)
+- Validate and save via `modelContext`; both create and edit modes
+- Edit triggered via `@Entry var editItem` environment key injected by `DayView`; "Edit…" context menu item in `ItemPillView` and `DeadlineItemRow` calls it
+- Add Item button in `DayView` presents `ItemForm(date:)`; "Edit…" presents `ItemForm(item:)`
+- Bindings use `Bindable(viewModel).property` pattern since ViewModel is `@Observable @MainActor`
 
 ## Phase 7 — Calendar Integration
 - `CalendarService` protocol + `EventKitCalendarService` live implementation

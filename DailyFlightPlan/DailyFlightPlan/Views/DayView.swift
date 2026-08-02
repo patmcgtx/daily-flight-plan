@@ -31,6 +31,8 @@ struct DayView: View {
     private var allCategories: [PlanCategory]
 
     @State private var isShowingCategoriesEdit = false
+    @State private var isAddingItem = false
+    @State private var itemToEdit: PlanItem? = nil
 
     private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
@@ -58,8 +60,15 @@ struct DayView: View {
                 .transition(dayTransition)
         }
         .clipped()
+        .environment(\.editItem) { item in itemToEdit = item }
         .sheet(isPresented: $isShowingCategoriesEdit) {
             CategoriesEditView()
+        }
+        .sheet(isPresented: $isAddingItem) {
+            ItemForm(date: viewModel.selectedDate)
+        }
+        .sheet(item: $itemToEdit) { item in
+            ItemForm(item: item)
         }
     }
 
@@ -272,7 +281,7 @@ struct DayView: View {
     // MARK: Add button
 
     private var addButton: some View {
-        Button { } label: {
+        Button { isAddingItem = true } label: {
             Label("Add Item", systemImage: "plus")
                 .font(.headline)
                 .padding(.horizontal, 28)

@@ -10,6 +10,8 @@ struct ItemPillView: View {
     let item: PlanItem
     var isMissed: Bool = false
 
+    @Environment(\.editItem) private var editItem
+
     @State private var dragOffset: CGFloat = 0
 
     // Minimum predicted end translation (pt) to commit a flick
@@ -120,7 +122,7 @@ struct ItemPillView: View {
             } label: {
                 Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
             }
-            Button { } label: {
+            Button { editItem?(item) } label: {
                 Label("Edit…", systemImage: "pencil")
             }
         }
