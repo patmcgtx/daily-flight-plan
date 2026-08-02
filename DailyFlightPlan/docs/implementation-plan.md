@@ -83,41 +83,49 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - **Deferred**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decide in a later phase
 - **Deferred**: reminder list selection UI — moved to Phase 9 (Settings)
 
-### Phase 9 — Workflow Refinments
-- Spillover logic: today -> tomorrow @ midnight 
-- Spillover logic as a day secion passes
-- Be able to drag itens vertically from one day section to another 
+### ✅ Phase 9 — Workflow Refinements
+- **Spillover**: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
+- **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their calendar events and timed reminders are collected into a collapsible "Past" card at the top of the day view (starts collapsed). Pending plan items from those sections already appear in the "Any Time" area via the existing missed-item logic.
+- **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the "Past" card grows in real time as sections end during the day.
+- **Deferred**: Drag to reorder items between sections → Phase 10
 
-### Phase 10 — Timeline view
+### Phase 10 — UI Refinements
+- **Drag to reorder**: Drag a section-based pill vertically to reassign it to a different day section (updates `item.daySection`)
+- **Calendar / Reminders toggles**: Filter-bar toggles to show or hide calendar events and Reminders items inline in the day view (stored in `@AppStorage`)
+- Make Reminders items and Calendar events stand out more (or less) from the rest of the items, such as italic font.
+- Make recurring items, aka habits, stand out in some more intuituve way as well. I like the infinity icon. Maybe just lay it out differently?
+- Consider renaming "Any time" to "Still Today"
+
+### Phase 11 — Timeline view
 - A single list of items completed (past) or planned (future), scrolling infinitely
 - A "today" indicator
 - Helpful for planning or reporting and possible later exporting
 
-### Phase 11 — Settings
+### Phase 12 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
 - **Reminders settings**: similar toggle + list picker for reminder lists
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
 - Any other preferences surfaced here as phases are completed
 
-### Phase 12 — Local Notifications
+### Phase 13 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
 - Notification times respect custom day section boundaries from Phase 11
 
-### Phase 13 — Hands-On QA
+### Phase 14 — Hands-On QA
 - Use the app daily for a period of time — real tasks, real calendar events, real reminders
 - Note friction points, readability, missing features, visual rough edges, and anything that feels off
 - Gather a list of changes needed before shipping version 1.0
 
-### Phase 14 — Fit and Finish
+### Phase 15 — Fit and Finish
 - Address findings from Phase 12 QA
 - Bug fixes, UX tweaks, visual polish
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - Anything that must be right before calling this version 1.0
 
-### Phase 15 — Tech debt
+### Phase 16 — Tech debt
 - Architecture review & refactor
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings

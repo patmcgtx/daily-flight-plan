@@ -11,6 +11,10 @@ final class DayViewModel {
     var collapsedSections: Set<DaySection> = []
     private(set) var forwardNavigation: Bool = true
 
+    // Updated each minute by startLiveClock(); drives currentSection and Past area in real time.
+    private(set) var currentTime: Date = .now
+    private var clockTask: Task<Void, Never>?
+
     // MARK: Date helpers
 
     var isToday: Bool {
@@ -20,7 +24,22 @@ final class DayViewModel {
     /// The section that contains the current clock time, or nil if not viewing today
     var currentSection: DaySection? {
         guard isToday else { return nil }
-        return DaySection.containing(.now)
+        return DaySection.containing(currentTime)
+    }
+
+    /// Sections whose time window has already ended when viewing today. Empty on other days.
+    var pastSections: [DaySection] {
+        guard isToday,
+              let current = currentSection,
+              let currentIdx = DaySection.allCases.firstIndex(of: current) else { return [] }
+        return Array(DaySection.allCases.prefix(currentIdx))
+    }
+
+    /// Sections to display in the main list — all sections on non-today days, current+future on today.
+    var activeSections: [DaySection] {
+        guard isToday else { return DaySection.allCases }
+        let past = Set(pastSections)
+        return DaySection.allCases.filter { !past.contains($0) }
     }
 
     func goToYesterday() {
@@ -55,20 +74,55 @@ final class DayViewModel {
         }
     }
 
+    // MARK: Live clock
+
+    /// Starts a per-minute background tick that updates currentTime, keeping the Past area current.
+    func startLiveClock() {
+        guard clockTask == nil else { return }
+        clockTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                let now = Date.now
+                var components = Calendar.current.dateComponents(
+                    [.year, .month, .day, .hour, .minute], from: now
+                )
+                components.minute = (components.minute ?? 0) + 1
+                components.second = 0
+                components.nanosecond = 0
+                let nextMinute = Calendar.current.date(from: components) ?? now.addingTimeInterval(60)
+                let sleepSeconds = max(1, nextMinute.timeIntervalSince(Date.now))
+                do {
+                    try await Task.sleep(for: .seconds(sleepSeconds))
+                } catch {
+                    return
+                }
+                withAnimation(.spring(duration: 0.3)) {
+                    self?.currentTime = .now
+                }
+            }
+        }
+    }
+
     // MARK: Missed item logic
 
-    /// True when viewing today and the item's scheduled time has passed but it's still pending.
-    /// Missed items are pulled out of their section and shown in the "any time" area with a warning style.
+    /// Combined check — used to exclude an item from its scheduled section card.
     func isMissed(_ item: PlanItem) -> Bool {
-        guard isToday, item.status == .pending else { return false }
-        if let deadline = item.deadline {
-            return deadline < .now
-        }
-        if let section = item.daySection,
-           let sectionEnd = Calendar.current.date(bySettingHour: section.endHour, minute: 59, second: 59, of: .now) {
-            return sectionEnd < .now
-        }
-        return false
+        isDeadlineMissed(item) || isSectionMissed(item)
+    }
+
+    /// Item had a specific timed deadline that has now passed → shown in "Missed".
+    func isDeadlineMissed(_ item: PlanItem) -> Bool {
+        guard isToday, item.status == .pending, let deadline = item.deadline else { return false }
+        return deadline < currentTime
+    }
+
+    /// Item was assigned to a day section that has ended, with no specific deadline → shown in "Any Time".
+    private func isSectionMissed(_ item: PlanItem) -> Bool {
+        guard isToday, item.status == .pending, item.deadline == nil,
+              let section = item.daySection,
+              let sectionEnd = Calendar.current.date(
+                  bySettingHour: section.endHour, minute: 59, second: 59, of: currentTime
+              ) else { return false }
+        return sectionEnd < currentTime
     }
 
     // MARK: Item grouping
@@ -93,6 +147,25 @@ final class DayViewModel {
         events.filter { DaySection.containing($0.startDate) == section }
     }
 
+    /// Calendar events belonging to any past section (shown in the "Past" card at the top of today's view)
+    func pastCalendarEvents(from events: [CalendarEvent]) -> [CalendarEvent] {
+        let past = Set(pastSections)
+        return events.filter { event in
+            guard let section = DaySection.containing(event.startDate) else { return false }
+            return past.contains(section)
+        }
+    }
+
+    /// Timed reminders belonging to any past section (shown in the "Past" card)
+    func pastReminderItems(from items: [ReminderItem]) -> [ReminderItem] {
+        let past = Set(pastSections)
+        return items.filter { item in
+            guard let dueDate = item.dueDate,
+                  let section = DaySection.containing(dueDate) else { return false }
+            return past.contains(section)
+        }
+    }
+
     /// Reminders with a specific due time that falls within this section
     func reminderItemsForSection(_ section: DaySection, from items: [ReminderItem]) -> [ReminderItem] {
         items.filter { item in
@@ -106,10 +179,17 @@ final class DayViewModel {
         items.filter { $0.dueDate == nil }
     }
 
-    /// Items with no section and no deadline, plus any missed items from earlier in the day
+    /// Pending items whose specific deadline has passed — shown in the "Missed" section.
+    func missedDeadlineItems(from items: [PlanItem]) -> [PlanItem] {
+        items.filter { isDeadlineMissed($0) }
+            .sorted { ($0.deadline ?? .distantPast) < ($1.deadline ?? .distantPast) }
+    }
+
+    /// Untimed items (no section, no deadline) plus section-based items whose section has ended.
+    /// Deadline-missed items are excluded — they go to the "Missed" section instead.
     func anyTimeItems(from items: [PlanItem]) -> [PlanItem] {
         let noTimeItems = items.filter { $0.daySection == nil && $0.deadline == nil }
-        let missedItems = items.filter { isMissed($0) }
-        return noTimeItems + missedItems
+        let sectionMissedItems = items.filter { isSectionMissed($0) }
+        return noTimeItems + sectionMissedItems
     }
 }

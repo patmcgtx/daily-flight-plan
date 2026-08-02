@@ -43,6 +43,9 @@ struct DayView: View {
     @Query(sort: \PlanCategory.name)
     private var allCategories: [PlanCategory]
 
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.modelContext) private var modelContext
+
     @State private var isShowingCategoriesEdit = false
     @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
@@ -76,9 +79,18 @@ struct DayView: View {
         }
         .clipped()
         .environment(\.editItem) { item in itemToEdit = item }
+        .task {
+            viewModel.startLiveClock()
+            await watchForMidnight()
+        }
         .task(id: viewModel.selectedDate) {
             await fetchCalendarEvents()
             await fetchReminderItems()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                performSpilloverIfNeeded()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
             Task {
@@ -247,7 +259,9 @@ struct DayView: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(DaySection.allCases) { section in
+                    pastSectionCard(calendarEvents: calendarEvents)
+
+                    ForEach(viewModel.activeSections) { section in
                         DaySectionView(
                             section: section,
                             sectionPills: viewModel.sectionPills(section, from: selectedDateItems),
@@ -265,6 +279,7 @@ struct DayView: View {
                         .id(section)
                     }
 
+                    missedSection(items: selectedDateItems, reminderItems: reminderItems)
                     anyTimeSection(items: selectedDateItems)
                 }
                 .padding(.horizontal)
@@ -312,6 +327,106 @@ struct DayView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
+            }
+        }
+    }
+
+    // MARK: Past section (calendar events only — reminders go to Missed)
+
+    @ViewBuilder
+    private func pastSectionCard(calendarEvents: [CalendarEvent]) -> some View {
+        let pastEvents = viewModel.pastCalendarEvents(from: calendarEvents)
+        if !pastEvents.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Past")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
+                VStack(spacing: 0) {
+                    ForEach(pastEvents) { event in
+                        CalendarEventRow(event: event)
+                    }
+                }
+                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+        }
+    }
+
+    // MARK: Missed section (deadline plan items + past timed reminders)
+
+    @ViewBuilder
+    private func missedSection(items: [PlanItem], reminderItems: [ReminderItem]) -> some View {
+        let missedItems = viewModel.missedDeadlineItems(from: items)
+        let pastReminders = viewModel.pastReminderItems(from: reminderItems)
+        if !missedItems.isEmpty || !pastReminders.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Missed")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
+                if !missedItems.isEmpty {
+                    VStack(spacing: 0) {
+                        ForEach(missedItems) { item in
+                            DeadlineItemRow(item: item)
+                        }
+                    }
+                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+                }
+                if !pastReminders.isEmpty {
+                    VStack(spacing: 0) {
+                        ForEach(pastReminders) { item in
+                            ReminderItemRow(item: item)
+                        }
+                    }
+                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+        }
+    }
+
+    // MARK: Spillover
+
+    /// Moves all pending items from days before today to today.
+    /// Primary trigger: app launch / foreground. Secondary: midnight watcher.
+    private func performSpilloverIfNeeded() {
+        let today = Calendar.current.startOfDay(for: .now)
+        let toSpill = allItems.filter {
+            $0.status == .pending &&
+            Calendar.current.startOfDay(for: $0.date) < today
+        }
+        guard !toSpill.isEmpty else { return }
+        for item in toSpill {
+            item.date = today
+            if item.deadline != nil {
+                item.deadline = nil  // deadline-based items become "any time" on the new day
+            }
+        }
+        try? modelContext.save()
+        withAnimation(.easeInOut(duration: 0.3)) {
+            viewModel.goToToday()
+        }
+    }
+
+    /// Sleeps until midnight, triggers spillover, then loops for subsequent nights.
+    private func watchForMidnight() async {
+        while !Task.isCancelled {
+            let now = Date.now
+            let calendar = Calendar.current
+            guard let tomorrow = calendar.date(
+                byAdding: .day, value: 1, to: calendar.startOfDay(for: now)
+            ) else { break }
+            let secondsUntilMidnight = tomorrow.timeIntervalSince(now)
+            do {
+                try await Task.sleep(for: .seconds(max(1, secondsUntilMidnight + 1)))
+            } catch {
+                break
+            }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                performSpilloverIfNeeded()
             }
         }
     }
