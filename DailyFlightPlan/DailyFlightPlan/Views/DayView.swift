@@ -224,7 +224,6 @@ struct DayView: View {
             Spacer()
         }
         .padding(.horizontal)
-        .padding(.top, 4)
     }
 
     private var filterRow: some View {
@@ -324,7 +323,6 @@ struct DayView: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    progressSummaryRow
                     pastSectionCard(calendarEvents: visibleEvents)
 
                     ForEach(viewModel.activeSections) { section in
@@ -349,6 +347,7 @@ struct DayView: View {
                         .id(section)
                     }
 
+                    progressSummaryRow
                     missedSection(items: selectedDateItems, reminderItems: visibleReminders)
                     anyTimeSection(items: selectedDateItems)
                 }
