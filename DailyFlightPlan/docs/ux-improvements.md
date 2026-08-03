@@ -1,6 +1,6 @@
 # UX / Workflow Improvements
 
-## Timeline view should be lazy-loading in
+## Timeline view should lazy-load past days
 
 Starting with today, and then lazy load the past in as needed. I think SwiftUI will handle this nicely.
 
@@ -20,7 +20,7 @@ It leaves me feeling a little anxious, not knowing exactly what morning means or
 
 Treat them like completed items. Similar to calendars. Done is done.
 
-## When filtering by a category, drop calendars & Reminders
+## When filtering by a category, drop calendars & reminders
 
 It’s basically a bug. They were only showing things with that category. Calendars and reminders are not categorized.
 
