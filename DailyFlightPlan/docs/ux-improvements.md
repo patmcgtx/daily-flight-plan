@@ -2,7 +2,7 @@
 
 ## Timeline view should be lazy-loading in
 
-Starting with today. And then lazy load the past in the future as needed. I think Swifty I will handle this nicely.
+Starting with today, and then lazy load the past in as needed. I think SwiftUI will handle this nicely.
 
 ## Ask for reminders and calendars permission the first time the filter is tapped
 
@@ -22,7 +22,7 @@ Treat them like completed items. Similar to calendars. Done is done.
 
 ## When filtering by a category, drop calendars & Reminders
 
-It’s basically I did. They were only showing things with that category. Categories and reminders are not categorized.
+It’s basically a bug. They were only showing things with that category. Calendars and reminders are not categorized.
 
 ## Drop the recurring item toggle
 
@@ -42,19 +42,19 @@ This way we can drop the info icon too.
 
 ## Display recurring items/habits on their own row/flow
 
-Instead of an Infiniti icon for each item, just add a little infinity icon at the beginning of the row
+Instead of an infinity icon for each item, just add a little infinity icon at the beginning of the row
 
 ## Display completed items on their own row
 
-Instead of an Infiniti icon for each item, just add a little infinity icon at the beginning of the row
+Instead of an check mark icon for each item, just add a little check icon at the beginning of the row
 
 ## Always hide any day sections that are empty
 
-The applies to any view, especially filtering. The whole point of this app is to encourage focus and simplicity. This even includes the mist and open sections, also passed.
+This applies to any view, especially filtering. The whole point of this app is to encourage focus and simplicity. This even includes the missed and open sections, also past.
 
 ## Auto collapse day sections we're not currently in
 
-At this point in the day, anything else is either in another section, missed, or open. Or completed.
+At this point in the day, anything else is either in another section, missed, open, or completed.
 
 ## Move the progress indicator to a floating button
 
