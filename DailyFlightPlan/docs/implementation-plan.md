@@ -113,16 +113,32 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Timeline button (`calendar.day.timeline.left`) added to DayView header (left side, next to `[<]`)
 - `navigate(to:)` method added to `DayViewModel`
 - Read-only; add/edit deferred to a later phase
+- **Deferred**: lazy-load past days starting from today, paging backward on scroll — Phase 12 follow-up
 
-### Phase 12 — Nav & Chrome Rework (Liquid Glass)
+### Phase 12 — Usability Part 1
+Items identified during early real-world use.
+
+- **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there's no ambiguity about what each section covers
+- **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly; remove the separate info (ⓘ) button
+- **Recurring items grouped on their own row**: instead of an ∞ icon on each pill, render recurring items in a dedicated "Habits" sub-row within their section with a single ∞ icon at the row leading edge
+- **Completed items grouped on their own row**: render completed items in a "Done" sub-row with a single ✓ icon at the leading edge, rather than a checkmark on every pill
+- **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
+- **Hide past Calendar events**: treat past-section calendar events as done; hide them by default, show only if Done filter is active
+- **Category filter excludes Calendar & Reminders**: when any category is selected, Calendar events and Reminder items are hidden entirely — they are not categorized and showing them is misleading (bug)
+- **Remove the Recurring filter toggle**: always show recurring items; the toggle added confusion and the grouped habit row makes them easy to distinguish visually
+- **Always hide empty sections**: if a section (including Missed, Open, Past) has no visible items after filtering, hide it entirely — don't show an empty card
+- **Auto-collapse inactive sections**: on today, sections whose time window hasn't started yet or has already ended are collapsed by default; the current section is expanded
+- **AI summary on collapsed sections**: when a section is collapsed, use **Apple Foundation Models** (on-device) to generate a one-line natural-language summary of its contents (e.g. "3 tasks · standup at 10am · 1 calendar event") shown in the section header; generated lazily on first collapse and cached; gracefully falls back to a plain item count if Foundation Models is unavailable
+
+### Phase 13 — Nav & Chrome Rework (Liquid Glass)
 - Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)
 - Retire swipe-left-to-cancel and swipe-right-to-defer on items; long-press context menu (already implemented) covers the same actions
 - **Top header**: date only — large weekday + month/day centered; "Go to today" scope button inline when off today; tap date → date picker sheet
 - **Bottom floating glass bar** (`safeAreaInset(edge: .bottom)`): `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
 - Filter pills row stays sticky in the header
-- Progress summary row stays at top of scroll content
+- **Progress indicator as floating button**: replace the inline progress summary row with a small floating donut button (bottom of screen, above the glass bar); tap it for a detail popover (X of Y complete, etc.)
 
-### Phase 13 — Quick Entry (Natural Language)
+### Phase 14 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up
 - User types natural language: "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
 - On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework, on-device) using a `@Generable` struct for structured output:
@@ -140,35 +156,36 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 14 — Search
+### Phase 15 — Search
 - Search bar (`.searchable`) in the day view header or as a dedicated screen
 - Search across all items (title, notes) regardless of date
 - Results grouped by date, showing section and status
 - Tapping a result navigates to that day and scrolls to the item
 - Filter results by status (pending / completed / canceled)
 
-### Phase 15 — Settings
+### Phase 16 — Settings
 - `SettingsView` navigated to from ⚙ button
-- **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
-- **Reminders settings**: similar toggle + list picker for reminder lists
+- **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
+- **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
+- **Permission prompt on first filter tap**: when the user taps the Calendar or Reminders filter pill for the first time, prompt for permission then and there (rather than waiting for the day to load); on grant, show the calendar/list selector immediately
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
 - Any other preferences surfaced here as phases are completed
 
-### Phase 16 — Local Notifications
+### Phase 17 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 15
+- Notification times respect custom day section boundaries from Phase 16
 
-### Phase 17 — Usability Testing
+### Phase 18 — Usability Part 2
 - Use the app daily for a real period of time — real tasks, real calendar events, real reminders
 - Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
 - Gather a prioritized list of changes needed before shipping version 1.0
 - Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer.
   Drqagging to/from sections would remain like it its.
 
-### Phase 18 — Fit and Finish
-- Address findings from Phase 17 usability testing
+### Phase 19 — Fit and Finish
+- Address findings from Phase 18 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
@@ -178,7 +195,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Add an app icon
 - Anything that must be right before calling this version 1.0
 
-### Phase 19 — Tech debt
+### Phase 20 — Tech debt
 - Architecture review & refactor
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
@@ -195,7 +212,8 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 
 ### Import / Export
 - Export a day or the timeline view
-- Import (ideally from Things as) probably from markdwon like DayOne does, possibly local AI-assisted
+- **Import from Things**: parse a Things export (markdown or JSON) and use Foundation Models to auto-assign each task to the appropriate day section, deadline, or recurring schedule
+- Import from other sources (markdown like DayOne, etc.)
 
 ### iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
