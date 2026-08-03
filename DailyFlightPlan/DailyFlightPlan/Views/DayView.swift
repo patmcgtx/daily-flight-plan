@@ -53,6 +53,7 @@ struct DayView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var isShowingCategoriesEdit = false
+    @State private var isShowingTimeline = false
     @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
@@ -108,6 +109,13 @@ struct DayView: View {
         .sheet(isPresented: $isShowingCategoriesEdit) {
             CategoriesEditView()
         }
+        .sheet(isPresented: $isShowingTimeline) {
+            TimelineView { date in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    viewModel.navigate(to: date)
+                }
+            }
+        }
         .sheet(isPresented: $isAddingItem) {
             ItemForm(date: viewModel.selectedDate)
         }
@@ -135,18 +143,8 @@ struct DayView: View {
     }
 
     private var dateNavRow: some View {
-        HStack(spacing: 8) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToYesterday() }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .frame(width: 20)
-            }
-            .buttonStyle(.glass)
-            .accessibilityLabel("Previous Day")
-
-            Spacer()
-
+        ZStack {
+            // Always-centered date display
             VStack(spacing: 1) {
                 Text(viewModel.selectedDate, format: .dateTime.weekday(.wide))
                     .font(.subheadline)
@@ -167,24 +165,28 @@ struct DayView: View {
                 }
             }
 
-            Spacer()
-
-            HStack(spacing: 8) {
-                progressRing
-                Button { } label: { Image(systemName: "gearshape") }
-                    .buttonStyle(.glass)
-                    .accessibilityLabel("Settings")
-                Menu {
-                    ForEach(DFPTheme.allCases) { option in
-                        Button { theme = option } label: {
-                            Label(option.localizedName, systemImage: option.menuIconName)
-                        }
+            HStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToYesterday() }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .frame(width: 20)
                     }
-                } label: {
-                    Image(systemName: theme.menuIconName)
+                    .buttonStyle(.glass)
+                    .accessibilityLabel("Previous Day")
+
+                    Button {
+                        isShowingTimeline = true
+                    } label: {
+                        Image(systemName: "calendar.day.timeline.left")
+                    }
+                    .buttonStyle(.glass)
+                    .accessibilityLabel("Timeline")
                 }
-                .buttonStyle(.glass)
-                .accessibilityLabel("Theme")
+
+                Spacer()
+
                 Button {
                     withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToTomorrow() }
                 } label: {
@@ -198,50 +200,95 @@ struct DayView: View {
         .padding(.horizontal)
     }
 
-    private var progressRing: some View {
+    private var progressSummaryRow: some View {
         let items = selectedDateNonCanceledItems
         let completed = items.filter { $0.status == .completed }.count
         let total = items.count
         let progress = total > 0 ? Double(completed) / Double(total) : 0
-        return ProgressRingView(progress: progress, completed: completed, total: total)
+        return HStack(spacing: 12) {
+            ProgressRingView(progress: progress, completed: completed, total: total)
+            if total == 0 {
+                Text("No items planned")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else if completed == total {
+                Text("All done!")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.green)
+            } else {
+                Text("\(completed) of \(total) complete")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal)
     }
 
     private var filterRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
-                    showFlaggedOnly.toggle()
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
+                        showFlaggedOnly.toggle()
+                    }
+                    filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
+                        showCompleted.toggle()
+                    }
+                    filterToggle("Recurring", icon: "infinity", isActive: showRecurring) {
+                        showRecurring.toggle()
+                    }
+                    filterToggle("Calendar", icon: "calendar", isActive: showCalendarEvents) {
+                        showCalendarEvents.toggle()
+                    }
+                    filterToggle("Reminders", icon: "bell", isActive: showReminderItems) {
+                        showReminderItems.toggle()
+                    }
+                    if !allCategories.isEmpty {
+                        Divider().frame(height: 20)
+                        ForEach(allCategories) { category in
+                            CategoryCapsule(category: category)
+                        }
+                    }
+                    Button {
+                        isShowingCategoriesEdit = true
+                    } label: {
+                        Image(systemName: "tag")
+                            .font(.caption.bold())
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.glass)
+                    .accessibilityLabel("Manage Categories")
                 }
-                filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
-                    showCompleted.toggle()
-                }
-                filterToggle("Recurring", icon: "infinity", isActive: showRecurring) {
-                    showRecurring.toggle()
-                }
-                filterToggle("Calendar", icon: "calendar", isActive: showCalendarEvents) {
-                    showCalendarEvents.toggle()
-                }
-                filterToggle("Reminders", icon: "bell", isActive: showReminderItems) {
-                    showReminderItems.toggle()
-                }
-                if !allCategories.isEmpty {
-                    Divider().frame(height: 20)
-                    ForEach(allCategories) { category in
-                        CategoryCapsule(category: category)
+                .padding(.leading)
+                .padding(.trailing, 4)
+            }
+
+            Divider().frame(height: 20).padding(.trailing, 8)
+
+            Menu {
+                Section("Theme") {
+                    ForEach(DFPTheme.allCases) { option in
+                        Button { theme = option } label: {
+                            Label(option.localizedName, systemImage: option.menuIconName)
+                        }
                     }
                 }
-                Button {
-                    isShowingCategoriesEdit = true
-                } label: {
-                    Image(systemName: "tag")
-                        .font(.caption.bold())
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                Section {
+                    Button { } label: {
+                        Label("Settings", systemImage: "gearshape")
+                    }
                 }
-                .buttonStyle(.glass)
-                .accessibilityLabel("Manage Categories")
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.caption.bold())
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
             }
-            .padding(.horizontal)
+            .buttonStyle(.glass)
+            .accessibilityLabel("More")
+            .padding(.trailing)
         }
     }
 
@@ -299,6 +346,7 @@ struct DayView: View {
                         .id(section)
                     }
 
+                    progressSummaryRow
                     missedSection(items: selectedDateItems, reminderItems: visibleReminders)
                     anyTimeSection(items: selectedDateItems)
                 }

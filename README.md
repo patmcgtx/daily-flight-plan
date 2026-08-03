@@ -2,13 +2,35 @@
 
 A daily planning and execution app for iOS, inspired by an airplane flight plan checklist. Today is your trip; this is your checklist.
 
+> "While we delay, life hurries past."
+> — Seneca
+
+See this app's plan [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
+
+
+## Goals
+
+Most people already know how to plan their day. The hard part is actually executing it — staying aware of what you committed to, not losing track of things as time passes, and finishing with a real sense of completion rather than just motion.
+
+Daily Flight Plan is about execution, not planning. It's a lightweight layer on top of your existing Calendar and Reminders — not a replacement — that gives your day clear structure and focuses your attention on what matters right now.
+
+**Design principles:**
+- **One day at a time.** The app lives in today. Past and future are reference, not focus.
+- **Present, not just planned.** The goal isn't just to have a list — it's to stay aware and present as the day unfolds.
+- **Fast and out of your way.** Checking off and adding items should take seconds, not decisions.
+- **Calm, not urgent.** Time-of-day sections create structure without adding pressure.
+- **Context on your terms.** Calendar events and Reminders appear inline for full context, but can be toggled off instantly when you need to narrow your focus to just your own plan.
+- **Finishing feels good.** Progress is always visible; completing your plan feels like landing the plane.
+
+**Version 1.0 target:** A personal daily-use tool that integrates cleanly with Calendar and Reminders, works great on iPhone, and is good enough to ship. iPad, Watch, iCloud sync, and Siri come later.
+
+## The original idea
+
 I took an app idea in my mind, sketched it out in Figma, broke that into a detailed requirements spec, and fed that to a Claude agent to make an architecture and a plan.
 
 - [`docs/project-spec-prompt.md`](DailyFlightPlan/docs/project-spec-prompt.md) — original feature and UX specs
-- [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) — phased build plan and progress
 - [`docs/architecture.md`](DailyFlightPlan/docs/architecture.md) — folder structure, data models, services, UI direction
-
-## The original idea
+- [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) — phased build plan and progress
 
 ![Initial "back of a napkin" Figma sketch](DailyFlightPlan/docs/daily-flight-plan-figma.png)
 
@@ -74,12 +96,14 @@ Phases 1–9 are complete. Remaining MVP phases:
 |-------|-------------|
 | 10 | UI refinements (drag to reorder, calendar/reminders toggles, visual polish) |
 | 11 | Timeline view |
-| 12 | Search |
-| 13 | Settings (calendar/reminders selection, section boundaries) |
-| 14 | Local notifications |
-| 15 | Usability testing |
-| 16 | Fit and finish + Aviation UI spike |
-| 17 | Tech debt (unit tests, UI tests, architecture review) |
+| 12 | Nav & chrome rework (swipe days, bottom glass bar) |
+| 13 | Quick entry (natural language → PlanItem via Foundation Models) |
+| 14 | Search |
+| 15 | Settings (calendar/reminders selection, section boundaries) |
+| 16 | Local notifications |
+| 17 | Usability testing |
+| 18 | Fit and finish + Aviation UI spike |
+| 19 | Tech debt (unit tests, UI tests, architecture review) |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
 
