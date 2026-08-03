@@ -111,7 +111,6 @@ struct DayView: View {
         }
         .sheet(isPresented: $isShowingTimeline) {
             TimelineView { date in
-                isShowingTimeline = false
                 withAnimation(.easeInOut(duration: 0.3)) {
                     viewModel.navigate(to: date)
                 }

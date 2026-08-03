@@ -62,7 +62,8 @@ final class DayViewModel {
 
     func navigate(to date: Date) {
         let target = Calendar.current.startOfDay(for: date)
-        forwardNavigation = target >= selectedDate
+        guard target != selectedDate else { return }
+        forwardNavigation = target > selectedDate
         selectedDate = target
     }
 
