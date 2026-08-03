@@ -74,13 +74,14 @@ Phases 1–9 are complete. Remaining MVP phases:
 |-------|-------------|
 | 10 | UI refinements (drag to reorder, calendar/reminders toggles, visual polish) |
 | 11 | Timeline view |
-| 12 | Search |
-| 13 | Quick entry (natural language → PlanItem via Foundation Models) |
-| 14 | Settings (calendar/reminders selection, section boundaries) |
-| 15 | Local notifications |
-| 16 | Usability testing |
-| 17 | Fit and finish + Aviation UI spike |
-| 18 | Tech debt (unit tests, UI tests, architecture review) |
+| 12 | Nav & chrome rework (swipe days, bottom glass bar) |
+| 13 | Search |
+| 14 | Quick entry (natural language → PlanItem via Foundation Models) |
+| 15 | Settings (calendar/reminders selection, section boundaries) |
+| 16 | Local notifications |
+| 17 | Usability testing |
+| 18 | Fit and finish + Aviation UI spike |
+| 19 | Tech debt (unit tests, UI tests, architecture review) |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
 

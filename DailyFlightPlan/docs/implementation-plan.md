@@ -112,14 +112,22 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - `navigate(to:)` method added to `DayViewModel`
 - Read-only; add/edit deferred to a later phase
 
-### Phase 12 — Search
+### Phase 12 — Nav & Chrome Rework (Liquid Glass)
+- Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)
+- Retire swipe-left-to-cancel and swipe-right-to-defer on items; long-press context menu (already implemented) covers the same actions
+- **Top header**: date only — large weekday + month/day centered; "Go to today" scope button inline when off today; tap date → date picker sheet
+- **Bottom floating glass bar** (`safeAreaInset(edge: .bottom)`): `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
+- Filter pills row stays sticky in the header
+- Progress summary row stays at top of scroll content
+
+### Phase 13 — Search
 - Search bar (`.searchable`) in the day view header or as a dedicated screen
 - Search across all items (title, notes) regardless of date
 - Results grouped by date, showing section and status
 - Tapping a result navigates to that day and scrolls to the item
 - Filter results by status (pending / completed / canceled)
 
-### Phase 13 — Quick Entry (Natural Language)
+### Phase 14 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up
 - User types natural language: "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
 - On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework, on-device) using a `@Generable` struct for structured output:
@@ -137,28 +145,28 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 14 — Settings
+### Phase 15 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all)
 - **Reminders settings**: similar toggle + list picker for reminder lists
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
 - Any other preferences surfaced here as phases are completed
 
-### Phase 15 — Local Notifications
+### Phase 16 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 14
+- Notification times respect custom day section boundaries from Phase 15
 
-### Phase 16 — Usability Testing
+### Phase 17 — Usability Testing
 - Use the app daily for a real period of time — real tasks, real calendar events, real reminders
 - Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
 - Gather a prioritized list of changes needed before shipping version 1.0
 - Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer.
   Drqagging to/from sections would remain like it its.
 
-### Phase 17 — Fit and Finish
-- Address findings from Phase 16 usability testing
+### Phase 18 — Fit and Finish
+- Address findings from Phase 17 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
@@ -167,7 +175,7 @@ See `architecture.md` for folder structure, data models, and UI direction.
 - Add an app icon
 - Anything that must be right before calling this version 1.0
 
-### Phase 18 — Tech debt
+### Phase 19 — Tech debt
 - Architecture review & refactor
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
