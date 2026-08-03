@@ -2,6 +2,8 @@
 
 See `architecture.md` for folder structure, data models, and UI direction.
 
+See `ux-improvements.md` for a running list of UX/workflow improvement ideas with notes, to be triaged into phases below.
+
 ## Version 1.0
 
 ### ✅ Phase 1 — Skeleton + Models
