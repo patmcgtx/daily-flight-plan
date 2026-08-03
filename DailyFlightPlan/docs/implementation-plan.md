@@ -113,7 +113,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Timeline button (`calendar.day.timeline.left`) added to DayView header (left side, next to `[<]`)
 - `navigate(to:)` method added to `DayViewModel`
 - Read-only; add/edit deferred to a later phase
-- **Deferred**: lazy-load past days starting from today, paging backward on scroll — Phase 12 follow-up
+- **Deferred**: lazy-load past days — moved to Phase 12
 
 ### Phase 12 — Usability Part 1
 Items identified during early real-world use.
@@ -129,6 +129,7 @@ Items identified during early real-world use.
 - **Always hide empty sections**: if a section (including Missed, Open, Past) has no visible items after filtering, hide it entirely — don't show an empty card
 - **Auto-collapse inactive sections**: on today, sections whose time window hasn't started yet or has already ended are collapsed by default; the current section is expanded
 - **AI summary on collapsed sections**: when a section is collapsed, use **Apple Foundation Models** (on-device) to generate a one-line natural-language summary of its contents (e.g. "3 tasks · standup at 10am · 1 calendar event") shown in the section header; generated lazily on first collapse and cached; gracefully falls back to a plain item count if Foundation Models is unavailable
+- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
 
 ### Phase 13 — Nav & Chrome Rework (Liquid Glass)
 - Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)

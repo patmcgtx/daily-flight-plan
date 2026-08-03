@@ -22,9 +22,6 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.showCompleted.rawValue)
     private var showCompleted: Bool = false
 
-    @AppStorage(AppStorageKeys.showRecurring.rawValue)
-    private var showRecurring: Bool = true
-
     @AppStorage(AppStorageKeys.showCalendarEvents.rawValue)
     private var showCalendarEvents: Bool = true
 
@@ -72,7 +69,6 @@ struct DayView: View {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && (showCompleted || ($0.status != .completed && $0.status != .canceled))
             && (!showFlaggedOnly || $0.isFlagged)
-            && (showRecurring || !$0.isRecurring)
         }
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
@@ -235,9 +231,6 @@ struct DayView: View {
                     filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
                         showCompleted.toggle()
                     }
-                    filterToggle("Recurring", icon: "infinity", isActive: showRecurring) {
-                        showRecurring.toggle()
-                    }
                     filterToggle("Calendar", icon: "calendar", isActive: showCalendarEvents) {
                         showCalendarEvents.toggle()
                     }
@@ -317,38 +310,47 @@ struct DayView: View {
     private var dayScrollView: some View {
         let selectedDateItems = itemsForSelectedDate
         let projected = viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: allItems)
-        let visibleEvents = showCalendarEvents ? calendarEvents : []
-        let visibleReminders = showReminderItems ? reminderItems : []
+        let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
+        let visibleEvents = (showCalendarEvents && !categoriesActive) ? calendarEvents : []
+        let rawReminders = (showReminderItems && !categoriesActive) ? reminderItems : []
+        let visibleReminders = showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    pastSectionCard(calendarEvents: visibleEvents)
+                    pastSectionCard(calendarEvents: showCompleted ? visibleEvents : [])
 
                     ForEach(viewModel.activeSections) { section in
-                        DaySectionView(
-                            section: section,
-                            sectionPills: viewModel.sectionPills(section, from: selectedDateItems),
-                            deadlineRows: viewModel.deadlineRows(section, from: selectedDateItems),
-                            calendarEvents: viewModel.calendarEventsForSection(section, from: visibleEvents),
-                            reminderItems: viewModel.reminderItemsForSection(section, from: visibleReminders),
-                            projectedPills: projected.filter { $0.daySection == section },
-                            showNowBar: viewModel.currentSection == section,
-                            isCollapsed: viewModel.isCollapsed(section),
-                            onToggle: {
-                                withAnimation(.spring(duration: 0.25)) {
-                                    viewModel.toggleCollapsed(section)
+                        let pills = viewModel.sectionPills(section, from: selectedDateItems)
+                        let deadlines = viewModel.deadlineRows(section, from: selectedDateItems)
+                        let events = viewModel.calendarEventsForSection(section, from: visibleEvents)
+                        let reminders = viewModel.reminderItemsForSection(section, from: visibleReminders)
+                        let sectionProjected = projected.filter { $0.daySection == section }
+                        if !pills.isEmpty || !deadlines.isEmpty || !events.isEmpty || !reminders.isEmpty || !sectionProjected.isEmpty || viewModel.currentSection == section {
+                            DaySectionView(
+                                section: section,
+                                sectionPills: pills,
+                                deadlineRows: deadlines,
+                                calendarEvents: events,
+                                reminderItems: reminders,
+                                projectedPills: sectionProjected,
+                                showNowBar: viewModel.currentSection == section,
+                                isCollapsed: viewModel.isCollapsed(section),
+                                onToggle: {
+                                    withAnimation(.spring(duration: 0.25)) {
+                                        viewModel.toggleCollapsed(section)
+                                    }
+                                },
+                                onDropItem: { uuidString in
+                                    handlePillDrop(uuidString: uuidString, targetSection: section)
                                 }
-                            },
-                            onDropItem: { uuidString in
-                                handlePillDrop(uuidString: uuidString, targetSection: section)
-                            }
-                        )
-                        .id(section)
+                            )
+                            .id(section)
+                        }
                     }
 
                     progressSummaryRow
                     missedSection(items: selectedDateItems, reminderItems: visibleReminders)
-                    anyTimeSection(items: selectedDateItems)
+                    anyTimeSection(items: selectedDateItems, visibleReminders: visibleReminders)
                 }
                 .padding(.horizontal)
                 .padding(.top, 12)
@@ -366,11 +368,12 @@ struct DayView: View {
 
     // MARK: Any time section
 
-    private func anyTimeSection(items: [PlanItem]) -> some View {
+    @ViewBuilder
+    private func anyTimeSection(items: [PlanItem], visibleReminders: [ReminderItem]) -> some View {
         let anyTimeItems = viewModel.anyTimeItems(from: items)
-        let anyTimeReminders = viewModel.anyTimeReminderItems(from: showReminderItems ? reminderItems : [])
-        return VStack(alignment: .leading, spacing: 10) {
-            if !anyTimeItems.isEmpty || !anyTimeReminders.isEmpty {
+        let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
+        if !anyTimeItems.isEmpty || !anyTimeReminders.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
                 Text("Open")
                     .font(.subheadline.bold())
                     .foregroundStyle(.secondary)
@@ -391,35 +394,25 @@ struct DayView: View {
                         }
                     }
                 }
-            } else {
-                // Empty placeholder so the drop target stays hittable even when empty
-                Text("Open")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(isAnyTimeDropTargeted ? Color.accentColor : Color.secondary)
-                    .padding(.leading, 4)
-                Text("Drop here to make it open / unscheduled")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                    .padding(.leading, 4)
             }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
-        .padding(4)
-        .overlay {
-            if isAnyTimeDropTargeted {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.accentColor, lineWidth: 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .padding(4)
+            .overlay {
+                if isAnyTimeDropTargeted {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.accentColor, lineWidth: 2)
+                }
             }
+            .dropDestination(for: String.self) { dropItems, _ in
+                guard let uuidString = dropItems.first else { return false }
+                handlePillDrop(uuidString: uuidString, targetSection: nil)
+                return true
+            } isTargeted: { targeted in
+                isAnyTimeDropTargeted = targeted
+            }
+            .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
         }
-        .dropDestination(for: String.self) { dropItems, _ in
-            guard let uuidString = dropItems.first else { return false }
-            handlePillDrop(uuidString: uuidString, targetSection: nil)
-            return true
-        } isTargeted: { targeted in
-            isAnyTimeDropTargeted = targeted
-        }
-        .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
     }
 
     // MARK: Past section (calendar events only — reminders go to Missed)
