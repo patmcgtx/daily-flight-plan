@@ -115,25 +115,18 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Read-only; add/edit deferred to a later phase
 - **Deferred**: lazy-load past days — moved to Phase 12
 
-### Phase 12 — Usability Part 1
+### ✅ Phase 12 — Usability Part 1
 Items identified during early real-world use.
 
-**Batch 1 — Filtering & visibility (complete):**
-- ✅ **Remove the Recurring filter toggle**: always show recurring items; the toggle added confusion and the grouped habit row makes them easy to distinguish visually
-- ✅ **Always hide empty sections**: if a section (including Missed, Open, Past) has no visible items after filtering, hide it entirely — don't show an empty card
-  - **Revisit**: the "hide when empty" rule should only apply to *past* sections; current and future today-sections should remain visible even when empty so they stay usable as drag targets. Open already always renders for this reason.
-- ✅ **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
-- ✅ **Hide past Calendar events**: treat past-section calendar events as done; hide them by default, show only if Done filter is active
-- ✅ **Category filter excludes Calendar & Reminders**: when any category is selected, Calendar events and Reminder items are hidden entirely — they are not categorized and showing them is misleading (bug)
-
-**Remaining:**
-- **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there's no ambiguity about what each section covers
-- **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly; remove the separate info (ⓘ) button
-- **Auto-collapse inactive sections**: on today, sections whose time window hasn't started yet or has already ended are collapsed by default; the current section is expanded
-- **Recurring items grouped on their own row**: instead of an ∞ icon on each pill, render recurring items in a dedicated "Habits" sub-row within their section with a single ∞ icon at the row leading edge
-- **Completed items grouped on their own row**: render completed items in a "Done" sub-row with a single ✓ icon at the leading edge, rather than a checkmark on every pill
-- **AI summary on collapsed sections**: when a section is collapsed, use **Apple Foundation Models** (on-device) to generate a one-line natural-language summary of its contents (e.g. "3 tasks · standup at 10am · 1 calendar event") shown in the section header; generated lazily on first collapse and cached; gracefully falls back to a plain item count if Foundation Models is unavailable
-- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
+- **Remove the Recurring filter toggle**: always show recurring items; grouped habit row makes them easy to distinguish visually
+- **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
+- **Hide past Calendar events**: treat past-section calendar events as done; hide by default, show only if Done filter is active
+- **Category filter excludes Calendar & Reminders**: when any category is selected, events and reminders are hidden entirely — they are not categorized
+- **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there is no ambiguity about what each section covers
+- **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly
+- **Always show all five sections**: removed section hiding — past sections stay visible for day-at-a-glance reference; only deadline-missed items surface in the "Missed" area
+- **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one start collapsed; collapsed headers display a one-line AI summary generated via Foundation Models (`LanguageModelSession`); live clock tick auto-expands the incoming section; falls back to item count badge when Foundation Models is unavailable
+- **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞ badge suppressed in the Habits row; checkbox shown only on pending items
 
 ### Phase 13 — Nav & Chrome Rework (Liquid Glass)
 - Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)
@@ -142,6 +135,7 @@ Items identified during early real-world use.
 - **Bottom floating glass bar** (`safeAreaInset(edge: .bottom)`): `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
 - Filter pills row stays sticky in the header
 - **Progress indicator as floating button**: replace the inline progress summary row with a small floating donut button (bottom of screen, above the glass bar); tap it for a detail popover (X of Y complete, etc.)
+- **Reserve space for Phase 14 (Quick Entry) and Phase 15 (Search)**: during this chrome rework, decide where the quick-entry bar and search live in the layout, and stub in placeholder UI elements so the nav structure doesn't need to be revisited again when those phases land. Quick entry likely replaces or augments the `[+]` button in the bottom bar; search likely lives in the top header or as a gesture.
 
 ### Phase 14 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up
@@ -173,7 +167,7 @@ Items identified during early real-world use.
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
 - **Permission prompt on first filter tap**: when the user taps the Calendar or Reminders filter pill for the first time, prompt for permission then and there (rather than waiting for the day to load); on grant, show the calendar/list selector immediately
-- **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours
+- **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours; also update `DaySection.timeRangeLabel` to compute dynamically from stored boundaries instead of hardcoded strings
 - Any other preferences surfaced here as phases are completed
 
 ### Phase 17 — Local Notifications
@@ -186,8 +180,9 @@ Items identified during early real-world use.
 - Use the app daily for a real period of time — real tasks, real calendar events, real reminders
 - Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
 - Gather a prioritized list of changes needed before shipping version 1.0
-- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer.
-  Drqagging to/from sections would remain like it its.
+- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
+- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
+- **Summary vs. full view**: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
 
 ### Phase 19 — Fit and Finish
 - Address findings from Phase 18 usability testing
@@ -202,6 +197,8 @@ Items identified during early real-world use.
 
 ### Phase 20 — Tech debt
 - Architecture review & refactor
+- **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
+- **Bug: completed/canceled items still accept completion/cancellation gestures**: pills in the done or cancelled rows still have the swipe-left-to-cancel and swipe-right-to-defer gesture, and the context menu "Cancel Item" action. Fix: gate the `DragGesture` and context menu destructive action in `ItemPillView` on `item.status == .pending`.
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 

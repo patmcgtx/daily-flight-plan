@@ -47,6 +47,19 @@ enum DaySection: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Human-readable hour range shown in section headers, e.g. "11 AM – 1 PM"
+    /// Morning is special-cased since its startHour (midnight) is a catch-all, not a meaningful boundary.
+    /// Phase 16: replace with dynamic computation from @AppStorage-backed boundaries.
+    var timeRangeLabel: String {
+        switch self {
+        case .morning:   return "until 11 AM"
+        case .midday:    return "11 AM – 1 PM"
+        case .afternoon: return "1 – 5 PM"
+        case .evening:   return "5 – 8 PM"
+        case .night:     return "8 PM – midnight"
+        }
+    }
+
     /// Returns the section that contains the given date's hour, or nil if none match
     static func containing(_ date: Date) -> DaySection? {
         let hour = Calendar.current.component(.hour, from: date)

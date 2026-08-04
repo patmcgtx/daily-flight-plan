@@ -88,6 +88,8 @@ struct DayView: View {
             await watchForMidnight()
         }
         .task(id: viewModel.selectedDate) {
+            viewModel.clearSummaries()
+            viewModel.applyAutoCollapse()
             await fetchCalendarEvents()
             await fetchReminderItems()
         }
@@ -317,39 +319,54 @@ struct DayView: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    pastSectionCard(calendarEvents: showCompleted ? visibleEvents : [])
-
                     ForEach(viewModel.activeSections) { section in
                         let pills = viewModel.sectionPills(section, from: selectedDateItems)
                         let deadlines = viewModel.deadlineRows(section, from: selectedDateItems)
                         let events = viewModel.calendarEventsForSection(section, from: visibleEvents)
                         let reminders = viewModel.reminderItemsForSection(section, from: visibleReminders)
                         let sectionProjected = projected.filter { $0.daySection == section }
-                        if !pills.isEmpty || !deadlines.isEmpty || !events.isEmpty || !reminders.isEmpty || !sectionProjected.isEmpty || viewModel.currentSection == section {
-                            DaySectionView(
-                                section: section,
-                                sectionPills: pills,
-                                deadlineRows: deadlines,
-                                calendarEvents: events,
-                                reminderItems: reminders,
-                                projectedPills: sectionProjected,
-                                showNowBar: viewModel.currentSection == section,
-                                isCollapsed: viewModel.isCollapsed(section),
-                                onToggle: {
-                                    withAnimation(.spring(duration: 0.25)) {
-                                        viewModel.toggleCollapsed(section)
-                                    }
-                                },
-                                onDropItem: { uuidString in
-                                    handlePillDrop(uuidString: uuidString, targetSection: section)
+                        DaySectionView(
+                            section: section,
+                            sectionPills: pills,
+                            deadlineRows: deadlines,
+                            calendarEvents: events,
+                            reminderItems: reminders,
+                            projectedPills: sectionProjected,
+                            summary: viewModel.sectionSummaries[section],
+                            showNowBar: viewModel.currentSection == section,
+                            isCollapsed: viewModel.isCollapsed(section),
+                            onToggle: {
+                                withAnimation(.spring(duration: 0.25)) {
+                                    viewModel.toggleCollapsed(section)
                                 }
-                            )
-                            .id(section)
+                                if viewModel.isCollapsed(section) {
+                                    viewModel.generateSummaryIfNeeded(
+                                        for: section,
+                                        items: pills + deadlines,
+                                        events: events,
+                                        reminders: reminders
+                                    )
+                                }
+                            },
+                            onDropItem: { uuidString in
+                                handlePillDrop(uuidString: uuidString, targetSection: section)
+                            }
+                        )
+                        .id(section)
+                        .onAppear {
+                            if viewModel.isCollapsed(section) {
+                                viewModel.generateSummaryIfNeeded(
+                                    for: section,
+                                    items: pills + deadlines,
+                                    events: events,
+                                    reminders: reminders
+                                )
+                            }
                         }
                     }
 
                     progressSummaryRow
-                    missedSection(items: selectedDateItems, reminderItems: visibleReminders)
+                    missedSection(items: selectedDateItems)
                     anyTimeSection(items: selectedDateItems, visibleReminders: visibleReminders)
                 }
                 .padding(.horizontal)
@@ -439,27 +456,17 @@ struct DayView: View {
     // MARK: Missed section (deadline plan items + past timed reminders)
 
     @ViewBuilder
-    private func missedSection(items: [PlanItem], reminderItems: [ReminderItem]) -> some View {
+    private func missedSection(items: [PlanItem]) -> some View {
         let missedItems = viewModel.missedDeadlineItems(from: items)
-        let pastReminders = viewModel.pastReminderItems(from: reminderItems)
-        if !missedItems.isEmpty || !pastReminders.isEmpty {
+        if !missedItems.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Missed")
                     .font(.subheadline.bold())
                     .foregroundStyle(.secondary)
                     .padding(.leading, 4)
-                if !missedItems.isEmpty {
-                    VStack(spacing: 0) {
-                        ForEach(missedItems) { item in
-                            DeadlineItemRow(item: item)
-                        }
-                    }
-                }
-                if !pastReminders.isEmpty {
-                    VStack(spacing: 0) {
-                        ForEach(pastReminders) { item in
-                            ReminderItemRow(item: item)
-                        }
+                VStack(spacing: 0) {
+                    ForEach(missedItems) { item in
+                        DeadlineItemRow(item: item)
                     }
                 }
             }

@@ -14,6 +14,7 @@ struct DaySectionView: View {
     let calendarEvents: [CalendarEvent]
     let reminderItems: [ReminderItem]
     var projectedPills: [PlanItem] = []
+    var summary: String? = nil
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
@@ -25,6 +26,26 @@ struct DaySectionView: View {
     private var totalCount: Int {
         // Projected pills are not counted — they're not committed items
         sectionPills.count + deadlineRows.count + calendarEvents.count + reminderItems.count
+    }
+
+    private var regularPills: [PlanItem] {
+        sectionPills.filter { $0.status == .pending && !$0.isRecurring }
+    }
+
+    private var habitPills: [PlanItem] {
+        sectionPills.filter { $0.status == .pending && $0.isRecurring }
+    }
+
+    private var donePills: [PlanItem] {
+        sectionPills.filter { $0.status == .completed }
+    }
+
+    private var canceledPills: [PlanItem] {
+        sectionPills.filter { $0.status == .canceled }
+    }
+
+    private var hasAnyPills: Bool {
+        !regularPills.isEmpty || !habitPills.isEmpty || !projectedPills.isEmpty || !donePills.isEmpty || !canceledPills.isEmpty
     }
 
     var body: some View {
@@ -56,24 +77,53 @@ struct DaySectionView: View {
         .animation(.easeInOut(duration: 0.15), value: isDropTargeted)
     }
 
+    // MARK: Helpers
+
+    private func labeledPillRow(icon: String, pills: [PlanItem], isFirst: Bool) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(width: 14)
+                .padding(.top, 7)
+            HFlow(itemSpacing: 8, rowSpacing: 8) {
+                ForEach(pills) { item in
+                    ItemPillView(item: item)
+                        .draggable(item.uuid.uuidString)
+                }
+            }
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 14)
+        .padding(.top, isFirst ? 10 : 6)
+    }
+
     // MARK: Header
 
     private var sectionHeader: some View {
         Button(action: onToggle) {
-            HStack {
-                Text(section.displayName)
-                    .font(.headline)
-
-                if isCollapsed && totalCount > 0 {
-                    Text("\(totalCount)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(.secondary.opacity(0.15), in: Capsule())
+            HStack(alignment: .top, spacing: 8) {
+                if isCollapsed, let summary {
+                    Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text(summary).font(.caption).foregroundStyle(.secondary))")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack(spacing: 6) {
+                        Text(section.displayName)
+                            .font(.headline)
+                        Text(section.timeRangeLabel)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        if isCollapsed && totalCount > 0 {
+                            Text("\(totalCount)")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.secondary.opacity(0.15), in: Capsule())
+                        }
+                        Spacer()
+                    }
                 }
-
-                Spacer()
 
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .font(.caption.bold())
@@ -94,20 +144,47 @@ struct DaySectionView: View {
                     .padding(.vertical, 8)
             }
 
-            if !sectionPills.isEmpty || !projectedPills.isEmpty {
+            if !regularPills.isEmpty {
                 HFlow(itemSpacing: 8, rowSpacing: 8) {
-                    ForEach(sectionPills) { item in
+                    ForEach(regularPills) { item in
                         ItemPillView(item: item)
                             .draggable(item.uuid.uuidString)
-                    }
-                    ForEach(projectedPills) { item in
-                        ItemPillView(item: item)
-                            .opacity(0.35)
-                            .allowsHitTesting(false)
                     }
                 }
                 .padding(.horizontal, 14)
                 .padding(.top, 10)
+            }
+
+            if !donePills.isEmpty {
+                labeledPillRow(icon: "checkmark", pills: donePills, isFirst: regularPills.isEmpty)
+            }
+
+            if !canceledPills.isEmpty {
+                labeledPillRow(icon: "xmark", pills: canceledPills, isFirst: regularPills.isEmpty && donePills.isEmpty)
+            }
+
+            if !habitPills.isEmpty || !projectedPills.isEmpty {
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "infinity")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 14)
+                        .padding(.top, 7)
+                    HFlow(itemSpacing: 8, rowSpacing: 8) {
+                        ForEach(habitPills) { item in
+                            ItemPillView(item: item, showRecurringBadge: false)
+                                .draggable(item.uuid.uuidString)
+                        }
+                        ForEach(projectedPills) { item in
+                            ItemPillView(item: item, showRecurringBadge: false)
+                                .opacity(0.35)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                }
+                .padding(.leading, 14)
+                .padding(.trailing, 14)
+                .padding(.top, (regularPills.isEmpty && donePills.isEmpty && canceledPills.isEmpty) ? 10 : 6)
             }
 
             if !deadlineRows.isEmpty {
@@ -117,7 +194,7 @@ struct DaySectionView: View {
                             .draggable(item.uuid.uuidString)
                     }
                 }
-                .padding(.top, sectionPills.isEmpty ? 4 : 6)
+                .padding(.top, hasAnyPills ? 6 : 4)
             }
 
             if !calendarEvents.isEmpty {
@@ -138,7 +215,7 @@ struct DaySectionView: View {
                 .padding(.top, (sectionPills.isEmpty && deadlineRows.isEmpty && calendarEvents.isEmpty) ? 4 : 0)
             }
 
-            if totalCount == 0 && !showNowBar {
+            if !hasAnyPills && deadlineRows.isEmpty && calendarEvents.isEmpty && reminderItems.isEmpty && !showNowBar {
                 Text("Nothing scheduled")
                     .font(.caption)
                     .foregroundStyle(.tertiary)

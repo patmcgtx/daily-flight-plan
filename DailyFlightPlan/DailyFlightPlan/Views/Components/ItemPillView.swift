@@ -9,6 +9,7 @@ struct ItemPillView: View {
 
     let item: PlanItem
     var isMissed: Bool = false
+    var showRecurringBadge: Bool = true
 
     @Environment(\.editItem) private var editItem
 
@@ -55,23 +56,24 @@ struct ItemPillView: View {
 
     private var pillContent: some View {
         HStack(spacing: 5) {
-            Button {
-                guard item.status != .canceled else { return }
-                withAnimation(.spring(duration: 0.2)) {
-                    item.status = item.status == .completed ? .pending : .completed
+            if item.status == .pending {
+                Button {
+                    withAnimation(.spring(duration: 0.2)) {
+                        item.status = .completed
+                    }
+                } label: {
+                    Image(systemName: "circle")
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
                 }
-            } label: {
-                Image(systemName: completionIcon)
-                    .foregroundStyle(completionColor)
-                    .font(.subheadline)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             Text(item.title)
                 .font(.subheadline)
                 .lineLimit(1)
-                .foregroundStyle(.primary)
-                .strikethrough(item.status == .canceled, color: .secondary)
+                .foregroundStyle(item.status == .pending ? .primary : .secondary)
+                .strikethrough(item.status != .pending, color: .secondary)
 
             if isMissed, let deadline = item.deadline {
                 Text(deadline, format: .dateTime.hour().minute())
@@ -86,7 +88,7 @@ struct ItemPillView: View {
                     .foregroundStyle(.red)
             }
 
-            if item.isRecurring {
+            if item.isRecurring && showRecurringBadge {
                 Image(systemName: "infinity")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -96,16 +98,13 @@ struct ItemPillView: View {
                     .font(.caption2)
                     .foregroundStyle(.red)
             }
-
-            Image(systemName: "info.circle")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background {
             Capsule().fill(.regularMaterial)
         }
+        .onTapGesture { editItem?(item) }
         .contextMenu {
             Button(role: .destructive) {
                 withAnimation { item.status = .canceled }
@@ -121,9 +120,6 @@ struct ItemPillView: View {
                 }
             } label: {
                 Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
-            }
-            Button { editItem?(item) } label: {
-                Label("Edit…", systemImage: "pencil")
             }
         }
     }
@@ -154,21 +150,6 @@ struct ItemPillView: View {
         }
     }
 
-    private var completionIcon: String {
-        switch item.status {
-        case .completed: "checkmark.circle.fill"
-        case .canceled:  "xmark.circle.fill"
-        case .pending:   "circle"
-        }
-    }
-
-    private var completionColor: Color {
-        switch item.status {
-        case .completed: .green
-        case .canceled:  .secondary
-        case .pending:   .secondary
-        }
-    }
 }
 
 #Preview {

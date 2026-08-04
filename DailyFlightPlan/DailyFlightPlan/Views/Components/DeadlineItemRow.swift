@@ -93,13 +93,10 @@ struct DeadlineItemRow: View {
                     .font(.caption2)
                     .foregroundStyle(.red)
             }
-
-            Image(systemName: "info.circle")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+        .onTapGesture { editItem?(item) }
         .contextMenu {
             Button(role: .destructive) {
                 withAnimation { item.status = .canceled }
@@ -115,9 +112,6 @@ struct DeadlineItemRow: View {
                 }
             } label: {
                 Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
-            }
-            Button { editItem?(item) } label: {
-                Label("Edit…", systemImage: "pencil")
             }
         }
     }
