@@ -56,6 +56,8 @@ struct DayView: View {
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
     @State private var isAnyTimeDropTargeted = false
+    @State private var isCancelZoneTargeted = false
+    @State private var isDeferZoneTargeted = false
 
     private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
@@ -373,7 +375,7 @@ struct DayView: View {
                 .padding(.top, 12)
             }
             .safeAreaInset(edge: .bottom) {
-                addButton
+                bottomBar
             }
             .onAppear {
                 if let current = viewModel.currentSection {
@@ -554,7 +556,19 @@ struct DayView: View {
         reminderItems = await service.reminders(for: viewModel.selectedDate, listIDs: ids)
     }
 
-    // MARK: Add button
+    // MARK: Bottom bar — Cancel zone | Add button | Defer zone
+
+    private var bottomBar: some View {
+        HStack(alignment: .bottom, spacing: 0) {
+            cancelZone
+            Spacer()
+            addButton
+            Spacer()
+            deferZone
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 12)
+    }
 
     private var addButton: some View {
         Button { isAddingItem = true } label: {
@@ -564,7 +578,53 @@ struct DayView: View {
                 .padding(.vertical, 13)
         }
         .buttonStyle(.glass)
-        .padding(.bottom, 12)
+    }
+
+    private var cancelZone: some View {
+        Image(systemName: "xmark.circle.fill")
+            .font(.title2)
+            .foregroundStyle(isCancelZoneTargeted ? .white : .secondary)
+            .frame(width: 48, height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isCancelZoneTargeted ? Color.red : Color.secondary.opacity(0.12))
+            )
+            .scaleEffect(isCancelZoneTargeted ? 1.25 : 1.0)
+            .animation(.spring(duration: 0.25), value: isCancelZoneTargeted)
+            .dropDestination(for: String.self) { items, _ in
+                guard let uuidString = items.first,
+                      let uuid = UUID(uuidString: uuidString),
+                      let item = allItems.first(where: { $0.uuid == uuid }) else { return false }
+                withAnimation { item.status = .canceled }
+                return true
+            } isTargeted: { isCancelZoneTargeted = $0 }
+            .accessibilityLabel("Cancel Item")
+    }
+
+    private var deferZone: some View {
+        Image(systemName: "arrow.right.circle.fill")
+            .font(.title2)
+            .foregroundStyle(isDeferZoneTargeted ? .white : .secondary)
+            .frame(width: 48, height: 48)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isDeferZoneTargeted ? Color.orange : Color.secondary.opacity(0.12))
+            )
+            .scaleEffect(isDeferZoneTargeted ? 1.25 : 1.0)
+            .animation(.spring(duration: 0.25), value: isDeferZoneTargeted)
+            .dropDestination(for: String.self) { items, _ in
+                guard let uuidString = items.first,
+                      let uuid = UUID(uuidString: uuidString),
+                      let item = allItems.first(where: { $0.uuid == uuid }) else { return false }
+                let cal = Calendar.current
+                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
+                item.date = tomorrow
+                if let deadline = item.deadline {
+                    item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
+                }
+                return true
+            } isTargeted: { isDeferZoneTargeted = $0 }
+            .accessibilityLabel("Defer to Tomorrow")
     }
 }
 
