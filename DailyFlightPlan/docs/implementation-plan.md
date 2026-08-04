@@ -203,6 +203,7 @@ Items identified during early real-world use.
 ### Phase 20 — Tech debt
 - Architecture review & refactor
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
+- **Bug: completed/canceled items still accept completion/cancellation gestures**: pills in the done or cancelled rows still have the swipe-left-to-cancel and swipe-right-to-defer gesture, and the context menu "Cancel Item" action. Fix: gate the `DragGesture` and context menu destructive action in `ItemPillView` on `item.status == .pending`.
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
