@@ -36,7 +36,7 @@ I took an app idea in my mind, sketched it out in Figma, broke that into a detai
 
 ## Concept
 
-Combines one-off and recurring tasks, organized into time-of-day sections (Morning, Midday, Afternoon, Evening, Night). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Open" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. All five sections are always visible — past sections stay on screen as a day-at-a-glance reference. Inactive sections auto-collapse with a one-line AI summary; items past a specific deadline surface in a "Missed" area. Navigate to a future date to see a ghosted preview of your expected recurring habits.
+Combines one-off and recurring tasks, organized into six time-of-day sections (First Thing, Morning, Midday, Afternoon, Evening, Bedtime). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Open" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. All six sections are always visible — past sections stay on screen as a day-at-a-glance reference. Inactive sections auto-collapse with a one-line AI summary; items past a specific deadline surface in a "Missed" area. Navigate to a future date to see a ghosted preview of your expected recurring habits.
 
 ## Tech stack
 
@@ -49,7 +49,7 @@ Combines one-off and recurring tasks, organized into time-of-day sections (Morni
 
 ## Features (current)
 
-- Day view with five collapsible time-of-day sections — all always visible, including past sections for day-at-a-glance reference
+- Day view with six collapsible time-of-day sections — all always visible, including past sections for day-at-a-glance reference
 - **Auto-collapse + AI summary**: inactive sections collapse automatically; collapsed headers show a one-line on-device AI summary (Foundation Models)
 - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring); completed and cancelled items show with strikethrough
 - Navigate between days with a directional slide animation

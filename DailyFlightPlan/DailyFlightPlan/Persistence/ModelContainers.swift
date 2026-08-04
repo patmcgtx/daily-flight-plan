@@ -61,10 +61,10 @@ extension ModelContainer {
             PlanItem(title: "Walk", date: today, daySection: .evening,
                      isRecurring: true, recurringWeekdays: everyday),
 
-            // Night habits
-            PlanItem(title: "Read", date: today, daySection: .night,
+            // Bedtime habits
+            PlanItem(title: "Read", date: today, daySection: .bedtime,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Plan tomorrow", date: today, daySection: .night,
+            PlanItem(title: "Plan tomorrow", date: today, daySection: .bedtime,
                      isRecurring: true, recurringWeekdays: weekdays),
 
             // Untimed one-offs
@@ -113,9 +113,9 @@ extension ModelContainer {
                      isRecurring: true, recurringWeekdays: mwf),
             PlanItem(title: "Walk", date: today, daySection: .evening,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Read", date: today, daySection: .night,
+            PlanItem(title: "Read", date: today, daySection: .bedtime,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Plan tomorrow", date: today, daySection: .night,
+            PlanItem(title: "Plan tomorrow", date: today, daySection: .bedtime,
                      isRecurring: true, recurringWeekdays: weekdays),
             PlanItem(title: "Buy groceries", date: today),
             PlanItem(title: "Call Mom", isFlagged: true, date: today),
