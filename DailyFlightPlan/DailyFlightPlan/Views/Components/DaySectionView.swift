@@ -14,6 +14,7 @@ struct DaySectionView: View {
     let calendarEvents: [CalendarEvent]
     let reminderItems: [ReminderItem]
     var projectedPills: [PlanItem] = []
+    var summary: String? = nil
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
@@ -92,6 +93,14 @@ struct DaySectionView: View {
 
     private var sectionContent: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if let summary {
+                Text(summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 8)
+            }
+
             if showNowBar {
                 NowBarView()
                     .padding(.vertical, 8)

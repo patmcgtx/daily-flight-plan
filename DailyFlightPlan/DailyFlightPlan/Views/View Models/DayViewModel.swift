@@ -3,6 +3,7 @@
 //  DailyFlightPlan
 //
 import SwiftUI
+import FoundationModels
 
 @Observable @MainActor
 final class DayViewModel {
@@ -10,10 +11,12 @@ final class DayViewModel {
     var selectedDate: Date = Calendar.current.startOfDay(for: .now)
     var collapsedSections: Set<DaySection> = []
     private(set) var forwardNavigation: Bool = true
+    private(set) var sectionSummaries: [DaySection: String] = [:]
 
     // Updated each minute by startLiveClock(); drives currentSection and Past area in real time.
     private(set) var currentTime: Date = .now
     private var clockTask: Task<Void, Never>?
+    private var summaryTasks: [DaySection: Task<Void, Never>] = [:]
 
     // MARK: Date helpers
 
@@ -105,6 +108,9 @@ func startLiveClock() {
                 }
                 withAnimation(.spring(duration: 0.3)) {
                     self?.currentTime = .now
+                    if let current = self?.currentSection {
+                        self?.collapsedSections.remove(current)
+                    }
                 }
             }
         }
@@ -242,5 +248,65 @@ func startLiveClock() {
         let noTimeItems = items.filter { $0.daySection == nil && $0.deadline == nil }
         let sectionMissedItems = items.filter { isSectionMissed($0) }
         return noTimeItems + sectionMissedItems
+    }
+
+    // MARK: Auto-collapse and AI summaries
+
+    /// Collapse all inactive sections when viewing today. No-op on past/future dates.
+    func applyAutoCollapse() {
+        guard isToday else {
+            collapsedSections = []
+            return
+        }
+        collapsedSections = Set(activeSections.filter { $0 != currentSection })
+    }
+
+    /// Cancel any in-flight summary tasks and clear cached summaries (call on date change).
+    func clearSummaries() {
+        summaryTasks.values.forEach { $0.cancel() }
+        summaryTasks = [:]
+        sectionSummaries = [:]
+    }
+
+    /// Generate a one-line AI summary for a collapsed section. Skips if already cached or in-flight.
+    func generateSummaryIfNeeded(
+        for section: DaySection,
+        items: [PlanItem],
+        events: [CalendarEvent],
+        reminders: [ReminderItem]
+    ) {
+        guard sectionSummaries[section] == nil, summaryTasks[section] == nil else { return }
+        guard !items.isEmpty || !events.isEmpty || !reminders.isEmpty else { return }
+        guard SystemLanguageModel.default.availability == .available else { return }
+
+        summaryTasks[section] = Task { [weak self] in
+            guard let self else { return }
+            defer { self.summaryTasks[section] = nil }
+
+            let session = LanguageModelSession(
+                instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Be factual and concise."
+            )
+
+            var parts: [String] = []
+            for item in items.filter({ $0.deadline == nil }).prefix(5) {
+                parts.append(item.title)
+            }
+            for item in items.filter({ $0.deadline != nil }).prefix(3) {
+                if let dl = item.deadline {
+                    parts.append("\(item.title) at \(dl.formatted(.dateTime.hour().minute()))")
+                }
+            }
+            for event in events.prefix(3) {
+                parts.append("\(event.title) at \(event.startDate.formatted(.dateTime.hour().minute()))")
+            }
+            for reminder in reminders.prefix(3) {
+                parts.append(reminder.title)
+            }
+
+            let prompt = parts.joined(separator: "; ")
+            if let response = try? await session.respond(to: prompt) {
+                self.sectionSummaries[section] = response.content
+            }
+        }
     }
 }

@@ -88,6 +88,8 @@ struct DayView: View {
             await watchForMidnight()
         }
         .task(id: viewModel.selectedDate) {
+            viewModel.clearSummaries()
+            viewModel.applyAutoCollapse()
             await fetchCalendarEvents()
             await fetchReminderItems()
         }
@@ -333,11 +335,20 @@ struct DayView: View {
                                 calendarEvents: events,
                                 reminderItems: reminders,
                                 projectedPills: sectionProjected,
+                                summary: viewModel.sectionSummaries[section],
                                 showNowBar: viewModel.currentSection == section,
                                 isCollapsed: viewModel.isCollapsed(section),
                                 onToggle: {
                                     withAnimation(.spring(duration: 0.25)) {
                                         viewModel.toggleCollapsed(section)
+                                    }
+                                    if viewModel.isCollapsed(section) {
+                                        viewModel.generateSummaryIfNeeded(
+                                            for: section,
+                                            items: pills + deadlines,
+                                            events: events,
+                                            reminders: reminders
+                                        )
                                     }
                                 },
                                 onDropItem: { uuidString in
@@ -345,6 +356,16 @@ struct DayView: View {
                                 }
                             )
                             .id(section)
+                            .onAppear {
+                                if viewModel.isCollapsed(section) {
+                                    viewModel.generateSummaryIfNeeded(
+                                        for: section,
+                                        items: pills + deadlines,
+                                        events: events,
+                                        reminders: reminders
+                                    )
+                                }
+                            }
                         }
                     }
 

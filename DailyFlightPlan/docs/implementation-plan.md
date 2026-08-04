@@ -129,11 +129,9 @@ Items identified during early real-world use.
 **Remaining:**
 - ✅ **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there's no ambiguity about what each section covers
 - ✅ **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly; remove the separate info (ⓘ) button
-- **Auto-collapse inactive sections**: on today, sections whose time window hasn't started yet or has already ended are collapsed by default; the current section is expanded
+- ✅ **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one are collapsed by default (`applyAutoCollapse()` in `DayViewModel`); when a section collapses, `generateSummaryIfNeeded(for:items:events:reminders:)` lazily generates a one-line AI summary via `LanguageModelSession` (Foundation Models); cached in `sectionSummaries[section]`; live clock tick auto-expands the new current section; fallback to item count badge when Foundation Models is unavailable or pending
 - **Recurring items grouped on their own row**: instead of an ∞ icon on each pill, render recurring items in a dedicated "Habits" sub-row within their section with a single ∞ icon at the row leading edge
 - **Completed items grouped on their own row**: render completed items in a "Done" sub-row with a single ✓ icon at the leading edge, rather than a checkmark on every pill
-- **AI summary on collapsed sections**: when a section is collapsed, use **Apple Foundation Models** (on-device) to generate a one-line natural-language summary of its contents (e.g. "3 tasks · standup at 10am · 1 calendar event") shown in the section header; generated lazily on first collapse and cached; gracefully falls back to a plain item count if Foundation Models is unavailable
-- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
 
 ### Phase 13 — Nav & Chrome Rework (Liquid Glass)
 - Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)
@@ -186,8 +184,9 @@ Items identified during early real-world use.
 - Use the app daily for a real period of time — real tasks, real calendar events, real reminders
 - Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
 - Gather a prioritized list of changes needed before shipping version 1.0
-- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer.
-  Drqagging to/from sections would remain like it its.
+- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
+- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
+- **Summary vs. full view**: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
 
 ### Phase 19 — Fit and Finish
 - Address findings from Phase 18 usability testing
