@@ -372,65 +372,46 @@ struct DayView: View {
     private func anyTimeSection(items: [PlanItem], visibleReminders: [ReminderItem]) -> some View {
         let anyTimeItems = viewModel.anyTimeItems(from: items)
         let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
-        if !anyTimeItems.isEmpty || !anyTimeReminders.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Open")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 4)
-                if !anyTimeItems.isEmpty {
-                    HFlow(itemSpacing: 8, rowSpacing: 8) {
-                        ForEach(anyTimeItems) { item in
-                            ItemPillView(item: item, isMissed: viewModel.isMissed(item))
-                                .draggable(item.uuid.uuidString)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                if !anyTimeReminders.isEmpty {
-                    VStack(spacing: 0) {
-                        ForEach(anyTimeReminders) { item in
-                            ReminderItemRow(item: item)
-                        }
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Open")
+                .font(.subheadline.bold())
+                .foregroundStyle(isAnyTimeDropTargeted ? Color.accentColor : Color.secondary)
+                .padding(.leading, 4)
+            if !anyTimeItems.isEmpty {
+                HFlow(itemSpacing: 8, rowSpacing: 8) {
+                    ForEach(anyTimeItems) { item in
+                        ItemPillView(item: item, isMissed: viewModel.isMissed(item))
+                            .draggable(item.uuid.uuidString)
                     }
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
-            .padding(4)
-            .overlay {
-                if isAnyTimeDropTargeted {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color.accentColor, lineWidth: 2)
-                }
-            }
-            .dropDestination(for: String.self) { dropItems, _ in
-                guard let uuidString = dropItems.first else { return false }
-                handlePillDrop(uuidString: uuidString, targetSection: nil)
-                return true
-            } isTargeted: { targeted in
-                isAnyTimeDropTargeted = targeted
-            }
-            .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
-        } else {
-            Color.clear
-                .frame(height: 44)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .overlay {
-                    if isAnyTimeDropTargeted {
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.accentColor, lineWidth: 2)
+            }
+            if !anyTimeReminders.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(anyTimeReminders) { item in
+                        ReminderItemRow(item: item)
                     }
                 }
-                .dropDestination(for: String.self) { dropItems, _ in
-                    guard let uuidString = dropItems.first else { return false }
-                    handlePillDrop(uuidString: uuidString, targetSection: nil)
-                    return true
-                } isTargeted: { targeted in
-                    isAnyTimeDropTargeted = targeted
-                }
-                .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+        .padding(4)
+        .contentShape(Rectangle())
+        .overlay {
+            if isAnyTimeDropTargeted {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.accentColor, lineWidth: 2)
+            }
+        }
+        .dropDestination(for: String.self) { dropItems, _ in
+            guard let uuidString = dropItems.first else { return false }
+            handlePillDrop(uuidString: uuidString, targetSection: nil)
+            return true
+        } isTargeted: { targeted in
+            isAnyTimeDropTargeted = targeted
+        }
+        .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
     }
 
     // MARK: Past section (calendar events only — reminders go to Missed)
