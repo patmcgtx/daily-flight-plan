@@ -102,23 +102,28 @@ struct DaySectionView: View {
 
     private var sectionHeader: some View {
         Button(action: onToggle) {
-            HStack {
-                Text(section.displayName)
-                    .font(.headline)
-                Text(section.timeRangeLabel)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-
-                if isCollapsed && totalCount > 0 {
-                    Text("\(totalCount)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(.secondary.opacity(0.15), in: Capsule())
+            HStack(alignment: .top, spacing: 8) {
+                if isCollapsed, let summary {
+                    Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text(summary).font(.caption).foregroundStyle(.secondary))")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack(spacing: 6) {
+                        Text(section.displayName)
+                            .font(.headline)
+                        Text(section.timeRangeLabel)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        if isCollapsed && totalCount > 0 {
+                            Text("\(totalCount)")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.secondary.opacity(0.15), in: Capsule())
+                        }
+                        Spacer()
+                    }
                 }
-
-                Spacer()
 
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .font(.caption.bold())
@@ -134,14 +139,6 @@ struct DaySectionView: View {
 
     private var sectionContent: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let summary {
-                Text(summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 14)
-                    .padding(.top, 8)
-            }
-
             if showNowBar {
                 NowBarView()
                     .padding(.vertical, 8)
