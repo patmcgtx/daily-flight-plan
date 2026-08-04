@@ -115,7 +115,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Read-only; add/edit deferred to a later phase
 - **Deferred**: lazy-load past days — moved to Phase 12
 
-### Phase 12 — Usability Part 1
+### ✅ Phase 12 — Usability Part 1
 Items identified during early real-world use.
 
 **Batch 1 — Filtering & visibility (complete):**
@@ -130,8 +130,8 @@ Items identified during early real-world use.
 - ✅ **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there's no ambiguity about what each section covers
 - ✅ **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly; remove the separate info (ⓘ) button
 - ✅ **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one are collapsed by default (`applyAutoCollapse()` in `DayViewModel`); when a section collapses, `generateSummaryIfNeeded(for:items:events:reminders:)` lazily generates a one-line AI summary via `LanguageModelSession` (Foundation Models); cached in `sectionSummaries[section]`; live clock tick auto-expands the new current section; fallback to item count badge when Foundation Models is unavailable or pending
-- **Recurring items grouped on their own row**: instead of an ∞ icon on each pill, render recurring items in a dedicated "Habits" sub-row within their section with a single ∞ icon at the row leading edge
-- **Completed items grouped on their own row**: render completed items in a "Done" sub-row with a single ✓ icon at the leading edge, rather than a checkmark on every pill
+- ✅ **Recurring items grouped on their own row**: recurring pending pills render in a "Habits" sub-row with a leading ∞ icon; per-pill ∞ badge suppressed (`showRecurringBadge: false`); projected ghost pills also appear here
+- ✅ **Completed items grouped on their own row**: completed pills render in a "Done" sub-row with a leading ✓ icon (visible only when Done filter is active)
 
 ### Phase 13 — Nav & Chrome Rework (Liquid Glass)
 - Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)
@@ -140,6 +140,7 @@ Items identified during early real-world use.
 - **Bottom floating glass bar** (`safeAreaInset(edge: .bottom)`): `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
 - Filter pills row stays sticky in the header
 - **Progress indicator as floating button**: replace the inline progress summary row with a small floating donut button (bottom of screen, above the glass bar); tap it for a detail popover (X of Y complete, etc.)
+- **Reserve space for Phase 14 (Quick Entry) and Phase 15 (Search)**: during this chrome rework, decide where the quick-entry bar and search live in the layout, and stub in placeholder UI elements so the nav structure doesn't need to be revisited again when those phases land. Quick entry likely replaces or augments the `[+]` button in the bottom bar; search likely lives in the top header or as a gesture.
 
 ### Phase 14 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up

@@ -9,6 +9,7 @@ struct ItemPillView: View {
 
     let item: PlanItem
     var isMissed: Bool = false
+    var showRecurringBadge: Bool = true
 
     @Environment(\.editItem) private var editItem
 
@@ -86,7 +87,7 @@ struct ItemPillView: View {
                     .foregroundStyle(.red)
             }
 
-            if item.isRecurring {
+            if item.isRecurring && showRecurringBadge {
                 Image(systemName: "infinity")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
