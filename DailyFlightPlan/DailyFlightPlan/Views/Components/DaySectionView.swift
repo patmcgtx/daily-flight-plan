@@ -104,8 +104,14 @@ struct DaySectionView: View {
         Button(action: onToggle) {
             HStack(alignment: .top, spacing: 8) {
                 if isCollapsed, let summary {
-                    Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text(summary).font(.caption).foregroundStyle(.secondary))")
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(section.displayName).font(.headline)
+                            Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary)
+                        }
+                        Text(summary).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     HStack(spacing: 6) {
                         Text(section.displayName)
