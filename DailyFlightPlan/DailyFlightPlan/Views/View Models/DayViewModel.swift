@@ -280,7 +280,7 @@ func startLiveClock() {
             defer { self.summaryTasks[section] = nil }
 
             let session = LanguageModelSession(
-                instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Be factual and concise."
+                instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
             )
 
             var parts: [String] = []
@@ -302,6 +302,9 @@ func startLiveClock() {
             let prompt = parts.joined(separator: "; ")
             if let response = try? await session.respond(to: prompt) {
                 self.sectionSummaries[section] = response.content
+                    .components(separatedBy: .newlines)
+                    .joined(separator: " · ")
+                    .trimmingCharacters(in: .whitespaces)
             }
         }
     }

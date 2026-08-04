@@ -133,8 +133,10 @@ Items identified during early real-world use.
 - Retire swipe-left-to-cancel and swipe-right-to-defer on items; long-press context menu (already implemented) covers the same actions
 - **Top header**: date only — large weekday + month/day centered; "Go to today" scope button inline when off today; tap date → date picker sheet
 - **Bottom floating glass bar** (`safeAreaInset(edge: .bottom)`): `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
+- **Move categories editing into `···` menu**: remove the separate tag icon from the filter row; "Manage Categories" lives in the dropdown alongside Settings and Theme
 - Filter pills row stays sticky in the header
-- **Progress indicator as floating button**: replace the inline progress summary row with a small floating donut button (bottom of screen, above the glass bar); tap it for a detail popover (X of Y complete, etc.)
+- **Progress indicator as floating button**: replace the inline progress summary row with a small floating donut button (bottom of screen, above the glass bar); tap it for a detail popover (X of Y complete, daily summary text)
+- **Retire swipe gestures**: swipe-left-to-cancel and swipe-right-to-defer are too easy to trigger accidentally; replace with intentional drop targets (drag to a "Cancel" or "Defer" zone) or rely on long-press context menu only
 - **Reserve space for Phase 14 (Quick Entry) and Phase 15 (Search)**: during this chrome rework, decide where the quick-entry bar and search live in the layout, and stub in placeholder UI elements so the nav structure doesn't need to be revisited again when those phases land. Quick entry likely replaces or augments the `[+]` button in the bottom bar; search likely lives in the top header or as a gesture.
 
 ### Phase 14 — Quick Entry (Natural Language)
@@ -168,6 +170,8 @@ Items identified during early real-world use.
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
 - **Permission prompt on first filter tap**: when the user taps the Calendar or Reminders filter pill for the first time, prompt for permission then and there (rather than waiting for the day to load); on grant, show the calendar/list selector immediately
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours; also update `DaySection.timeRangeLabel` to compute dynamically from stored boundaries instead of hardcoded strings
+- **"Rise & Shine" pre-morning section**: consider adding an early-morning section (e.g. 5–6 AM) for first-thing-out-of-bed habits; or expose Morning's start time as a user-adjustable boundary so the section stretches to cover it
+- **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
 - Any other preferences surfaced here as phases are completed
 
 ### Phase 17 — Local Notifications
@@ -183,11 +187,17 @@ Items identified during early real-world use.
 - Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
 - **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
 - **Summary vs. full view**: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
+- **Import Reminder as PlanItem**: tapping a `ReminderItemRow` offers an "Import as Task" action that creates a `PlanItem` from the reminder's title, notes, and due date, then assigns it to the current day's appropriate section; the original reminder is left unchanged
+- **"All clear ✅" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear ✅" in the header instead of an AI summary — a small reward for finishing the section
+- **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
+- **AI summary quality**: weight timed/deadline items and non-recurring items more heavily in the summary prompt so the most time-sensitive things surface first
 
 ### Phase 19 — Fit and Finish
 - Address findings from Phase 18 usability testing
 - Bug fixes, UX tweaks, visual polish
-- **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector
+- **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
+- **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
+- **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
