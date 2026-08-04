@@ -412,6 +412,24 @@ struct DayView: View {
                 isAnyTimeDropTargeted = targeted
             }
             .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
+        } else {
+            Color.clear
+                .frame(height: 44)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay {
+                    if isAnyTimeDropTargeted {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.accentColor, lineWidth: 2)
+                    }
+                }
+                .dropDestination(for: String.self) { dropItems, _ in
+                    guard let uuidString = dropItems.first else { return false }
+                    handlePillDrop(uuidString: uuidString, targetSection: nil)
+                    return true
+                } isTargeted: { targeted in
+                    isAnyTimeDropTargeted = targeted
+                }
+                .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
         }
     }
 
