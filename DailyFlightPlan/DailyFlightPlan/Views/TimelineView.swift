@@ -17,7 +17,6 @@ struct TimelineView: View {
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
     @AppStorage(AppStorageKeys.showCompleted.rawValue) private var showCompleted: Bool = false
-    @AppStorage(AppStorageKeys.showRecurring.rawValue) private var showRecurring: Bool = true
 
     private let calendar = Calendar.current
     private var today: Date { calendar.startOfDay(for: .now) }
@@ -26,7 +25,6 @@ struct TimelineView: View {
         let filtered = allItems.filter {
             (showCompleted || ($0.status != .completed && $0.status != .canceled))
             && (!showFlaggedOnly || $0.isFlagged)
-            && (showRecurring || !$0.isRecurring)
         }
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
@@ -123,9 +121,6 @@ struct TimelineView: View {
                 }
                 filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
                     showCompleted.toggle()
-                }
-                filterToggle("Recurring", icon: "infinity", isActive: showRecurring) {
-                    showRecurring.toggle()
                 }
                 if !allCategories.isEmpty {
                     Divider().frame(height: 20)
