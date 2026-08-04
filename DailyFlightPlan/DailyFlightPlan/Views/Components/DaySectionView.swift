@@ -29,11 +29,11 @@ struct DaySectionView: View {
     }
 
     private var regularPills: [PlanItem] {
-        sectionPills.filter { $0.status != .completed && !$0.isRecurring }
+        sectionPills.filter { $0.status == .pending && !$0.isRecurring }
     }
 
     private var habitPills: [PlanItem] {
-        sectionPills.filter { $0.status != .completed && $0.isRecurring }
+        sectionPills.filter { $0.status == .pending && $0.isRecurring }
     }
 
     private var donePills: [PlanItem] {

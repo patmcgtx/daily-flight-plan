@@ -56,23 +56,24 @@ struct ItemPillView: View {
 
     private var pillContent: some View {
         HStack(spacing: 5) {
-            Button {
-                guard item.status != .canceled else { return }
-                withAnimation(.spring(duration: 0.2)) {
-                    item.status = item.status == .completed ? .pending : .completed
+            if item.status == .pending {
+                Button {
+                    withAnimation(.spring(duration: 0.2)) {
+                        item.status = .completed
+                    }
+                } label: {
+                    Image(systemName: "circle")
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
                 }
-            } label: {
-                Image(systemName: completionIcon)
-                    .foregroundStyle(completionColor)
-                    .font(.subheadline)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             Text(item.title)
                 .font(.subheadline)
                 .lineLimit(1)
-                .foregroundStyle(.primary)
-                .strikethrough(item.status == .canceled, color: .secondary)
+                .foregroundStyle(item.status == .pending ? .primary : .secondary)
+                .strikethrough(item.status != .pending, color: .secondary)
 
             if isMissed, let deadline = item.deadline {
                 Text(deadline, format: .dateTime.hour().minute())
@@ -149,21 +150,6 @@ struct ItemPillView: View {
         }
     }
 
-    private var completionIcon: String {
-        switch item.status {
-        case .completed: "checkmark.circle.fill"
-        case .canceled:  "xmark.circle.fill"
-        case .pending:   "circle"
-        }
-    }
-
-    private var completionColor: Color {
-        switch item.status {
-        case .completed: .green
-        case .canceled:  .secondary
-        case .pending:   .secondary
-        }
-    }
 }
 
 #Preview {
