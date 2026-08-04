@@ -118,16 +118,19 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 ### Phase 12 — Usability Part 1
 Items identified during early real-world use.
 
+**Batch 1 — Filtering & visibility (complete):**
+- ✅ **Remove the Recurring filter toggle**: always show recurring items; the toggle added confusion and the grouped habit row makes them easy to distinguish visually
+- ✅ **Always hide empty sections**: if a section (including Missed, Open, Past) has no visible items after filtering, hide it entirely — don't show an empty card
+- ✅ **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
+- ✅ **Hide past Calendar events**: treat past-section calendar events as done; hide them by default, show only if Done filter is active
+- ✅ **Category filter excludes Calendar & Reminders**: when any category is selected, Calendar events and Reminder items are hidden entirely — they are not categorized and showing them is misleading (bug)
+
+**Remaining:**
 - **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there's no ambiguity about what each section covers
 - **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly; remove the separate info (ⓘ) button
+- **Auto-collapse inactive sections**: on today, sections whose time window hasn't started yet or has already ended are collapsed by default; the current section is expanded
 - **Recurring items grouped on their own row**: instead of an ∞ icon on each pill, render recurring items in a dedicated "Habits" sub-row within their section with a single ∞ icon at the row leading edge
 - **Completed items grouped on their own row**: render completed items in a "Done" sub-row with a single ✓ icon at the leading edge, rather than a checkmark on every pill
-- **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
-- **Hide past Calendar events**: treat past-section calendar events as done; hide them by default, show only if Done filter is active
-- **Category filter excludes Calendar & Reminders**: when any category is selected, Calendar events and Reminder items are hidden entirely — they are not categorized and showing them is misleading (bug)
-- **Remove the Recurring filter toggle**: always show recurring items; the toggle added confusion and the grouped habit row makes them easy to distinguish visually
-- **Always hide empty sections**: if a section (including Missed, Open, Past) has no visible items after filtering, hide it entirely — don't show an empty card
-- **Auto-collapse inactive sections**: on today, sections whose time window hasn't started yet or has already ended are collapsed by default; the current section is expanded
 - **AI summary on collapsed sections**: when a section is collapsed, use **Apple Foundation Models** (on-device) to generate a one-line natural-language summary of its contents (e.g. "3 tasks · standup at 10am · 1 calendar event") shown in the section header; generated lazily on first collapse and cached; gracefully falls back to a plain item count if Foundation Models is unavailable
 - **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
 
