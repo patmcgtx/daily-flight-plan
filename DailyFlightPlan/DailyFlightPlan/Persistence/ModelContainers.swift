@@ -26,50 +26,84 @@ extension ModelContainer {
         let cal = Calendar.current
         let everyday: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
         let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
-        let mwf: [Locale.Weekday] = [.monday, .wednesday, .friday]
 
         let items: [PlanItem] = [
-            // Morning habits
-            PlanItem(title: "Coffee", date: today, daySection: .morning,
+            // Any time habits
+            PlanItem(title: "Approach and talk with ppl", date: today,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Journal", date: today, daySection: .morning,
+            PlanItem(title: "Listen to news, book, or podcast 📰", date: today,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Morning run", date: today, daySection: .morning,
-                     isRecurring: true, recurringWeekdays: mwf),
-            PlanItem(title: "Review today's plan", date: today, daySection: .morning,
+            PlanItem(title: "Be singing along with songs in the car 🎤", date: today,
+                     isRecurring: true, recurringWeekdays: everyday),
+
+            // First Thing habits
+            PlanItem(title: "Slow breathing", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Visualize success", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Check my weight", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Basic stretch", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Jump up and down 50 times", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Chant or sing", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Be the GQ guy", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Take orange oil", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+
+            // Morning habits (Off to the races)
+            PlanItem(title: "Use reusable cup", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Update my Calendar", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Plan the day / prioritize Things", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Do a Leetcode 150 challenge", date: today, daySection: .morning,
                      isRecurring: true, recurringWeekdays: weekdays),
 
-            // Timed recurring
+            // Timed recurring (exercises deadline feature)
             PlanItem(title: "Team standup", date: today,
                      deadline: cal.date(bySettingHour: 9, minute: 30, second: 0, of: today),
                      isRecurring: true, recurringWeekdays: weekdays),
 
-            // Midday
-            PlanItem(title: "Lunch with Alex", date: today, daySection: .midday),
+            // Midday habits
+            PlanItem(title: "Take my pills 💊", date: today, daySection: .midday,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Eat some fruit 🍎🍊🍌", date: today, daySection: .midday,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Eat some nuts 🥜", date: today, daySection: .midday,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Use reusable cup", date: today, daySection: .midday,
+                     isRecurring: true, recurringWeekdays: everyday),
 
-            // Afternoon
-            PlanItem(title: "Clear inbox", date: today, daySection: .afternoon,
-                     isRecurring: true, recurringWeekdays: weekdays),
-            PlanItem(title: "1:1 with manager", date: today,
-                     deadline: cal.date(bySettingHour: 14, minute: 0, second: 0, of: today)),
-            PlanItem(title: "Expense report", notes: "Submit before end of month",
-                     isFlagged: true, date: today, daySection: .afternoon),
+            // Afternoon habits
+            PlanItem(title: "Macha + rooibos 🍵", date: today, daySection: .afternoon,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Hydrate (Good for hypertension etc.)", date: today, daySection: .afternoon,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Easy calf stretches 🏃🏻‍♂️🎾", date: today, daySection: .afternoon,
+                     isRecurring: true, recurringWeekdays: everyday),
 
             // Evening habits
-            PlanItem(title: "Gym", date: today, daySection: .evening,
-                     isRecurring: true, recurringWeekdays: mwf),
-            PlanItem(title: "Walk", date: today, daySection: .evening,
+            PlanItem(title: "Be teasing and challenging women", date: today, daySection: .evening,
                      isRecurring: true, recurringWeekdays: everyday),
 
             // Bedtime habits
-            PlanItem(title: "Read", date: today, daySection: .bedtime,
+            PlanItem(title: "Balance", date: today, daySection: .bedtime,
                      isRecurring: true, recurringWeekdays: everyday),
             PlanItem(title: "Plan tomorrow", date: today, daySection: .bedtime,
-                     isRecurring: true, recurringWeekdays: weekdays),
-
-            // Untimed one-offs
-            PlanItem(title: "Buy groceries", date: today),
-            PlanItem(title: "Call Mom", isFlagged: true, date: today),
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Play & sing music", date: today, daySection: .bedtime,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Full teeth cleaning", date: today, daySection: .bedtime,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Catch up on Wins journal", date: today, daySection: .bedtime,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Meditate / body scan", date: today, daySection: .bedtime,
+                     isRecurring: true, recurringWeekdays: everyday),
         ]
 
         for item in items { context.insert(item) }
@@ -93,32 +127,50 @@ extension ModelContainer {
         let cal = Calendar.current
         let everyday: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
         let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
-        let mwf: [Locale.Weekday] = [.monday, .wednesday, .friday]
 
         let sampleItems: [PlanItem] = [
-            PlanItem(title: "Coffee", date: today, daySection: .morning,
+            // Any time habits
+            PlanItem(title: "Approach and talk with ppl", date: today,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Journal", date: today, daySection: .morning,
+            PlanItem(title: "Listen to news, book, or podcast 📰", date: today,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Morning run", date: today, daySection: .morning,
-                     isRecurring: true, recurringWeekdays: mwf),
+
+            // First Thing
+            PlanItem(title: "Slow breathing", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Visualize success", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Basic stretch", date: today, daySection: .firstThing,
+                     isRecurring: true, recurringWeekdays: everyday),
+
+            // Morning
+            PlanItem(title: "Plan the day / prioritize Things", date: today, daySection: .morning,
+                     isRecurring: true, recurringWeekdays: everyday),
             PlanItem(title: "Team standup", date: today,
                      deadline: cal.date(bySettingHour: 9, minute: 30, second: 0, of: today),
                      isRecurring: true, recurringWeekdays: weekdays),
-            PlanItem(title: "Lunch with Alex", date: today, daySection: .midday),
-            PlanItem(title: "Clear inbox", date: today, daySection: .afternoon,
-                     isRecurring: true, recurringWeekdays: weekdays),
-            PlanItem(title: "Expense report", isFlagged: true, date: today, daySection: .afternoon),
-            PlanItem(title: "Gym", date: today, daySection: .evening,
-                     isRecurring: true, recurringWeekdays: mwf),
-            PlanItem(title: "Walk", date: today, daySection: .evening,
+
+            // Midday
+            PlanItem(title: "Take my pills 💊", date: today, daySection: .midday,
                      isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Read", date: today, daySection: .bedtime,
+            PlanItem(title: "Eat some fruit 🍎🍊🍌", date: today, daySection: .midday,
                      isRecurring: true, recurringWeekdays: everyday),
+
+            // Afternoon
+            PlanItem(title: "Hydrate (Good for hypertension etc.)", date: today, daySection: .afternoon,
+                     isRecurring: true, recurringWeekdays: everyday),
+
+            // Evening
+            PlanItem(title: "Be teasing and challenging women", date: today, daySection: .evening,
+                     isRecurring: true, recurringWeekdays: everyday),
+
+            // Bedtime
             PlanItem(title: "Plan tomorrow", date: today, daySection: .bedtime,
-                     isRecurring: true, recurringWeekdays: weekdays),
-            PlanItem(title: "Buy groceries", date: today),
-            PlanItem(title: "Call Mom", isFlagged: true, date: today),
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Full teeth cleaning", date: today, daySection: .bedtime,
+                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(title: "Meditate / body scan", date: today, daySection: .bedtime,
+                     isRecurring: true, recurringWeekdays: everyday),
         ]
 
         for item in sampleItems {

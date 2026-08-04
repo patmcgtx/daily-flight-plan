@@ -92,7 +92,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
 - **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the Past/Missed areas grow in real time as sections end during the day.
 - **Projected recurring items**: On future dates, recurring section-based habits that apply to that weekday appear as ghosted (35% opacity, non-interactive) pills in their section — a preview of the expected day, not yet committed items.
-- **Richer seed data**: Recurring habits across all five sections (coffee, journal, run, standup, clear inbox, gym, walk, read, plan tomorrow) plus one-off items and untimed tasks.
+- **Richer seed data**: Recurring habits across all six sections plus timed and untimed items for thorough testing.
 - **Deferred**: Drag to reorder items between sections → Phase 10
 
 ### Phase 10 — UI Refinements
@@ -202,6 +202,7 @@ Items identified during early real-world use.
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
 - **Calendar/Reminders load delay on day switch**: noticeable lag when navigating to a new day because `fetchCalendarEvents()` and `fetchReminderItems()` are triggered by `.task(id: viewModel.selectedDate)` and run sequentially. Consider prefetching adjacent days, caching results, or showing a subtle loading state while data arrives.
+- **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or replaced with a minimal, generic example set before shipping
 - Add an app icon
 - Anything that must be right before calling this version 1.0
 
