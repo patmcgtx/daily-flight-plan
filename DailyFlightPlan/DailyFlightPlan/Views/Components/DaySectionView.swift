@@ -63,6 +63,9 @@ struct DaySectionView: View {
             HStack {
                 Text(section.displayName)
                     .font(.headline)
+                Text(section.timeRangeLabel)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
 
                 if isCollapsed && totalCount > 0 {
                     Text("\(totalCount)")

@@ -96,16 +96,13 @@ struct ItemPillView: View {
                     .font(.caption2)
                     .foregroundStyle(.red)
             }
-
-            Image(systemName: "info.circle")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background {
             Capsule().fill(.regularMaterial)
         }
+        .onTapGesture { editItem?(item) }
         .contextMenu {
             Button(role: .destructive) {
                 withAnimation { item.status = .canceled }
@@ -121,9 +118,6 @@ struct ItemPillView: View {
                 }
             } label: {
                 Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
-            }
-            Button { editItem?(item) } label: {
-                Label("Edit…", systemImage: "pencil")
             }
         }
     }
