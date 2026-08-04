@@ -275,7 +275,7 @@ func startLiveClock() {
         guard !items.isEmpty || !events.isEmpty || !reminders.isEmpty else { return }
         guard SystemLanguageModel.default.availability == .available else { return }
 
-        summaryTasks[section] = Task { [weak self] in
+        summaryTasks[section] = Task { @MainActor [weak self] in
             guard let self else { return }
             defer { self.summaryTasks[section] = nil }
 
