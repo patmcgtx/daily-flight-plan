@@ -121,6 +121,7 @@ Items identified during early real-world use.
 **Batch 1 — Filtering & visibility (complete):**
 - ✅ **Remove the Recurring filter toggle**: always show recurring items; the toggle added confusion and the grouped habit row makes them easy to distinguish visually
 - ✅ **Always hide empty sections**: if a section (including Missed, Open, Past) has no visible items after filtering, hide it entirely — don't show an empty card
+  - **Revisit**: the "hide when empty" rule should only apply to *past* sections; current and future today-sections should remain visible even when empty so they stay usable as drag targets. Open already always renders for this reason.
 - ✅ **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
 - ✅ **Hide past Calendar events**: treat past-section calendar events as done; hide them by default, show only if Done filter is active
 - ✅ **Category filter excludes Calendar & Reminders**: when any category is selected, Calendar events and Reminder items are hidden entirely — they are not categorized and showing them is misleading (bug)
