@@ -38,11 +38,9 @@ final class DayViewModel {
         return Array(DaySection.allCases.prefix(currentIdx))
     }
 
-    /// Sections to display in the main list — all sections on non-today days, current+future on today.
+    /// All five sections, always — past sections remain visible for day-at-a-glance reference.
     var activeSections: [DaySection] {
-        guard isToday else { return DaySection.allCases }
-        let past = Set(pastSections)
-        return DaySection.allCases.filter { !past.contains($0) }
+        DaySection.allCases
     }
 
     func goToYesterday() {
@@ -118,9 +116,10 @@ func startLiveClock() {
 
     // MARK: Missed item logic
 
-    /// Combined check — used to exclude an item from its scheduled section card.
+    /// Returns true only for items with a specific clock-time deadline that has now passed.
+    /// Section-assigned items without a deadline stay in their section card regardless of time.
     func isMissed(_ item: PlanItem) -> Bool {
-        isDeadlineMissed(item) || isSectionMissed(item)
+        isDeadlineMissed(item)
     }
 
     /// Item had a specific timed deadline that has now passed → shown in "Missed".
@@ -242,12 +241,9 @@ func startLiveClock() {
             .sorted { ($0.deadline ?? .distantPast) < ($1.deadline ?? .distantPast) }
     }
 
-    /// Untimed items (no section, no deadline) plus section-based items whose section has ended.
-    /// Deadline-missed items are excluded — they go to the "Missed" section instead.
+    /// Truly untimed items — no section assignment and no deadline.
     func anyTimeItems(from items: [PlanItem]) -> [PlanItem] {
-        let noTimeItems = items.filter { $0.daySection == nil && $0.deadline == nil }
-        let sectionMissedItems = items.filter { isSectionMissed($0) }
-        return noTimeItems + sectionMissedItems
+        items.filter { $0.daySection == nil && $0.deadline == nil }
     }
 
     // MARK: Auto-collapse and AI summaries
