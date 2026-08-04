@@ -118,20 +118,15 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 ### ✅ Phase 12 — Usability Part 1
 Items identified during early real-world use.
 
-**Batch 1 — Filtering & visibility (complete):**
-- ✅ **Remove the Recurring filter toggle**: always show recurring items; the toggle added confusion and the grouped habit row makes them easy to distinguish visually
-- ✅ **Always hide empty sections**: if a section (including Missed, Open, Past) has no visible items after filtering, hide it entirely — don't show an empty card
-  - **Revisit**: the "hide when empty" rule should only apply to *past* sections; current and future today-sections should remain visible even when empty so they stay usable as drag targets. Open already always renders for this reason.
-- ✅ **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
-- ✅ **Hide past Calendar events**: treat past-section calendar events as done; hide them by default, show only if Done filter is active
-- ✅ **Category filter excludes Calendar & Reminders**: when any category is selected, Calendar events and Reminder items are hidden entirely — they are not categorized and showing them is misleading (bug)
-
-**Remaining:**
-- ✅ **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there's no ambiguity about what each section covers
-- ✅ **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly; remove the separate info (ⓘ) button
-- ✅ **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one are collapsed by default (`applyAutoCollapse()` in `DayViewModel`); when a section collapses, `generateSummaryIfNeeded(for:items:events:reminders:)` lazily generates a one-line AI summary via `LanguageModelSession` (Foundation Models); cached in `sectionSummaries[section]`; live clock tick auto-expands the new current section; fallback to item count badge when Foundation Models is unavailable or pending
-- ✅ **Recurring items grouped on their own row**: recurring pending pills render in a "Habits" sub-row with a leading ∞ icon; per-pill ∞ badge suppressed (`showRecurringBadge: false`); projected ghost pills also appear here
-- ✅ **Completed items grouped on their own row**: completed pills render in a "Done" sub-row with a leading ✓ icon (visible only when Done filter is active)
+- **Remove the Recurring filter toggle**: always show recurring items; grouped habit row makes them easy to distinguish visually
+- **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
+- **Hide past Calendar events**: treat past-section calendar events as done; hide by default, show only if Done filter is active
+- **Category filter excludes Calendar & Reminders**: when any category is selected, events and reminders are hidden entirely — they are not categorized
+- **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there is no ambiguity about what each section covers
+- **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly
+- **Always show all five sections**: removed section hiding — past sections stay visible for day-at-a-glance reference; only deadline-missed items surface in the "Missed" area
+- **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one start collapsed; collapsed headers display a one-line AI summary generated via Foundation Models (`LanguageModelSession`); live clock tick auto-expands the incoming section; falls back to item count badge when Foundation Models is unavailable
+- **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞ badge suppressed in the Habits row; checkbox shown only on pending items
 
 ### Phase 13 — Nav & Chrome Rework (Liquid Glass)
 - Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)

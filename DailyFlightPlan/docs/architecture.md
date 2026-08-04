@@ -67,7 +67,7 @@ enum ItemStatus: String, Codable
     // Deferring is a date mutation (item.date = tomorrow), not a status
 ```
 
-"Missed" items (deadline passed, still `.pending`) and "section-missed" items (section ended, still `.pending`) are computed dynamically — no extra DB field.
+"Missed" items (specific deadline passed, still `.pending`) are computed dynamically — no extra DB field. Section-assigned items stay in their section card regardless of whether that section's time window has passed.
 
 ## Services
 
@@ -91,14 +91,22 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 
 **Sticky header (two rows, never scrolls):**
 - Row 1: `[<] [⏱]  Friday, Aug 1  [☉]  [⚙] [🎨] [>]` — previous day, timeline, date + go-to-today, settings, theme, next day. Small progress ring (donut) sits between settings and theme.
-- Row 2: `[★ Flagged] [✓ Done] [∞ Recurring] [📅 Calendar] [🔔 Reminders]` Liquid Glass toggle pills + horizontally scrollable `CategoryCapsule` row. All filter prefs saved to `@AppStorage`.
+- Row 2: `[★ Flagged] [✓ Done] [📅 Calendar] [🔔 Reminders]` Liquid Glass toggle pills + horizontally scrollable `CategoryCapsule` row. All filter prefs saved to `@AppStorage`.
 
-**Day sections:** Rounded-rect bordered cards. Collapsible — tap the section header. Items draggable between sections via long-press; drop target highlights with an accent-colored border.
+**Day sections:** All five sections are always visible (past sections remain as a day-at-a-glance reference). Rounded-rect bordered cards, collapsible via tap. When viewing today, inactive sections start collapsed; the current section is always expanded and auto-expands when the clock ticks into it. Collapsed sections display a one-line AI summary (Foundation Models, on-device) inline in the header. Items draggable between sections via long-press; drop target highlights with an accent-colored border.
 
-**Special non-section areas (today only):**
-- **Past**: calendar events from sections whose time window has already ended. No card background.
-- **Missed**: deadline items and timed reminders whose time has passed. Uses `DeadlineItemRow`. No card background.
-- **Open**: untimed items + section-based items whose section has ended. Drop target for drag-to-reassign. No card background.
+Each expanded section body renders item sub-rows in order:
+1. **Regular pending pills** — `HFlow` row (no icon)
+2. **Done row** (✓ icon) — completed pills, `HFlow`; visible only when Done filter is on
+3. **Cancelled row** (✗ icon) — cancelled pills, `HFlow`; visible only when Done filter is on
+4. **Habits row** (∞ icon) — recurring pending pills + ghosted projected pills, `HFlow`
+5. **Deadline rows** — full-width `DeadlineItemRow` entries, sorted by time
+6. **Calendar event rows** — full-width `CalendarEventRow` entries
+7. **Reminder rows** — full-width `ReminderItemRow` entries
+
+**Special non-section areas (below section cards):**
+- **Missed**: pending items whose specific clock-time deadline has passed. Uses `DeadlineItemRow`. No card background.
+- **Open**: untimed items (no section, no deadline). Drop target for drag-to-reassign. No card background.
 
 **External item rows** (CalendarEventRow, ReminderItemRow): differentiated by a 3pt colored left accent bar and italic title. No card background.
 
@@ -117,4 +125,4 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 | Day-section item | `HFlow` pill within its section | — |
 | Open (any-time) item | `HFlow` pill in Open area | — |
 
-All plan items (non-calendar) have a completion checkbox and support cancel (swipe left / long-press) and defer-to-tomorrow (swipe right / long-press). Recurring items show an ∞ icon. Future dates show ghosted (35% opacity) projections of recurring habits.
+Pending plan items have a completion checkbox and support cancel (swipe left / long-press) and defer-to-tomorrow (swipe right / long-press). Completed and cancelled items show with strikethrough and dimmed text. Recurring items are grouped on a dedicated Habits row (∞ icon). Future dates show ghosted (35% opacity) projections of recurring habits.

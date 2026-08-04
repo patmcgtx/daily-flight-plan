@@ -36,7 +36,7 @@ I took an app idea in my mind, sketched it out in Figma, broke that into a detai
 
 ## Concept
 
-Combines one-off and recurring tasks, organized into time-of-day sections (Morning, Midday, Afternoon, Evening, Night). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Any Time" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. Sections whose time has passed are removed from view; their content is reorganized into "Past" (calendar events), "Missed" (deadline items and timed reminders), and "Any Time" (untimed items). Navigate to a future date to see a ghosted preview of your expected recurring habits.
+Combines one-off and recurring tasks, organized into time-of-day sections (Morning, Midday, Afternoon, Evening, Night). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Open" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. All five sections are always visible — past sections stay on screen as a day-at-a-glance reference. Inactive sections auto-collapse with a one-line AI summary; items past a specific deadline surface in a "Missed" area. Navigate to a future date to see a ghosted preview of your expected recurring habits.
 
 ## Tech stack
 
@@ -49,23 +49,26 @@ Combines one-off and recurring tasks, organized into time-of-day sections (Morni
 
 ## Features (current)
 
-- Day view with collapsible time-of-day sections
+- Day view with five collapsible time-of-day sections — all always visible, including past sections for day-at-a-glance reference
+- **Auto-collapse + AI summary**: inactive sections collapse automatically; collapsed headers show a one-line on-device AI summary (Foundation Models)
+- **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring); completed and cancelled items show with strikethrough
 - Navigate between days with a directional slide animation
 - "Go to today" button (appears only when you've navigated away)
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
 - Swipe to cancel or defer an item to tomorrow; long-press for a context menu
-- Recurring items with weekday picker
-- Deadline-based items with clock-time rows
-- Scroll-to-now on appear
+- Drag-and-drop items between day sections; drop on "Open" to clear section assignment
+- Recurring items with weekday picker; grouped on a dedicated Habits row
+- Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
+- Scroll-to-now on appear; live clock auto-expands the current section as the day progresses
 - Progress ring showing completed/total items for the day
-- Filter bar: flagged, done, recurring, and category filters
+- Filter bar: flagged, done, calendar, reminders, and category filters
 - Category management (add, rename, delete)
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
 - Calendar events from EventKit shown inline in each day section
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
 - **Spillover**: pending items from previous days automatically move to today on launch or at midnight
-- **Live day structure**: past sections disappear in real time as their time window ends; their content redistributes into "Past" (calendar events), "Missed" (deadline items + timed reminders), and "Any Time" (untimed/section-missed items)
 - **Future date preview**: recurring habits for a future weekday appear ghosted in their section — not yet committed, just a projection
+- **Timeline sheet**: all plan items grouped by date with filter bar; tap a date or row to navigate DayView
 
 ## Project structure
 
@@ -84,19 +87,20 @@ DailyFlightPlan/
     │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/     — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift
+    ├── TimelineView.swift
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```
 
 ## Build plan
 
-Phases 1–9 are complete. Remaining MVP phases:
+Phases 1–12 are complete. Remaining MVP phases:
 
 | Phase | Description |
 |-------|-------------|
-| 10 | UI refinements (drag to reorder, calendar/reminders toggles, visual polish) |
-| 11 | Timeline view |
-| 12 | Usability Part 1 (section times, tap-to-edit, grouping, empty-hiding) |
+| ✅ 10 | UI refinements (drag between sections, calendar/reminders toggles) |
+| ✅ 11 | Timeline view |
+| ✅ 12 | Usability Part 1 (section times, tap-to-edit, auto-collapse + AI summary, grouped rows) |
 | 13 | Nav & chrome rework (swipe days, bottom glass bar, floating progress) |
 | 14 | Quick entry (natural language → PlanItem via Foundation Models) |
 | 15 | Search |
