@@ -203,6 +203,8 @@ Items identified during early real-world use.
 - **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
 - **Calendar/Reminders load delay on day switch**: noticeable lag when navigating to a new day because `fetchCalendarEvents()` and `fetchReminderItems()` are triggered by `.task(id: viewModel.selectedDate)` and run sequentially. Consider prefetching adjacent days, caching results, or showing a subtle loading state while data arrives.
 - **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or replaced with a minimal, generic example set before shipping
+- **Drag-to-zone discoverability**: add a one-time tooltip or coach mark explaining the long-press drag gesture (Cancel zone lower-left, Defer zone lower-right) — most users won't discover it without a hint
+- **Per-section add button**: consider a small `+` button on each section header (or in the section content area) so the user can add an item directly into that section without going through the main Add form and re-selecting the section
 - Add an app icon
 - Anything that must be right before calling this version 1.0
 
