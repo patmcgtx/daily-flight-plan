@@ -129,15 +129,15 @@ Items identified during early real-world use.
 - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞ badge suppressed in the Habits row; checkbox shown only on pending items
 
 ### Phase 13 — Nav & Chrome Rework (Liquid Glass)
-- Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)
-- Retire swipe-left-to-cancel and swipe-right-to-defer on items; long-press context menu (already implemented) covers the same actions
-- **Top header**: date only — large weekday + month/day centered; "Go to today" scope button inline when off today; tap date → date picker sheet
-- **Bottom floating glass bar** (`safeAreaInset(edge: .bottom)`): `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
-- **Move categories editing into `···` menu**: remove the separate tag icon from the filter row; "Manage Categories" lives in the dropdown alongside Settings and Theme
-- Filter pills row stays sticky in the header
-- **Progress indicator as floating button**: replace the inline progress summary row with a small floating donut button (bottom of screen, above the glass bar); tap it for a detail popover (X of Y complete, daily summary text)
-- **Retire swipe gestures**: swipe-left-to-cancel and swipe-right-to-defer are too easy to trigger accidentally; replace with intentional drop targets (drag to a "Cancel" or "Defer" zone) or rely on long-press context menu only
-- **Reserve space for Phase 14 (Quick Entry) and Phase 15 (Search)**: during this chrome rework, decide where the quick-entry bar and search live in the layout, and stub in placeholder UI elements so the nav structure doesn't need to be revisited again when those phases land. Quick entry likely replaces or augments the `[+]` button in the bottom bar; search likely lives in the top header or as a gesture.
+> **On hold** — UI layout is being reconsidered. The items below may change significantly or be redistributed to other phases.
+
+- ✅ **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with intentional drag-to-zone; long-press drag a pill to the "✕ Cancel" or "→ Defer" corner zone in the bottom bar; zones expand full-width during a drag
+- **Nav rework** *(on hold)*: remove `[<]`/`[>]` from header; replace with swipe-between-days on the scroll view background
+- **Top header** *(on hold)*: large weekday + month/day centered; "Go to today" scope button inline; tap date → date picker sheet
+- **Bottom glass bar** *(on hold)*: `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
+- **Move categories editing into `···` menu** *(on hold)*
+- **Progress indicator as floating button** *(on hold)*: replace inline progress summary row with a floating donut button; tap for detail popover
+- **Reserve space for Phase 14 / Phase 15** *(on hold)*: stub in Quick Entry and Search placeholders so the nav structure doesn't need another rework when those phases land
 
 ### Phase 14 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up
