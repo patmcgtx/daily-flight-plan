@@ -14,7 +14,6 @@ import SwiftData
     var daySection: DaySection?
     var hasDeadline: Bool
     var deadline: Date
-    var isRecurring: Bool
     var recurringWeekdays: [Locale.Weekday]
     var selectedCategories: [PlanCategory]
 
@@ -33,7 +32,6 @@ import SwiftData
         daySection = nil
         hasDeadline = false
         deadline = date
-        isRecurring = false
         recurringWeekdays = []
         selectedCategories = []
     }
@@ -47,7 +45,6 @@ import SwiftData
         daySection = item.daySection
         hasDeadline = item.deadline != nil
         deadline = item.deadline ?? item.date
-        isRecurring = item.isRecurring
         recurringWeekdays = item.recurringWeekdays
         selectedCategories = item.categories
     }
@@ -72,8 +69,7 @@ import SwiftData
             item.date = day
             item.deadline = alignedDeadline
             item.daySection = hasDeadline ? nil : daySection
-            item.isRecurring = isRecurring
-            item.recurringWeekdays = isRecurring ? recurringWeekdays : []
+            item.recurringWeekdays = recurringWeekdays
             item.categories = selectedCategories
         } else {
             let newItem = PlanItem(
@@ -83,8 +79,7 @@ import SwiftData
                 date: day,
                 deadline: alignedDeadline,
                 daySection: hasDeadline ? nil : daySection,
-                isRecurring: isRecurring,
-                recurringWeekdays: isRecurring ? recurringWeekdays : []
+                recurringWeekdays: recurringWeekdays
             )
             newItem.categories = selectedCategories
             context.insert(newItem)

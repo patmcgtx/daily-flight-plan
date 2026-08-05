@@ -56,6 +56,9 @@ struct DayView: View {
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
     @State private var isAnyTimeDropTargeted = false
+    @State private var isCancelZoneTargeted = false
+    @State private var isDeferZoneTargeted = false
+    @State private var isDraggingPill = false
 
     private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
@@ -80,6 +83,16 @@ struct DayView: View {
             dayScrollView
                 .id(viewModel.selectedDate)
                 .transition(dayTransition)
+                .background(
+                    // Detects when any .draggable pill drag is in progress anywhere over the scroll view.
+                    Color.clear.dropDestination(
+                        for: String.self,
+                        action: { _, _ in false },
+                        isTargeted: { active in
+                            withAnimation(.spring(duration: 0.3)) { isDraggingPill = active }
+                        }
+                    )
+                )
         }
         .clipped()
         .environment(\.editItem) { item in itemToEdit = item }
@@ -373,7 +386,7 @@ struct DayView: View {
                 .padding(.top, 12)
             }
             .safeAreaInset(edge: .bottom) {
-                addButton
+                bottomBar
             }
             .onAppear {
                 if let current = viewModel.currentSection {
@@ -554,7 +567,33 @@ struct DayView: View {
         reminderItems = await service.reminders(for: viewModel.selectedDate, listIDs: ids)
     }
 
-    // MARK: Add button
+    // MARK: Bottom bar — Cancel zone | Add button | Defer zone
+
+    private var bottomBar: some View {
+        Group {
+            if isDraggingPill {
+                // Drag mode: full-width Cancel / Defer zones; Add button hidden
+                HStack(spacing: 12) {
+                    cancelZoneExpanded
+                    deferZoneExpanded
+                }
+                .padding(.top, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else {
+                // Normal mode: compact corner zones flanking the Add button
+                HStack(alignment: .bottom, spacing: 0) {
+                    cancelZoneCompact
+                    Spacer()
+                    addButton
+                    Spacer()
+                    deferZoneCompact
+                }
+                .transition(.opacity)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 12)
+    }
 
     private var addButton: some View {
         Button { isAddingItem = true } label: {
@@ -564,7 +603,105 @@ struct DayView: View {
                 .padding(.vertical, 13)
         }
         .buttonStyle(.glass)
-        .padding(.bottom, 12)
+    }
+
+    // MARK: Cancel / Defer zone variants
+
+    private var cancelZoneCompact: some View {
+        Image(systemName: "xmark.circle.fill")
+            .font(.title2)
+            .foregroundStyle(isCancelZoneTargeted ? .white : .secondary)
+            .frame(width: 48, height: 48)
+            .background(RoundedRectangle(cornerRadius: 14)
+                .fill(isCancelZoneTargeted ? Color.red : Color.secondary.opacity(0.12)))
+            .scaleEffect(isCancelZoneTargeted ? 1.25 : 1.0)
+            .animation(.spring(duration: 0.25), value: isCancelZoneTargeted)
+            .dropDestination(for: String.self) { items, _ in
+                handleCancelDrop(items)
+            } isTargeted: { isCancelZoneTargeted = $0 }
+            .accessibilityLabel("Cancel Item")
+    }
+
+    private var deferZoneCompact: some View {
+        Image(systemName: "arrow.right.circle.fill")
+            .font(.title2)
+            .foregroundStyle(isDeferZoneTargeted ? .white : .secondary)
+            .frame(width: 48, height: 48)
+            .background(RoundedRectangle(cornerRadius: 14)
+                .fill(isDeferZoneTargeted ? Color.orange : Color.secondary.opacity(0.12)))
+            .scaleEffect(isDeferZoneTargeted ? 1.25 : 1.0)
+            .animation(.spring(duration: 0.25), value: isDeferZoneTargeted)
+            .dropDestination(for: String.self) { items, _ in
+                handleDeferDrop(items)
+            } isTargeted: { isDeferZoneTargeted = $0 }
+            .accessibilityLabel("Defer to Tomorrow")
+    }
+
+    private var cancelZoneExpanded: some View {
+        Label("Cancel", systemImage: "xmark.circle.fill")
+            .font(.title2.bold())
+            .foregroundStyle(isCancelZoneTargeted ? .white : .red)
+            .frame(maxWidth: .infinity, minHeight: 80)
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(isCancelZoneTargeted ? Color.red : Color.red.opacity(0.08))
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(
+                        Color.red.opacity(isCancelZoneTargeted ? 0 : 0.5),
+                        style: StrokeStyle(lineWidth: 2, dash: [8, 4])
+                    )
+            }
+            .scaleEffect(isCancelZoneTargeted ? 1.03 : 1.0)
+            .animation(.spring(duration: 0.2), value: isCancelZoneTargeted)
+            .dropDestination(for: String.self) { items, _ in
+                handleCancelDrop(items)
+            } isTargeted: { isCancelZoneTargeted = $0 }
+            .accessibilityLabel("Cancel Item")
+    }
+
+    private var deferZoneExpanded: some View {
+        Label("Defer", systemImage: "arrow.right.circle.fill")
+            .font(.title2.bold())
+            .foregroundStyle(isDeferZoneTargeted ? .white : .orange)
+            .frame(maxWidth: .infinity, minHeight: 80)
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(isDeferZoneTargeted ? Color.orange : Color.orange.opacity(0.08))
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(
+                        Color.orange.opacity(isDeferZoneTargeted ? 0 : 0.5),
+                        style: StrokeStyle(lineWidth: 2, dash: [8, 4])
+                    )
+            }
+            .scaleEffect(isDeferZoneTargeted ? 1.03 : 1.0)
+            .animation(.spring(duration: 0.2), value: isDeferZoneTargeted)
+            .dropDestination(for: String.self) { items, _ in
+                handleDeferDrop(items)
+            } isTargeted: { isDeferZoneTargeted = $0 }
+            .accessibilityLabel("Defer to Tomorrow")
+    }
+
+    // MARK: Drop action helpers
+
+    private func handleCancelDrop(_ items: [String]) -> Bool {
+        guard let uuidString = items.first,
+              let uuid = UUID(uuidString: uuidString),
+              let item = allItems.first(where: { $0.uuid == uuid }) else { return false }
+        withAnimation { item.status = .canceled }
+        return true
+    }
+
+    private func handleDeferDrop(_ items: [String]) -> Bool {
+        guard let uuidString = items.first,
+              let uuid = UUID(uuidString: uuidString),
+              let item = allItems.first(where: { $0.uuid == uuid }) else { return false }
+        let cal = Calendar.current
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
+        item.date = tomorrow
+        if let deadline = item.deadline {
+            item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
+        }
+        return true
     }
 }
 

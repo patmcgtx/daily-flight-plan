@@ -247,15 +247,15 @@ struct DaySectionView: View {
         listColor: .blue,
         isCompleted: false
     )
-    return VStack(spacing: 12) {
+    VStack(spacing: 12) {
         DaySectionView(
             section: .morning,
             sectionPills: [
-                PlanItem(title: "Morning run", isRecurring: true),
-                PlanItem(title: "Coffee", isRecurring: true),
+                PlanItem(title: "Morning run"),
+                PlanItem(title: "Coffee"),
             ],
             deadlineRows: [
-                PlanItem(title: "Doctor appt", deadline: deadline, isRecurring: true),
+                PlanItem(title: "Doctor appt", deadline: deadline),
             ],
             calendarEvents: [calEvent],
             reminderItems: [reminder],

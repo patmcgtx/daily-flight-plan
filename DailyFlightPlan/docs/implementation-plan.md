@@ -92,7 +92,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
 - **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the Past/Missed areas grow in real time as sections end during the day.
 - **Projected recurring items**: On future dates, recurring section-based habits that apply to that weekday appear as ghosted (35% opacity, non-interactive) pills in their section — a preview of the expected day, not yet committed items.
-- **Richer seed data**: Recurring habits across all five sections (coffee, journal, run, standup, clear inbox, gym, walk, read, plan tomorrow) plus one-off items and untimed tasks.
+- **Richer seed data**: Recurring habits across all six sections plus timed and untimed items for thorough testing.
 - **Deferred**: Drag to reorder items between sections → Phase 10
 
 ### Phase 10 — UI Refinements
@@ -129,15 +129,15 @@ Items identified during early real-world use.
 - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞ badge suppressed in the Habits row; checkbox shown only on pending items
 
 ### Phase 13 — Nav & Chrome Rework (Liquid Glass)
-- Remove `[<]` / `[>]` buttons from the header; replace with swipe-between-days on the scroll view background (horizontal drag gesture, background only — no conflict with item gestures once item swipes are retired)
-- Retire swipe-left-to-cancel and swipe-right-to-defer on items; long-press context menu (already implemented) covers the same actions
-- **Top header**: date only — large weekday + month/day centered; "Go to today" scope button inline when off today; tap date → date picker sheet
-- **Bottom floating glass bar** (`safeAreaInset(edge: .bottom)`): `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
-- **Move categories editing into `···` menu**: remove the separate tag icon from the filter row; "Manage Categories" lives in the dropdown alongside Settings and Theme
-- Filter pills row stays sticky in the header
-- **Progress indicator as floating button**: replace the inline progress summary row with a small floating donut button (bottom of screen, above the glass bar); tap it for a detail popover (X of Y complete, daily summary text)
-- **Retire swipe gestures**: swipe-left-to-cancel and swipe-right-to-defer are too easy to trigger accidentally; replace with intentional drop targets (drag to a "Cancel" or "Defer" zone) or rely on long-press context menu only
-- **Reserve space for Phase 14 (Quick Entry) and Phase 15 (Search)**: during this chrome rework, decide where the quick-entry bar and search live in the layout, and stub in placeholder UI elements so the nav structure doesn't need to be revisited again when those phases land. Quick entry likely replaces or augments the `[+]` button in the bottom bar; search likely lives in the top header or as a gesture.
+> **On hold** — UI layout is being reconsidered. The items below may change significantly or be redistributed to other phases.
+
+- ✅ **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with intentional drag-to-zone; long-press drag a pill to the "✕ Cancel" or "→ Defer" corner zone in the bottom bar; zones expand full-width during a drag
+- **Nav rework** *(on hold)*: remove `[<]`/`[>]` from header; replace with swipe-between-days on the scroll view background
+- **Top header** *(on hold)*: large weekday + month/day centered; "Go to today" scope button inline; tap date → date picker sheet
+- **Bottom glass bar** *(on hold)*: `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
+- **Move categories editing into `···` menu** *(on hold)*
+- **Progress indicator as floating button** *(on hold)*: replace inline progress summary row with a floating donut button; tap for detail popover
+- **Reserve space for Phase 14 / Phase 15** *(on hold)*: stub in Quick Entry and Search placeholders so the nav structure doesn't need another rework when those phases land
 
 ### Phase 14 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up
@@ -202,6 +202,9 @@ Items identified during early real-world use.
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
 - **Calendar/Reminders load delay on day switch**: noticeable lag when navigating to a new day because `fetchCalendarEvents()` and `fetchReminderItems()` are triggered by `.task(id: viewModel.selectedDate)` and run sequentially. Consider prefetching adjacent days, caching results, or showing a subtle loading state while data arrives.
+- **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or replaced with a minimal, generic example set before shipping
+- **Drag-to-zone discoverability**: add a one-time tooltip or coach mark explaining the long-press drag gesture (Cancel zone lower-left, Defer zone lower-right) — most users won't discover it without a hint
+- **Per-section add button**: consider a small `+` button on each section header (or in the section content area) so the user can add an item directly into that section without going through the main Add form and re-selecting the section
 - Add an app icon
 - Anything that must be right before calling this version 1.0
 

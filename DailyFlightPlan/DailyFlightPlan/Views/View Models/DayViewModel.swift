@@ -38,7 +38,7 @@ final class DayViewModel {
         return Array(DaySection.allCases.prefix(currentIdx))
     }
 
-    /// All five sections, always — past sections remain visible for day-at-a-glance reference.
+    /// All six sections, always — past sections remain visible for day-at-a-glance reference.
     var activeSections: [DaySection] {
         DaySection.allCases
     }
