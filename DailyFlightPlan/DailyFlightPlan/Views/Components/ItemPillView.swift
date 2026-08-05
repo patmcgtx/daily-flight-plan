@@ -86,7 +86,7 @@ struct ItemPillView: View {
 
 #Preview {
     HStack {
-        ItemPillView(item: PlanItem(title: "Morning run", isRecurring: true))
+        ItemPillView(item: PlanItem(title: "Morning run"))
         ItemPillView(item: PlanItem(title: "Expense report", isFlagged: true))
         ItemPillView(
             item: PlanItem(

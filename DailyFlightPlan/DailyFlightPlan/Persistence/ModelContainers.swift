@@ -43,14 +43,12 @@ extension ModelContainer {
             PlanItem(
                 title: "Approach ppl",
                 date: today,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [social, outAndAbout]
             ),
             PlanItem(
                 title: "Things zero inbox",
                 date: today,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [shallow, laptop]
             ),
@@ -60,7 +58,6 @@ extension ModelContainer {
                 title: "Slow breathing",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [relaxing]
             ),
@@ -68,7 +65,6 @@ extension ModelContainer {
                 title: "Visualize success",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [relaxing]
             ),
@@ -76,7 +72,6 @@ extension ModelContainer {
                 title: "Check my weight",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [home]
             ),
@@ -84,7 +79,6 @@ extension ModelContainer {
                 title: "Basic stretch",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -92,7 +86,6 @@ extension ModelContainer {
                 title: "Jump up and down 50 times",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -100,7 +93,6 @@ extension ModelContainer {
                 title: "Chant or sing",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [home, health]
             ),
@@ -108,7 +100,6 @@ extension ModelContainer {
                 title: "Dress like the GQ guy",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [home]
             ),
@@ -116,7 +107,6 @@ extension ModelContainer {
                 title: "Take orange oil 1",
                 date: today,
                 daySection: .firstThing,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [home, health]
             ),
@@ -126,7 +116,6 @@ extension ModelContainer {
                 title: "Use reusable cup",
                 date: today,
                 daySection: .morning,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [outAndAbout]
             ),
@@ -134,7 +123,6 @@ extension ModelContainer {
                 title: "Update my Calendar",
                 date: today,
                 daySection: .morning,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [shallow, laptop]
             ),
@@ -142,7 +130,6 @@ extension ModelContainer {
                 title: "Plan the day",
                 date: today,
                 daySection: .morning,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [shallow, laptop]
             ),
@@ -150,7 +137,6 @@ extension ModelContainer {
                 title: "Do a Leetcode 150 challenge",
                 date: today,
                 daySection: .morning,
-                isRecurring: true,
                 recurringWeekdays: weekdays,
                 categories: [deep, laptop, career]
             ),
@@ -158,7 +144,6 @@ extension ModelContainer {
                 title: "Sing along with songs 🎤",
                 date: today,
                 daySection: .morning,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [fun, health, relaxing]
             ),
@@ -166,7 +151,6 @@ extension ModelContainer {
                 title: "Listen to news, book, or podcast 📰",
                 date: today,
                 daySection: .morning,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [outAndAbout, relaxing]
             ),
@@ -174,7 +158,6 @@ extension ModelContainer {
                 title: "YNAB done",
                 date: today,
                 daySection: .morning,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [shallow, laptop]
             ),
@@ -184,7 +167,6 @@ extension ModelContainer {
                 title: "Take my pills 💊",
                 date: today,
                 daySection: .midday,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -192,7 +174,6 @@ extension ModelContainer {
                 title: "Eat some fruit 🍎🍊🍌",
                 date: today,
                 daySection: .midday,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -200,7 +181,6 @@ extension ModelContainer {
                 title: "Eat some nuts 🥜",
                 date: today,
                 daySection: .midday,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -208,7 +188,6 @@ extension ModelContainer {
                 title: "Use reusable cup",
                 date: today,
                 daySection: .midday,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [outAndAbout]
             ),
@@ -218,7 +197,6 @@ extension ModelContainer {
                 title: "Macha + rooibos 🍵",
                 date: today,
                 daySection: .afternoon,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -227,7 +205,6 @@ extension ModelContainer {
                 notes: "Good for hypertension etc.",
                 date: today,
                 daySection: .afternoon,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -235,7 +212,6 @@ extension ModelContainer {
                 title: "Easy calf stretches 🏃🏻‍♂️🎾",
                 date: today,
                 daySection: .afternoon,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -245,7 +221,6 @@ extension ModelContainer {
                 title: "Be teasing and challenging women",
                 date: today,
                 daySection: .evening,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [fun, social]
             ),
@@ -253,7 +228,6 @@ extension ModelContainer {
                 title: "Email zero inbox",
                 date: today,
                 daySection: .evening,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [laptop, shallow]
             ),
@@ -261,7 +235,6 @@ extension ModelContainer {
                 title: "Take orange oil 2",
                 date: today,
                 daySection: .evening,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -271,7 +244,6 @@ extension ModelContainer {
                 title: "Pics cleaned up",
                 date: today,
                 daySection: .bedtime,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [laptop, shallow]
             ),
@@ -279,7 +251,6 @@ extension ModelContainer {
                 title: "Balance",
                 date: today,
                 daySection: .bedtime,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health]
             ),
@@ -287,7 +258,6 @@ extension ModelContainer {
                 title: "Plan tomorrow",
                 date: today,
                 daySection: .bedtime,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [laptop, health]
             ),
@@ -295,7 +265,6 @@ extension ModelContainer {
                 title: "Work on my repertoire 🎶",
                 date: today,
                 daySection: .bedtime,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [relaxing, home, fun]
             ),
@@ -303,7 +272,6 @@ extension ModelContainer {
                 title: "Full teeth cleaning",
                 date: today,
                 daySection: .bedtime,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health, home]
             ),
@@ -311,7 +279,6 @@ extension ModelContainer {
                 title: "Catch up on Wins journal",
                 date: today,
                 daySection: .bedtime,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [laptop, fun]
             ),
@@ -320,7 +287,6 @@ extension ModelContainer {
                 notes: "Body scan",
                 date: today,
                 daySection: .bedtime,
-                isRecurring: true,
                 recurringWeekdays: everyday,
                 categories: [health, relaxing]
             )
@@ -351,47 +317,105 @@ extension ModelContainer {
 
         let sampleItems: [PlanItem] = [
             // Any time habits
-            PlanItem(title: "Approach and talk with ppl", date: today,
-                     isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Listen to news, book, or podcast 📰", date: today,
-                     isRecurring: true, recurringWeekdays: everyday),
-
+            PlanItem(
+                title: "Approach and talk with ppl",
+                date: today,
+                recurringWeekdays: everyday
+            ),
+            PlanItem(
+                title: "Listen to news, book, or podcast 📰",
+                date: today,
+                recurringWeekdays: everyday
+            ),
+            
             // First Thing
-            PlanItem(title: "Slow breathing", date: today, daySection: .firstThing,
-                     isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Visualize success", date: today, daySection: .firstThing,
-                     isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Basic stretch", date: today, daySection: .firstThing,
-                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(
+                title: "Slow breathing",
+                date: today,
+                daySection: .firstThing,
+                recurringWeekdays: everyday
+            ),
+            PlanItem(
+                title: "Visualize success",
+                date: today,
+                daySection: .firstThing,
+                recurringWeekdays: everyday
+            ),
+            PlanItem(
+                title: "Basic stretch",
+                date: today,
+                daySection: .firstThing,
+                recurringWeekdays: everyday
+            ),
 
             // Morning
-            PlanItem(title: "Plan the day / prioritize Things", date: today, daySection: .morning,
-                     isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Team standup", date: today,
-                     deadline: cal.date(bySettingHour: 9, minute: 30, second: 0, of: today),
-                     isRecurring: true, recurringWeekdays: weekdays),
-
+            PlanItem(
+                title: "Plan the day / prioritize Things",
+                date: today,
+                daySection: .morning,
+                recurringWeekdays: everyday
+            ),
+            PlanItem(
+                title: "Team standup",
+                date: today,
+                deadline: cal.date(
+                    bySettingHour: 9,
+                    minute: 30,
+                    second: 0,
+                    of: today
+                ),
+                recurringWeekdays: weekdays
+            ),
+            
             // Midday
-            PlanItem(title: "Take my pills 💊", date: today, daySection: .midday,
-                     isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Eat some fruit 🍎🍊🍌", date: today, daySection: .midday,
-                     isRecurring: true, recurringWeekdays: everyday),
-
+            PlanItem(
+                title: "Take my pills 💊",
+                date: today,
+                daySection: .midday,
+                recurringWeekdays: everyday
+            ),
+            PlanItem(
+                title: "Eat some fruit 🍎🍊🍌",
+                date: today,
+                daySection: .midday,
+                recurringWeekdays: everyday
+            ),
+            
             // Afternoon
-            PlanItem(title: "Hydrate (Good for hypertension etc.)", date: today, daySection: .afternoon,
-                     isRecurring: true, recurringWeekdays: everyday),
-
+            PlanItem(
+                title: "Hydrate (Good for hypertension etc.)",
+                date: today,
+                daySection: .afternoon,
+                recurringWeekdays: everyday
+            ),
+            
             // Evening
-            PlanItem(title: "Be teasing and challenging women", date: today, daySection: .evening,
-                     isRecurring: true, recurringWeekdays: everyday),
-
+            PlanItem(
+                title: "Be teasing and challenging women",
+                date: today,
+                daySection: .evening,
+                recurringWeekdays: everyday
+            ),
+            
             // Bedtime
-            PlanItem(title: "Plan tomorrow", date: today, daySection: .bedtime,
-                     isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Full teeth cleaning", date: today, daySection: .bedtime,
-                     isRecurring: true, recurringWeekdays: everyday),
-            PlanItem(title: "Meditate / body scan", date: today, daySection: .bedtime,
-                     isRecurring: true, recurringWeekdays: everyday),
+            PlanItem(
+                title: "Plan tomorrow",
+                date: today,
+                daySection: .bedtime,
+                recurringWeekdays: everyday
+            ),
+            PlanItem(
+                title: "Full teeth cleaning",
+                date: today,
+                daySection: .bedtime,
+                recurringWeekdays: everyday
+            ),
+            PlanItem(
+                title: "Meditate / body scan",
+                date: today,
+                daySection: .bedtime,
+                recurringWeekdays: everyday
+            ),
         ]
 
         for item in sampleItems {

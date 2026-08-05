@@ -25,7 +25,10 @@ class PlanItem {
     /// nil when the item has a specific deadline or is explicitly "any time".
     var daySection: DaySection?
 
-    var isRecurring: Bool
+    /// Considered recurring if it has any recurring days
+    var isRecurring: Bool {
+        !recurringWeekdays.isEmpty
+    }
 
     /// The weekdays on which this item recurs
     var recurringWeekdays: [Locale.Weekday]
@@ -45,7 +48,6 @@ class PlanItem {
         date: Date = .now,
         deadline: Date? = nil,
         daySection: DaySection? = nil,
-        isRecurring: Bool = false,
         recurringWeekdays: [Locale.Weekday] = [],
         status: ItemStatus = .pending,
         categories: [PlanCategory] = []
@@ -56,7 +58,6 @@ class PlanItem {
         self.date = date
         self.deadline = deadline
         self.daySection = daySection
-        self.isRecurring = isRecurring
         self.recurringWeekdays = recurringWeekdays
         self.status = status
         self.categories = categories

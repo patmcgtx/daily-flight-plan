@@ -164,7 +164,6 @@ struct DeadlineItemRow: View {
         DeadlineItemRow(item: PlanItem(
             title: "Team standup",
             deadline: Calendar.current.date(bySettingHour: 9, minute: 30, second: 0, of: .now),
-            isRecurring: true
         ))
         DeadlineItemRow(item: PlanItem(
             title: "Doctor appointment",

@@ -95,10 +95,8 @@ struct ItemForm: View {
     @ViewBuilder
     private var recurringSection: some View {
         Section("Recurring") {
-            Toggle("Repeats Weekly", isOn: Bindable(viewModel).isRecurring)
-            if viewModel.isRecurring {
-                weekdayPicker
-            }
+            Text("Make it a routine")
+            weekdayPicker
         }
     }
 
@@ -185,10 +183,9 @@ struct ItemForm: View {
         notes: "Check in with the team",
         isFlagged: true,
         deadline: Calendar.current.date(bySettingHour: 9, minute: 30, second: 0, of: .now),
-        isRecurring: true,
         recurringWeekdays: [.monday, .wednesday, .friday]
     )
-    return ItemForm(item: item)
+    ItemForm(item: item)
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
