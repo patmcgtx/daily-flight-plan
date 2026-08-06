@@ -128,18 +128,34 @@ Items identified during early real-world use.
 - **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one start collapsed; collapsed headers display a one-line AI summary generated via Foundation Models (`LanguageModelSession`); live clock tick auto-expands the incoming section; falls back to item count badge when Foundation Models is unavailable
 - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞ badge suppressed in the Habits row; checkbox shown only on pending items
 
-### Phase 13 — Nav & Chrome Rework (Liquid Glass)
-> **On hold** — UI layout is being reconsidered. The items below may change significantly or be redistributed to other phases.
+### ✅ Phase 13 — Nav & Chrome Rework (Liquid Glass)
 
-- ✅ **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with intentional drag-to-zone; long-press drag a pill to the "✕ Cancel" or "→ Defer" corner zone in the bottom bar; zones expand full-width during a drag
-- **Nav rework** *(on hold)*: remove `[<]`/`[>]` from header; replace with swipe-between-days on the scroll view background
-- **Top header** *(on hold)*: large weekday + month/day centered; "Go to today" scope button inline; tap date → date picker sheet
-- **Bottom glass bar** *(on hold)*: `[<]` `[⏱ Timeline]` `[+]` `[···]` `[>]` — add item is the central prominent action; `···` menu contains settings, theme, categories
-- **Move categories editing into `···` menu** *(on hold)*
-- **Progress indicator as floating button** *(on hold)*: replace inline progress summary row with a floating donut button; tap for detail popover
-- **Reserve space for Phase 14 / Phase 15** *(on hold)*: stub in Quick Entry and Search placeholders so the nav structure doesn't need another rework when those phases land
+- ✅ **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with long-press context menu only (cancel/defer drag zones also removed)
+- ✅ **Remove sticky header**: entire top header (date row + filter row) removed; no more material bar at the top
+- ✅ **Date label scrolls with content**: weekday + month/day + prev/next chevrons are now the first item in the scroll view's LazyVStack; they scroll along with the sections
+- ✅ **System TabView** (Focus · Timeline · Search) replaces the custom bottom bar; tab bar gets Liquid Glass automatically on iOS 26; `Tab(role: .search)` pins Search to trailing edge
+- ✅ **Add button in toolbar**: `[+]` is a `ToolbarItem(placement: .topBarTrailing)` on the Focus tab, sitting outside the filter group so it gets its own glass capsule
+- ✅ **Toolbar controls on Focus tab**: `NavigationStack` with `ToolbarItemGroup(placement: .topBarTrailing)` — filter menu · categories · theme — grouped by the system into a single Liquid Glass cluster; settings alone on `.topBarLeading`
+- ✅ **Active state on filter & theme buttons**: filter uses `.fill` icon + accent color when `showFlaggedOnly || showCompleted`; theme uses `.fill` paintbrush + accent color when not `.cupertino`
+- ✅ **Filter icon**: `line.3.horizontal.decrease.circle` (standard iOS filter icon, not sliders)
 
-### Phase 14 — Quick Entry (Natural Language)
+### Phase 14 — Usability Part 2
+- Use the app daily for a real period of time — real tasks, real calendar events, real reminders
+- Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
+- Gather a prioritized list of changes needed before shipping version 1.0
+- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
+- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
+- **Day navigation via swipe**: consider replacing prev/next chevrons with horizontal swipe gesture on the scroll view background
+- **Progress indicator**: decide whether to keep inline progress summary row or replace with a floating donut button + detail popover
+- **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
+- **"All clear ✅" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear ✅" in the header instead of an AI summary — a small reward for finishing the section
+- **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
+- **Import Reminder as PlanItem**: tapping a `ReminderItemRow` offers an "Import as Task" action that creates a `PlanItem` from the reminder's title, notes, and due date, then assigns it to the current day's appropriate section; the original reminder is left unchanged
+- **Recurring item logic revisit**: audit the full recurring item lifecycle — `isRecurring`/`recurringDays` fields, projected ghost pills in `DayViewModel`, spillover behavior for recurring items, and how recurring items interact with completion/cancellation. Clarify the intended model (do recurring items ever get "committed" as real items? what happens when you cancel a single occurrence?) and clean up any inconsistencies
+- **Summary vs. full view** *(defer until Phase 15 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
+- **AI summary quality** *(defer until Phase 15 Quick Entry is done — both use Foundation Models)*: weight timed/deadline items and non-recurring items more heavily in the summary prompt so the most time-sensitive things surface first
+
+### Phase 15 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up
 - User types natural language: "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
 - On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework, on-device) using a `@Generable` struct for structured output:
@@ -157,14 +173,14 @@ Items identified during early real-world use.
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 15 — Search
+### Phase 16 — Search
 - Search bar (`.searchable`) in the day view header or as a dedicated screen
 - Search across all items (title, notes) regardless of date
 - Results grouped by date, showing section and status
 - Tapping a result navigates to that day and scrolls to the item
 - Filter results by status (pending / completed / canceled)
 
-### Phase 16 — Settings
+### Phase 17 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
@@ -174,26 +190,14 @@ Items identified during early real-world use.
 - **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
 - Any other preferences surfaced here as phases are completed
 
-### Phase 17 — Local Notifications
+### Phase 18 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 16
-
-### Phase 18 — Usability Part 2
-- Use the app daily for a real period of time — real tasks, real calendar events, real reminders
-- Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
-- Gather a prioritized list of changes needed before shipping version 1.0
-- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
-- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
-- **Summary vs. full view**: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
-- **Import Reminder as PlanItem**: tapping a `ReminderItemRow` offers an "Import as Task" action that creates a `PlanItem` from the reminder's title, notes, and due date, then assigns it to the current day's appropriate section; the original reminder is left unchanged
-- **"All clear ✅" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear ✅" in the header instead of an AI summary — a small reward for finishing the section
-- **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
-- **AI summary quality**: weight timed/deadline items and non-recurring items more heavily in the summary prompt so the most time-sensitive things surface first
+- Notification times respect custom day section boundaries from Phase 17 (Settings)
 
 ### Phase 19 — Fit and Finish
-- Address findings from Phase 18 usability testing
+- Address findings from Phase 14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
@@ -210,6 +214,7 @@ Items identified during early real-world use.
 
 ### Phase 20 — Tech debt
 - Architecture review & refactor
+- **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts (`MapPlusTheme`, `CategoryCapsule`, etc.). When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
 - **Bug: completed/canceled items still accept completion/cancellation gestures**: pills in the done or cancelled rows still have the swipe-left-to-cancel and swipe-right-to-defer gesture, and the context menu "Cancel Item" action. Fix: gate the `DragGesture` and context menu destructive action in `ItemPillView` on `item.status == .pending`.
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
@@ -218,6 +223,20 @@ Items identified during early real-world use.
 ---
 
 ## Version 2.0
+
+### In-App Purchases
+- **Monetization model TBD** — likely a free tier with limits + optional unlock
+- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $1.99
+- **Individual unlocks (TBD — need a 3rd):**
+  - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
+  - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
+  - **[Third unlock TBD]** ($0.99) — candidates: Quick Entry (natural language), Timeline history beyond 30 days, advanced recurring rules, custom section names/times
+- **Daily Flight Plan Pro bundle** ($1.99) — all three unlocks; $0.98 savings vs. buying separately
+- **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
+- Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
+- Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
+- `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
+- Restore purchases flow (required for App Store)
 
 ### iCloud Sync
 - Enable CloudKit capability in entitlements

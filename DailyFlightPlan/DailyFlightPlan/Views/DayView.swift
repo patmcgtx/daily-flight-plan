@@ -7,6 +7,8 @@ import SwiftData
 import EventKit
 import Flow
 
+private enum AppTab: Hashable { case focus, timeline, search }
+
 struct DayView: View {
 
     @State private var viewModel = DayViewModel()
@@ -49,16 +51,18 @@ struct DayView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var modelContext
 
+    @State private var activeTab: AppTab = .focus
     @State private var isShowingCategoriesEdit = false
-    @State private var isShowingTimeline = false
+    @State private var showCategorySelector = false
     @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
     @State private var isAnyTimeDropTargeted = false
-    @State private var isCancelZoneTargeted = false
-    @State private var isDeferZoneTargeted = false
-    @State private var isDraggingPill = false
+
+    private var isFilterActive: Bool {
+        showFlaggedOnly || showCompleted
+    }
 
     private var selectedDateNonCanceledItems: [PlanItem] {
         allItems.filter {
@@ -77,24 +81,87 @@ struct DayView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerView
-            Divider()
-            dayScrollView
-                .id(viewModel.selectedDate)
-                .transition(dayTransition)
-                .background(
-                    // Detects when any .draggable pill drag is in progress anywhere over the scroll view.
-                    Color.clear.dropDestination(
-                        for: String.self,
-                        action: { _, _ in false },
-                        isTargeted: { active in
-                            withAnimation(.spring(duration: 0.3)) { isDraggingPill = active }
+        TabView(selection: $activeTab) {
+            Tab("Focus", systemImage: "airplane", value: AppTab.focus) {
+                NavigationStack {
+                    dayScrollView
+                        .id(viewModel.selectedDate)
+                        .transition(dayTransition)
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button { } label: {
+                                    Image(systemName: "gearshape")
+                                }
+                                .accessibilityLabel("Settings")
+                            }
+
+                            ToolbarItemGroup(placement: .topBarTrailing) {
+                                Menu {
+                                    Toggle(isOn: $showFlaggedOnly) {
+                                        Label("Flagged Only", systemImage: "flag.fill")
+                                    }
+                                    Toggle(isOn: $showCompleted) {
+                                        Label("Show Completed", systemImage: "checkmark")
+                                    }
+                                    Divider()
+                                    Toggle(isOn: $showCalendarEvents) {
+                                        Label("Calendar Events", systemImage: "calendar")
+                                    }
+                                    Toggle(isOn: $showReminderItems) {
+                                        Label("Reminders", systemImage: "bell")
+                                    }
+                                } label: {
+                                    Image(systemName: isFilterActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                                        .foregroundStyle(isFilterActive ? Color.accentColor : Color.primary)
+                                }
+                                .accessibilityLabel("Filters")
+
+                                Button { showCategorySelector = true } label: {
+                                    Image(systemName: "tag")
+                                }
+                                .accessibilityLabel("Filter by Category")
+
+                                Menu {
+                                    ForEach(DFPTheme.allCases) { option in
+                                        Button { theme = option } label: {
+                                            Label(option.localizedName, systemImage: option.menuIconName)
+                                        }
+                                    }
+                                } label: {
+                                    Image(systemName: theme.menuIconName)
+                                        .foregroundStyle(theme == .cupertino ? Color.primary : Color.accentColor)
+                                }
+                                .accessibilityLabel("Theme")
+                            }
+
+                            ToolbarItem(placement: .topBarTrailing) {
+                                Button { isAddingItem = true } label: {
+                                    Image(systemName: "plus")
+                                }
+                                .accessibilityLabel("Add Item")
+                            }
                         }
-                    )
+                }
+            }
+
+            Tab("Timeline", systemImage: "calendar.day.timeline.left", value: AppTab.timeline) {
+                TimelineView(
+                    onSelectDate: { date in
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.navigate(to: date)
+                        }
+                        activeTab = .focus
+                    },
+                    onDismiss: { activeTab = .focus }
                 )
+            }
+            
+            Tab(value: AppTab.search, role: .search) {
+                Text("Search")
+                    .navigationTitle("Search")
+            }
         }
-        .clipped()
         .environment(\.editItem) { item in itemToEdit = item }
         .task {
             viewModel.startLiveClock()
@@ -120,12 +187,8 @@ struct DayView: View {
         .sheet(isPresented: $isShowingCategoriesEdit) {
             CategoriesEditView()
         }
-        .sheet(isPresented: $isShowingTimeline) {
-            TimelineView { date in
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    viewModel.navigate(to: date)
-                }
-            }
+        .sheet(isPresented: $showCategorySelector) {
+            categorySelectorSheet
         }
         .sheet(isPresented: $isAddingItem) {
             ItemForm(date: viewModel.selectedDate)
@@ -141,22 +204,47 @@ struct DayView: View {
             : .asymmetric(insertion: .move(edge: .leading),  removal: .move(edge: .trailing))
     }
 
-    // MARK: Sticky header
+    // MARK: Category selector sheet
 
-    private var headerView: some View {
-        VStack(spacing: 8) {
-            dateNavRow
-            filterRow
+    private var categorySelectorSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Filter by Category")
+                .font(.headline)
+                .padding(.horizontal)
+                .padding(.top)
+            if allCategories.isEmpty {
+                Text("No categories yet.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(allCategories) { category in
+                            CategoryCapsule(category: category)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+            Button("Manage Categories") {
+                showCategorySelector = false
+                isShowingCategoriesEdit = true
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
+            .padding(.bottom)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 10)
-        .background(.regularMaterial)
+        .presentationDetents([.height(160)])
+        .presentationDragIndicator(.visible)
     }
 
-    private var dateNavRow: some View {
+    // MARK: Scrolling date header (scrolls with day content)
+
+    private var scrollingDateHeader: some View {
         ZStack {
-            // Always-centered date display
-            VStack(spacing: 1) {
+            VStack(spacing: 2) {
                 Text(viewModel.selectedDate, format: .dateTime.weekday(.wide))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -176,40 +264,30 @@ struct DayView: View {
                 }
             }
 
-            HStack(spacing: 0) {
-                HStack(spacing: 8) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToYesterday() }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .frame(width: 20)
-                    }
-                    .buttonStyle(.glass)
-                    .accessibilityLabel("Previous Day")
-
-                    Button {
-                        isShowingTimeline = true
-                    } label: {
-                        Image(systemName: "calendar.day.timeline.left")
-                    }
-                    .buttonStyle(.glass)
-                    .accessibilityLabel("Timeline")
+            HStack {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToYesterday() }
+                } label: {
+                    Image(systemName: "chevron.left").frame(width: 20)
                 }
+                .buttonStyle(.glass)
+                .accessibilityLabel("Previous Day")
 
                 Spacer()
 
                 Button {
                     withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToTomorrow() }
                 } label: {
-                    Image(systemName: "chevron.right")
-                        .frame(width: 20)
+                    Image(systemName: "chevron.right").frame(width: 20)
                 }
                 .buttonStyle(.glass)
                 .accessibilityLabel("Next Day")
             }
         }
-        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
+
+    // MARK: Progress summary row
 
     private var progressSummaryRow: some View {
         let items = selectedDateNonCanceledItems
@@ -236,90 +314,6 @@ struct DayView: View {
         .padding(.horizontal)
     }
 
-    private var filterRow: some View {
-        HStack(spacing: 0) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
-                        showFlaggedOnly.toggle()
-                    }
-                    filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
-                        showCompleted.toggle()
-                    }
-                    filterToggle("Calendar", icon: "calendar", isActive: showCalendarEvents) {
-                        showCalendarEvents.toggle()
-                    }
-                    filterToggle("Reminders", icon: "bell", isActive: showReminderItems) {
-                        showReminderItems.toggle()
-                    }
-                    if !allCategories.isEmpty {
-                        Divider().frame(height: 20)
-                        ForEach(allCategories) { category in
-                            CategoryCapsule(category: category)
-                        }
-                    }
-                    Button {
-                        isShowingCategoriesEdit = true
-                    } label: {
-                        Image(systemName: "tag")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                    }
-                    .buttonStyle(.glass)
-                    .accessibilityLabel("Manage Categories")
-                }
-                .padding(.leading)
-                .padding(.trailing, 4)
-            }
-
-            Divider().frame(height: 20).padding(.trailing, 8)
-
-            Menu {
-                Section("Theme") {
-                    ForEach(DFPTheme.allCases) { option in
-                        Button { theme = option } label: {
-                            Label(option.localizedName, systemImage: option.menuIconName)
-                        }
-                    }
-                }
-                Section {
-                    Button { } label: {
-                        Label("Settings", systemImage: "gearshape")
-                    }
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .font(.caption.bold())
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-            }
-            .buttonStyle(.glass)
-            .accessibilityLabel("More")
-            .padding(.trailing)
-        }
-    }
-
-    private func filterToggle(
-        _ title: String, icon: String, isActive: Bool, action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: icon)
-                .font(.caption.bold())
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .foregroundStyle(isActive ? Color.white : Color.primary)
-        }
-        .background {
-            if isActive {
-                Capsule().fill(Color.accentColor)
-            } else {
-                Capsule().fill(.regularMaterial)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: Scrollable day content
 
     private var dayScrollView: some View {
@@ -332,6 +326,8 @@ struct DayView: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    scrollingDateHeader
+
                     ForEach(viewModel.activeSections) { section in
                         let pills = viewModel.sectionPills(section, from: selectedDateItems)
                         let deadlines = viewModel.deadlineRows(section, from: selectedDateItems)
@@ -384,9 +380,6 @@ struct DayView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top, 12)
-            }
-            .safeAreaInset(edge: .bottom) {
-                bottomBar
             }
             .onAppear {
                 if let current = viewModel.currentSection {
@@ -505,7 +498,6 @@ struct DayView: View {
     // MARK: Spillover
 
     /// Moves all pending items from days before today to today.
-    /// Primary trigger: app launch / foreground. Secondary: midnight watcher.
     private func performSpilloverIfNeeded() {
         let today = Calendar.current.startOfDay(for: .now)
         let toSpill = allItems.filter {
@@ -516,7 +508,7 @@ struct DayView: View {
         for item in toSpill {
             item.date = today
             if item.deadline != nil {
-                item.deadline = nil  // deadline-based items become "any time" on the new day
+                item.deadline = nil
             }
         }
         try? modelContext.save()
@@ -525,7 +517,6 @@ struct DayView: View {
         }
     }
 
-    /// Sleeps until midnight, triggers spillover, then loops for subsequent nights.
     private func watchForMidnight() async {
         while !Task.isCancelled {
             let now = Date.now
@@ -567,142 +558,6 @@ struct DayView: View {
         reminderItems = await service.reminders(for: viewModel.selectedDate, listIDs: ids)
     }
 
-    // MARK: Bottom bar — Cancel zone | Add button | Defer zone
-
-    private var bottomBar: some View {
-        Group {
-            if isDraggingPill {
-                // Drag mode: full-width Cancel / Defer zones; Add button hidden
-                HStack(spacing: 12) {
-                    cancelZoneExpanded
-                    deferZoneExpanded
-                }
-                .padding(.top, 8)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            } else {
-                // Normal mode: compact corner zones flanking the Add button
-                HStack(alignment: .bottom, spacing: 0) {
-                    cancelZoneCompact
-                    Spacer()
-                    addButton
-                    Spacer()
-                    deferZoneCompact
-                }
-                .transition(.opacity)
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 12)
-    }
-
-    private var addButton: some View {
-        Button { isAddingItem = true } label: {
-            Label("Add Item", systemImage: "plus")
-                .font(.headline)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 13)
-        }
-        .buttonStyle(.glass)
-    }
-
-    // MARK: Cancel / Defer zone variants
-
-    private var cancelZoneCompact: some View {
-        Image(systemName: "xmark.circle.fill")
-            .font(.title2)
-            .foregroundStyle(isCancelZoneTargeted ? .white : .secondary)
-            .frame(width: 48, height: 48)
-            .background(RoundedRectangle(cornerRadius: 14)
-                .fill(isCancelZoneTargeted ? Color.red : Color.secondary.opacity(0.12)))
-            .scaleEffect(isCancelZoneTargeted ? 1.25 : 1.0)
-            .animation(.spring(duration: 0.25), value: isCancelZoneTargeted)
-            .dropDestination(for: String.self) { items, _ in
-                handleCancelDrop(items)
-            } isTargeted: { isCancelZoneTargeted = $0 }
-            .accessibilityLabel("Cancel Item")
-    }
-
-    private var deferZoneCompact: some View {
-        Image(systemName: "arrow.right.circle.fill")
-            .font(.title2)
-            .foregroundStyle(isDeferZoneTargeted ? .white : .secondary)
-            .frame(width: 48, height: 48)
-            .background(RoundedRectangle(cornerRadius: 14)
-                .fill(isDeferZoneTargeted ? Color.orange : Color.secondary.opacity(0.12)))
-            .scaleEffect(isDeferZoneTargeted ? 1.25 : 1.0)
-            .animation(.spring(duration: 0.25), value: isDeferZoneTargeted)
-            .dropDestination(for: String.self) { items, _ in
-                handleDeferDrop(items)
-            } isTargeted: { isDeferZoneTargeted = $0 }
-            .accessibilityLabel("Defer to Tomorrow")
-    }
-
-    private var cancelZoneExpanded: some View {
-        Label("Cancel", systemImage: "xmark.circle.fill")
-            .font(.title2.bold())
-            .foregroundStyle(isCancelZoneTargeted ? .white : .red)
-            .frame(maxWidth: .infinity, minHeight: 80)
-            .background {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(isCancelZoneTargeted ? Color.red : Color.red.opacity(0.08))
-                RoundedRectangle(cornerRadius: 18)
-                    .strokeBorder(
-                        Color.red.opacity(isCancelZoneTargeted ? 0 : 0.5),
-                        style: StrokeStyle(lineWidth: 2, dash: [8, 4])
-                    )
-            }
-            .scaleEffect(isCancelZoneTargeted ? 1.03 : 1.0)
-            .animation(.spring(duration: 0.2), value: isCancelZoneTargeted)
-            .dropDestination(for: String.self) { items, _ in
-                handleCancelDrop(items)
-            } isTargeted: { isCancelZoneTargeted = $0 }
-            .accessibilityLabel("Cancel Item")
-    }
-
-    private var deferZoneExpanded: some View {
-        Label("Defer", systemImage: "arrow.right.circle.fill")
-            .font(.title2.bold())
-            .foregroundStyle(isDeferZoneTargeted ? .white : .orange)
-            .frame(maxWidth: .infinity, minHeight: 80)
-            .background {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(isDeferZoneTargeted ? Color.orange : Color.orange.opacity(0.08))
-                RoundedRectangle(cornerRadius: 18)
-                    .strokeBorder(
-                        Color.orange.opacity(isDeferZoneTargeted ? 0 : 0.5),
-                        style: StrokeStyle(lineWidth: 2, dash: [8, 4])
-                    )
-            }
-            .scaleEffect(isDeferZoneTargeted ? 1.03 : 1.0)
-            .animation(.spring(duration: 0.2), value: isDeferZoneTargeted)
-            .dropDestination(for: String.self) { items, _ in
-                handleDeferDrop(items)
-            } isTargeted: { isDeferZoneTargeted = $0 }
-            .accessibilityLabel("Defer to Tomorrow")
-    }
-
-    // MARK: Drop action helpers
-
-    private func handleCancelDrop(_ items: [String]) -> Bool {
-        guard let uuidString = items.first,
-              let uuid = UUID(uuidString: uuidString),
-              let item = allItems.first(where: { $0.uuid == uuid }) else { return false }
-        withAnimation { item.status = .canceled }
-        return true
-    }
-
-    private func handleDeferDrop(_ items: [String]) -> Bool {
-        guard let uuidString = items.first,
-              let uuid = UUID(uuidString: uuidString),
-              let item = allItems.first(where: { $0.uuid == uuid }) else { return false }
-        let cal = Calendar.current
-        let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
-        item.date = tomorrow
-        if let deadline = item.deadline {
-            item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
-        }
-        return true
-    }
 }
 
 #Preview {
