@@ -51,6 +51,12 @@ extension ModelContainer {
                 recurringWeekdays: everyday,
                 categories: [shallow, laptop]
             ),
+            PlanItem(
+                title: "Exercise",
+                date: today,
+                recurringWeekdays: everyday,
+                categories: [home, health]
+            ),
 
             // First Thing habits
             PlanItem(
