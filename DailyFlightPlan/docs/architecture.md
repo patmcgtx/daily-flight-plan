@@ -89,9 +89,21 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 
 ## UI: "Structured Flight Plan"
 
-**Sticky header (two rows, never scrolls):**
-- Row 1: `[<] [⏱]  Friday, Aug 1  [☉]  [⚙] [🎨] [>]` — previous day, timeline, date + go-to-today, settings, theme, next day. Small progress ring (donut) sits between settings and theme.
-- Row 2: `[★ Flagged] [✓ Done] [📅 Calendar] [🔔 Reminders]` Liquid Glass toggle pills + horizontally scrollable `CategoryCapsule` row. All filter prefs saved to `@AppStorage`.
+**Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
+- **Focus** (`airplane`) — the main day view
+- **Timeline** (`calendar.day.timeline.left`) — all plan items grouped by date
+- **Search** (`magnifyingglass`, pinned trailing via `Tab(role: .search)`) — stub, not yet implemented
+
+**Navigation bar toolbar (Focus tab only, inside `NavigationStack`):**
+- Leading: `⚙` Settings button (stub — navigates to `SettingsView`, not yet implemented)
+- Trailing: `ToolbarItemGroup` — filter menu (`line.3.horizontal.decrease.circle`), category button (`tag`), theme menu (`paintbrush`) — system groups these into a single Liquid Glass capsule on iOS 26
+- Trailing: `+` Add Item button (separate from the group; Phase 14 will move this to the thumb zone)
+
+All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`) is saved to `@AppStorage`. The filter icon fills/accents when any filter is active.
+
+**Scrolling date header (scrolls with content, not sticky):**
+- Centered: weekday + date, with a `scope` go-to-today button when not on today
+- Leading/trailing: `[<]` / `[>]` chevron buttons with `.buttonStyle(.glass)` for previous/next day
 
 **Day sections:** All five sections are always visible (past sections remain as a day-at-a-glance reference). Rounded-rect bordered cards, collapsible via tap. When viewing today, inactive sections start collapsed; the current section is always expanded and auto-expands when the clock ticks into it. Collapsed sections display a one-line AI summary (Foundation Models, on-device) inline in the header. Items draggable between sections via long-press; drop target highlights with an accent-colored border.
 
@@ -104,7 +116,8 @@ Each expanded section body renders item sub-rows in order:
 6. **Calendar event rows** — full-width `CalendarEventRow` entries
 7. **Reminder rows** — full-width `ReminderItemRow` entries
 
-**Special non-section areas (below section cards):**
+**Special non-section areas (below section cards, scrolls with content):**
+- **Progress row**: `ProgressRingView` (small donut) + "X of Y complete" text inline
 - **Missed**: pending items whose specific clock-time deadline has passed. Uses `DeadlineItemRow`. No card background.
 - **Open**: untimed items (no section, no deadline). Drop target for drag-to-reassign. No card background.
 
@@ -112,9 +125,7 @@ Each expanded section body renders item sub-rows in order:
 
 **Now bar:** Red horizontal line + "NOW" label, rendered inside whichever section contains the current time.
 
-**Add button:** Centered floating Liquid Glass pill `[+  Add Item  ]` using `safeAreaInset(edge: .bottom)`.
-
-**Timeline sheet:** Presented from the `[⏱]` button. Shows all plan items (no calendar/reminders) grouped by date, with filter bar and today indicator. Tap a date or row to dismiss and navigate DayView to that date.
+**Timeline tab:** Embedded as a tab (not a sheet). Shows all plan items grouped by date with a filter bar and today indicator. Selecting a date or row navigates the Focus tab to that date and switches back to Focus. Filters (flagged, done, category) are shared state via `@AppStorage`.
 
 **Item types in the day view:**
 | Type | Layout | Visual treatment |

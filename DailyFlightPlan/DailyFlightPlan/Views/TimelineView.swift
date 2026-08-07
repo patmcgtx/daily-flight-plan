@@ -8,12 +8,18 @@ import SwiftData
 struct TimelineView: View {
 
     let onSelectDate: (Date) -> Void
+    /// Set when embedded inline as a tab; nil means sheet mode (uses environment dismiss).
+    var onDismiss: (() -> Void)? = nil
 
     @Query(sort: \PlanItem.date) private var allItems: [PlanItem]
     @Query(sort: \PlanCategory.name) private var allCategories: [PlanCategory]
 
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var envDismiss
     @Environment(\.categorySelectionService) private var categorySelectionService
+
+    private func handleDismiss() {
+        if let onDismiss { onDismiss() } else { envDismiss() }
+    }
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
     @AppStorage(AppStorageKeys.showCompleted.rawValue) private var showCompleted: Bool = false
@@ -51,7 +57,7 @@ struct TimelineView: View {
                                         .contentShape(Rectangle())
                                         .onTapGesture {
                                             onSelectDate(group.date)
-                                            dismiss()
+                                            handleDismiss()
                                         }
                                 }
                             }
@@ -65,8 +71,10 @@ struct TimelineView: View {
                 .navigationTitle("Timeline")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") { dismiss() }
+                    if onDismiss == nil {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { handleDismiss() }
+                        }
                     }
                 }
                 .safeAreaInset(edge: .top) {
@@ -87,7 +95,7 @@ struct TimelineView: View {
         let isPast = date < today
         Button {
             onSelectDate(date)
-            dismiss()
+            handleDismiss()
         } label: {
             HStack {
                 if isToday {
