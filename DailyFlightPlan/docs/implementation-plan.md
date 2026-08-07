@@ -145,7 +145,7 @@ Items identified during early real-world use.
 - ✅ Gather a prioritized list of changes needed before shipping version 1.0
 - ❌ Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
 - ✅ **"All clear" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear" in the header instead of an AI summary — a small reward for finishing the section
-- **Consistent indention of items and flows in a day section**: Items and flows like recurring items, deadline items, Calendar events, and Reminders are all indented by an icon. Normal items are no indented. So it looks "off". Let's indent normal items the same as the others. Add a basic "task" icon if that helps.
+- ✅ **Consistent indentation of items in a day section**: regular pending pills now use `labeledPillRow(icon: "circle", ...)` so they align with the done (✓), canceled (✗), and habits (∞) rows — all four pill groups share the same icon-column layout
 - ✅ **Import Reminder as PlanItem**: long-press a `ReminderItemRow` to get a context menu with "Import as Task"; creates a `PlanItem` from the reminder's title, notes, and dueDate (stored as a `deadline`, placing it in the right section automatically); stores `reminderIdentifier` for future two-way sync; the original reminder is left unchanged
 - **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
 - **Progress indicator**: decide whether to keep inline progress summary row or replace with a floating donut button + detail popover

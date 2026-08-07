@@ -149,14 +149,7 @@ struct DaySectionView: View {
             }
 
             if !regularPills.isEmpty {
-                HFlow(itemSpacing: 8, rowSpacing: 8) {
-                    ForEach(regularPills) { item in
-                        ItemPillView(item: item)
-                            .draggable(item.uuid.uuidString)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.top, 10)
+                labeledPillRow(icon: "list.dash", pills: regularPills, isFirst: true)
             }
 
             if !donePills.isEmpty {
