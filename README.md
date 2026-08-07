@@ -5,7 +5,7 @@ A daily planning and execution app for iOS, inspired by an airplane flight plan 
 > "While we delay, life hurries past."
 > — Seneca
 
-See this app's plan [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
+See this app's [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
 
 
 ## Goals
