@@ -9,6 +9,8 @@ struct ReminderItemRow: View {
 
     let item: ReminderItem
 
+    @Environment(\.importReminderItem) private var importReminderItem
+
     var body: some View {
         HStack(spacing: 0) {
             Rectangle()
@@ -38,6 +40,15 @@ struct ReminderItemRow: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+        }
+        .contextMenu {
+            if let importReminderItem {
+                Button {
+                    importReminderItem(item)
+                } label: {
+                    Label("Import as Task", systemImage: "square.and.arrow.down")
+                }
+            }
         }
     }
 }

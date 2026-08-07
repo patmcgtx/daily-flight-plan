@@ -163,6 +163,7 @@ struct DayView: View {
             }
         }
         .environment(\.editItem) { item in itemToEdit = item }
+        .environment(\.importReminderItem) { reminder in importReminder(reminder) }
         .task {
             viewModel.startLiveClock()
             await watchForMidnight()
@@ -480,6 +481,20 @@ struct DayView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 8)
         }
+    }
+
+    // MARK: Import Reminder
+
+    private func importReminder(_ reminder: ReminderItem) {
+        let item = PlanItem(
+            title: reminder.title,
+            notes: reminder.notes ?? "",
+            date: Calendar.current.startOfDay(for: viewModel.selectedDate),
+            deadline: reminder.dueDate
+        )
+        item.reminderIdentifier = reminder.id
+        modelContext.insert(item)
+        try? modelContext.save()
     }
 
     // MARK: All clear
