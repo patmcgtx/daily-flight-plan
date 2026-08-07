@@ -69,7 +69,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - `selectedCalendarIDs` added to `AppStorageKeys` (comma-separated; empty = all calendars)
 - `CalendarEventRow` — read-only row with colored calendar dot; tap opens Calendar app via `calshow:` URL
 - Calendar events rendered in each `DaySectionView` (below deadline rows) via `calendarEventsForSection(_:from:)` on `DayViewModel`
-- Calendar selection UI deferred to Phase 9 (Settings); all calendars shown by default
+- Calendar selection UI deferred to Phase 21 (Settings); all calendars shown by default
 
 ### ✅ Phase 8 — Reminders Integration
 - `RemindersService` protocol + `EventKitRemindersService` live implementation (separate `EKEventStore` from calendar service)
@@ -83,7 +83,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Undated reminders appear in the "Any Time" area as a grouped card of `ReminderItemRow`s
 - `EKEventStoreChanged` notification re-fetches both calendar events and reminders on any store change
 - **Deferred**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decide in a later phase
-- **Deferred**: reminder list selection UI — moved to Phase 9 (Settings)
+- **Deferred**: reminder list selection UI — moved to Phase 21 (Settings)
 
 ### ✅ Phase 9 — Workflow Refinements
 - **Spillover**: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
@@ -92,17 +92,16 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
 - **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the Past/Missed areas grow in real time as sections end during the day.
 - **Projected recurring items**: On future dates, recurring section-based habits that apply to that weekday appear as ghosted (35% opacity, non-interactive) pills in their section — a preview of the expected day, not yet committed items.
-- **Richer seed data**: Recurring habits across all six sections plus timed and untimed items for thorough testing.
+- **Richer seed data**: Recurring habits across all five sections plus timed and untimed items for thorough testing.
 - **Deferred**: Drag to reorder items between sections → Phase 10
 
-### Phase 10 — UI Refinements
-- ✅ **Drag to reassign section**: Long-press any section pill or deadline row to drag it to a different day section card. Dropping onto a section sets `item.daySection` and clears any deadline. Dragging to "Open" clears both (`daySection = nil`, `deadline = nil`). Each section highlights with an accent-colored border while a drag is over it. Added `uuid: UUID` to `PlanItem` as a stable drag token. "Open" also acts as a drop target, with an empty placeholder shown when it has no items.
-- ✅ **Calendar / Reminders toggles**: Filter-bar `Calendar` and `Reminders` toggle pills added to the filter row (stored in `@AppStorage` as `showCalendarEvents` / `showReminderItems`, both on by default). When toggled off, events/reminders are hidden from all sections, Past, Missed, and Open.
-- Make Reminders items and Calendar events stand out more (or less) from the rest of the items, such as italic font.
-- Make recurring items, aka habits, stand out in some more intuitive way as well. I like the infinity icon. Maybe just lay it out differently?
-- ✅ Renamed "Any Time" → "Open" (works for today and all other dates)
+### ✅ Phase 10 — UI Refinements
+- **Drag to reassign section**: Long-press any section pill or deadline row to drag it to a different day section card. Dropping onto a section sets `item.daySection` and clears any deadline. Dragging to "Open" clears both (`daySection = nil`, `deadline = nil`). Each section highlights with an accent-colored border while a drag is over it. Added `uuid: UUID` to `PlanItem` as a stable drag token. "Open" also acts as a drop target, with an empty placeholder shown when it has no items.
+- **Calendar / Reminders toggles**: Filter-bar `Calendar` and `Reminders` toggle pills added to the filter row (stored in `@AppStorage` as `showCalendarEvents` / `showReminderItems`, both on by default). When toggled off, events/reminders are hidden from all sections, Past, Missed, and Open.
+- Renamed "Any Time" → "Open" (works for today and all other dates)
+- Remaining visual refinements (Calendar/Reminders row treatment, recurring item layout) moved to Phase 17 (Brand New Focus View)
 
-### ✅ Phase 11 — Timeline view
+### ✅ Phase 11 — Timeline View
 - `TimelineView.swift` — plan items only (no Calendar events, no Reminders)
 - Filter bar with Flagged/Done/Recurring toggles + category capsules (same `@AppStorage` keys as DayView)
 - Items grouped by date (`Dictionary(grouping:)` → sorted by day); today is always shown even if empty after filtering
@@ -113,7 +112,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 - Timeline button (`calendar.day.timeline.left`) added to DayView header (left side, next to `[<]`)
 - `navigate(to:)` method added to `DayViewModel`
 - Read-only; add/edit deferred to a later phase
-- **Deferred**: lazy-load past days — moved to Phase 12
+- **Deferred**: lazy-load past + future days — moved to Phase 16 (Finish Timeline View)
 
 ### ✅ Phase 12 — Usability Part 1
 Items identified during early real-world use.
@@ -129,15 +128,14 @@ Items identified during early real-world use.
 - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞ badge suppressed in the Habits row; checkbox shown only on pending items
 
 ### ✅ Phase 13 — Nav & Chrome Rework (Liquid Glass)
-
-- ✅ **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with long-press context menu only (cancel/defer drag zones also removed)
-- ✅ **Remove sticky header**: entire top header (date row + filter row) removed; no more material bar at the top
-- ✅ **Date label scrolls with content**: weekday + month/day + prev/next chevrons are now the first item in the scroll view's LazyVStack; they scroll along with the sections
-- ✅ **System TabView** (Focus · Timeline · Search) replaces the custom bottom bar; tab bar gets Liquid Glass automatically on iOS 26; `Tab(role: .search)` pins Search to trailing edge
-- ✅ **Add button in toolbar**: `[+]` is a `ToolbarItem(placement: .topBarTrailing)` on the Focus tab, sitting outside the filter group so it gets its own glass capsule
-- ✅ **Toolbar controls on Focus tab**: `NavigationStack` with `ToolbarItemGroup(placement: .topBarTrailing)` — filter menu · categories · theme — grouped by the system into a single Liquid Glass cluster; settings alone on `.topBarLeading`
-- ✅ **Active state on filter & theme buttons**: filter uses `.fill` icon + accent color when `showFlaggedOnly || showCompleted`; theme uses `.fill` paintbrush + accent color when not `.cupertino`
-- ✅ **Filter icon**: `line.3.horizontal.decrease.circle` (standard iOS filter icon, not sliders)
+- **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with long-press context menu only (cancel/defer drag zones also removed)
+- **Remove sticky header**: entire top header (date row + filter row) removed; no more material bar at the top
+- **Date label scrolls with content**: weekday + month/day + prev/next chevrons are now the first item in the scroll view's LazyVStack; they scroll along with the sections
+- **System TabView** (Focus · Timeline · Search) replaces the custom bottom bar; tab bar gets Liquid Glass automatically on iOS 26; `Tab(role: .search)` pins Search to trailing edge
+- **Add button in toolbar**: `[+]` is a `ToolbarItem(placement: .topBarTrailing)` on the Focus tab, sitting outside the filter group so it gets its own glass capsule
+- **Toolbar controls on Focus tab**: `NavigationStack` with `ToolbarItemGroup(placement: .topBarTrailing)` — filter menu · categories · theme — grouped by the system into a single Liquid Glass cluster; settings alone on `.topBarLeading`
+- **Active state on filter & theme buttons**: filter uses `.fill` icon + accent color when `showFlaggedOnly || showCompleted`; theme uses `.fill` paintbrush + accent color when not `.cupertino`
+- **Filter icon**: `line.3.horizontal.decrease.circle` (standard iOS filter icon, not sliders)
 
 ### Phase 14 — Usability Part 2
 - ✅ Use the app daily for a real period of time — real tasks, real calendar events, real reminders
@@ -145,56 +143,57 @@ Items identified during early real-world use.
 - ✅ Gather a prioritized list of changes needed before shipping version 1.0
 - ❌ Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
 - ✅ **"All clear" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear" in the header instead of an AI summary — a small reward for finishing the section
-- ✅ **Consistent indentation of items in a day section**: regular pending pills now use `labeledPillRow(icon: "circle", ...)` so they align with the done (✓), canceled (✗), and habits (∞) rows — all four pill groups share the same icon-column layout
+- ✅ **Consistent indentation of items in a day section**: regular pending pills now use `labeledPillRow(icon: "list.dash", ...)` so they align with the done (✓), canceled (✗), and habits (∞) rows — all four pill groups share the same icon-column layout
 - ✅ **Import Reminder as PlanItem**: long-press a `ReminderItemRow` to get a context menu with "Import as Task"; creates a `PlanItem` from the reminder's title, notes, and dueDate (stored as a `deadline`, placing it in the right section automatically); stores `reminderIdentifier` for future two-way sync; the original reminder is left unchanged
-- **Rename day "section" to "segment"**: This is more in line with the flight/airplane analogy. This change can be limited to user-facing terminology for now.
-- ✅ **Animation while waiting for section summary**: While a section summary is being generated by local AI, show an animation. I'm thinking a "..." animation like we see with AI a lot.
-- ✅ **Section summary reload option**: Add a small "reload" icon after an AI-generated section sumamry to generate a fresh summary.
-- ✅ **AI summary quality**: weight timed/deadline items and non-recurring items more heavily in the summary prompt so the most time-sensitive things surface first
+- **Rename day "section" to "segment"**: more in line with the flight/airplane analogy; user-facing terminology only for now
+- ✅ **Animation while waiting for section summary**: while a section summary is being generated by local AI, show a "..." animation
+- ✅ **Section summary reload option**: a small reload icon after an AI-generated section summary lets the user generate a fresh summary
+- ✅ **AI summary quality**: all timed items (deadline plan items, calendar events, and timed reminders) are merged and sorted by clock time and appear first; followed by non-recurring one-off tasks, untimed reminders, and recurring habits — so the most time-sensitive items always surface first in the summary
 
-### NEW: Fix Recurring Items / Habits / Routine behavior
-- Let's clearly define the rules and behavior for recurring items.
-- Probably treat them more as a "template" item.
-- Refator as needed.
+### Phase 15 — Fix Recurring Items / Habits / Routine Behavior
+- Clearly define the rules and behavior for recurring items
+- Probably treat them more as a "template" item
+- Refactor as needed
 - Possibly a "routine" or "habits" view / tab!
-- Known issues to addresss:
+- Known issues to address:
   - Recurring items not showing up on a new day
-  - Changing a recurring item's time of day on one day changes it forever. Do we want this? Probably not unless it's an *intentional* change, not just automatic bumping.
-  - Recurring items show up in future days as completed 
+  - Changing a recurring item's time of day on one day changes it forever — probably not the desired behavior unless it is an *intentional* change, not just automatic bumping
+  - Recurring items showing up in future days as completed
 
-### NEW: Finish timeline view
-- The timeline should show *all* days, past, present, and future. So it's a time machine of sorts.
-- Past days shows a history of what was completed (and canceled)
-- Future days show scheduled items and projected recurring items, which are non-interactable 
-- Can do the usual editing on today and future planned items, with swipe gestures for cancel, defer, flag, and delete
-- A share icon for each day. Can be basic first pass or even a visual placeholder for now.
+### Phase 16 — Finish Timeline View
+- The timeline should show *all* days, past, present, and future — a time machine of sorts
+- Past days show a history of what was completed (and canceled)
+- Future days show scheduled items and projected recurring items, which are non-interactive
+- Allow the usual editing on today and future planned items, with swipe gestures for cancel, defer, flag, and delete
+- A share icon for each day — can be a basic first pass or even a visual placeholder for now
 - Implementation notes:
-  - **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once.
-  - **Timeline lazy-load future days**: start with today and load future days on demand as the user scrolls, rather than fetching all of the future at once. The future will show recurring items and also items schedule for that day.
+  - **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
+  - **Timeline lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
 
-### NEW: Brand New Focus View
-- Based on what we've learned so far, let's create a brand new, cleaner focus view.
-- Progress indicator: Rework this? It needs to be *in* the day view somewhere. Possibly go horizontal?
-- Possibly more of an "accordian" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditinal expand/collapse view.
-- Remeber: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
-- **Start** with a view that can be clean swiped left and right for yesterday/tomorrow. See Smooth Day Swipe Navigation (Pager) below.
-- Refactor services and view models as we go. We want this stuff pristine and unit-testable.
-- Add unit tests once happy with the behavior.
+### Phase 17 — Brand New Focus View
+- Based on what we've learned so far, let's create a brand new, cleaner focus view
+- **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
+- **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
+- **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
+- Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
+- Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
+- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 23 (Smooth Day Swipe Navigation Pager)
+- Refactor services and view models as we go — we want this stuff pristine and unit-testable
+- Add unit tests once happy with the behavior
 - Can we reuse the existing view models?
 
-### NEW: Architecture Clean Up
-- With the "Brand New Focus View" working, let's drop the old Focus view and all associated code
-- Let's take the opportunity to audit and fix any architectural issues like too much logic in the views that can be in view models or view model logic that can be in services
-- Check and clean upthe file and class organization
-- Update the architecure doc
+### Phase 18 — Architecture Clean Up
+- With the "Brand New Focus View" working, drop the old Focus view and all associated code
+- Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
+- Check and clean up file and class organization
+- Update the architecture doc
 
-### Phase 15 — Chat node / Quick Entry (Natural Language)
-- Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural langauge to do whataver...
-  - Quick-enter new items
-  - e.g. user types natural language: "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
-  - Ask questions 
+### Phase 19 — Chat / Quick Entry (Natural Language)
+- Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
+  - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
+  - Ask questions about your day
 - Replace (or augment) the "Add Item" button with a free-text entry field?
-- Possible paid upgrade eventually - make surethe quality is good first!
+- Possible paid upgrade eventually — make sure the quality is good first!
 - On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework, on-device) using a `@Generable` struct for structured output:
   - `title: String`
   - `notes: String?`
@@ -210,18 +209,17 @@ Items identified during early real-world use.
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 16 — Search
-- all search already handled by Chat node? Do we need a separate Search tab? It might be redundant.
+### Phase 20 — Search
+- All search already handled by Chat / Quick Entry? Do we need a separate Search tab? It might be redundant.
 - Consider moving search to *only* the timeline view
 - Search bar (`.searchable`) in the day view header or as a dedicated screen
 - Search across all items (title, notes) regardless of date
 - Results grouped by date, showing section and status
 - Tapping a result navigates to that day and scrolls to the item
 - Filter results by status (pending / completed / canceled)
-- And moving the (+) button to where the search button is now...
 - **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
 
-### Phase 17 — Settings
+### Phase 21 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
@@ -231,15 +229,15 @@ Items identified during early real-world use.
 - **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
 - Any other preferences surfaced here as phases are completed
 
-### Phase 18 — Local Notifications
+### Phase 22 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 17 (Settings)
+- Notification times respect custom day section boundaries from Phase 21 (Settings)
 
-### Phase 19 — Smooth Day Swipe Navigation (Pager)
-- Was this handled by Phase "Brand New Focus View"?
-- This may be best done as a simple, brand new view rather than untangling and refactoring the existing code.
+### Phase 23 — Smooth Day Swipe Navigation (Pager)
+- Was this handled by Phase 17 (Brand New Focus View)?
+- This may be best done as part of that brand new view rather than untangling and refactoring the existing code
 - Replace the current chevron-only navigation with a true horizontal pager where adjacent day content slides in with your finger — like Apple Calendar or Photos
 - Extract the day scroll content into a date-parameterized `DayScrollContent` view with its own `@Query` and async calendar/reminder fetching so each adjacent page is self-contained
 - Implement a 3-page `TabView(.tabViewStyle(.page))` with an infinite-reset pattern: pages are `[yesterday, today, tomorrow]`; when a swipe commits, update `selectedDate`, update the page dates array, and silently jump back to the center page — no flash because the center page now shows the just-navigated-to date
@@ -247,35 +245,33 @@ Items identified during early real-world use.
 - Section collapse/expand state and AI summaries remain tied to `DayViewModel.selectedDate`, resetting on each navigation as they do today
 - Remove or keep the chevron buttons based on how discoverable the swipe feels after this change
 
-### Phase 20 — Fit and Finish
+### Phase 24 — Fit and Finish
 - Address findings from Phase 14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
-- Get a nice AI summary of the day once it's complete, in the day view, as a sort of reward.
+- Get a nice AI summary of the day once it's complete, in the day view, as a sort of reward
 - Are we hiding day segments that have passed?
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
-- **Missed item rule to consider**: When a day section has passed and items are left in it, move everything to “Open”.
-- **Summary vs. full view** *(defer until Phase 15 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
-- **make calendar and reminders access read-only**: No need for read/write access any more
-- **Recurring item logic revisit**: audit the full recurring item lifecycle — `isRecurring`/`recurringDays` fields, projected ghost pills in `DayViewModel`, spillover behavior for recurring items, and how recurring items interact with completion/cancellation. Clarify the intended model (do recurring items ever get "committed" as real items? what happens when you cancel a single occurrence?) and clean up any inconsistencies
+- **Missed item rule to consider**: when a day section has passed and items are left in it, move everything to "Open"
+- **Summary vs. full view** *(defer until Phase 19 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
+- **Make Calendar and Reminders access read-only**: no need for read/write access anymore
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
 - **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
-- **Calendar/Reminders load delay on day switch**: noticeable lag when navigating to a new day because `fetchCalendarEvents()` and `fetchReminderItems()` are triggered by `.task(id: viewModel.selectedDate)` and run sequentially. Consider prefetching adjacent days, caching results, or showing a subtle loading state while data arrives.
+- **Calendar/Reminders load delay on day switch**: noticeable lag when navigating to a new day because `fetchCalendarEvents()` and `fetchReminderItems()` are triggered by `.task(id: viewModel.selectedDate)` and run sequentially; consider prefetching adjacent days, caching results, or showing a subtle loading state while data arrives
 - **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or replaced with a minimal, generic example set before shipping
-- **Drag-to-zone discoverability**: add a one-time tooltip or coach mark explaining the long-press drag gesture (Cancel zone lower-left, Defer zone lower-right) — most users won't discover it without a hint
 - **Per-section add button**: consider a small `+` button on each section header (or in the section content area) so the user can add an item directly into that section without going through the main Add form and re-selecting the section
 - Add an app icon
 - Anything that must be right before calling this version 1.0
 
-### Phase 21 — Tech debt
+### Phase 25 — Tech Debt
 - Architecture review & refactor
-- **Rename day "section" to "segment"**: Make this change in the code now too.
-- **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts (`MapPlusTheme`, `CategoryCapsule`, etc.). When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
+- **Rename day "section" to "segment"**: make this change in the code as well
+- **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
-- **Bug: completed/canceled items still accept completion/cancellation gestures**: pills in the done or cancelled rows still have the swipe-left-to-cancel and swipe-right-to-defer gesture, and the context menu "Cancel Item" action. Fix: gate the `DragGesture` and context menu destructive action in `ItemPillView` on `item.status == .pending`.
+- **Bug: completed/canceled items still accept context menu actions**: pills in the done or cancelled rows still show the "Cancel Item" context menu action. Fix: gate the context menu destructive action in `ItemPillView` on `item.status == .pending`.
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
@@ -302,7 +298,6 @@ Items identified during early real-world use.
 - Switch `ModelConfiguration` to use a CloudKit container identifier
 - Handle merge conflicts and sync errors gracefully
 
-
 ### Import / Export
 - Export a day or the timeline view
 - **Import from Things**: parse a Things export (markdown or JSON) and use Foundation Models to auto-assign each task to the appropriate day section, deadline, or recurring schedule
@@ -327,9 +322,8 @@ Items identified during early real-world use.
 ## Version 3.0
 
 ### Siri & AI
-- Support Siri for adding items and asking specific questions 
-- Opt into iOS AI support so Siri can knwo about my daily plan
-
+- Support Siri for adding items and asking specific questions
+- Opt into iOS AI support so Siri can know about my daily plan
 
 ### Widget + Live Activity
 - Home screen widget: show today's next upcoming item or a compact progress ring + item count

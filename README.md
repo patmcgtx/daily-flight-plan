@@ -36,7 +36,7 @@ I took an app idea in my mind, sketched it out in Figma, broke that into a detai
 
 ## Concept
 
-Combines one-off and recurring tasks, organized into six time-of-day sections (First Thing, Morning, Midday, Afternoon, Evening, Bedtime). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Open" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. All six sections are always visible — past sections stay on screen as a day-at-a-glance reference. Inactive sections auto-collapse with a one-line AI summary; items past a specific deadline surface in a "Missed" area. Navigate to a future date to see a ghosted preview of your expected recurring habits.
+Combines one-off and recurring tasks, organized into five time-of-day sections (Morning, Midday, Afternoon, Evening, Night). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Open" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. All five sections are always visible — past sections stay on screen as a day-at-a-glance reference. Inactive sections auto-collapse with a one-line AI summary; items past a specific deadline surface in a "Missed" area. Navigate to a future date to see a ghosted preview of your expected recurring habits.
 
 ## Tech stack
 
@@ -49,13 +49,13 @@ Combines one-off and recurring tasks, organized into six time-of-day sections (F
 
 ## Features (current)
 
-- Day view with six collapsible time-of-day sections — all always visible, including past sections for day-at-a-glance reference
+- Day view with five collapsible time-of-day sections — all always visible, including past sections for day-at-a-glance reference
 - **Auto-collapse + AI summary**: inactive sections collapse automatically; collapsed headers show a one-line on-device AI summary (Foundation Models)
 - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring); completed and cancelled items show with strikethrough
 - Navigate between days with a directional slide animation
 - "Go to today" button (appears only when you've navigated away)
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
-- Swipe to cancel or defer an item to tomorrow; long-press for a context menu
+- Long-press any item for a context menu: cancel, defer to tomorrow, edit
 - Drag-and-drop items between day sections; drop on "Open" to clear section assignment
 - Recurring items with weekday picker; grouped on a dedicated Habits row
 - Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
@@ -94,21 +94,22 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–12 are complete. Remaining MVP phases:
+Phases 1–13 are complete. Remaining MVP phases:
 
 | Phase | Description |
 |-------|-------------|
-| ✅ 10 | UI refinements (drag between sections, calendar/reminders toggles) |
-| ✅ 11 | Timeline view |
-| ✅ 12 | Usability Part 1 (section times, tap-to-edit, auto-collapse + AI summary, grouped rows) |
-| 13 | Nav & chrome rework (swipe days, bottom glass bar, floating progress) |
-| 14 | Quick entry (natural language → PlanItem via Foundation Models) |
-| 15 | Search |
-| 16 | Settings (calendar/reminders selection, section boundaries) |
-| 17 | Local notifications |
-| 18 | Usability Part 2 |
-| 19 | Fit and finish + Aviation UI spike |
-| 20 | Tech debt (unit tests, UI tests, architecture review) |
+| 14 | Usability Part 2 (in progress) |
+| 15 | Fix recurring items / habits behavior |
+| 16 | Finish timeline view (lazy-load, full history + future) |
+| 17 | Brand new focus view |
+| 18 | Architecture clean up |
+| 19 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
+| 20 | Search |
+| 21 | Settings (calendar/reminders selection, section boundaries) |
+| 22 | Local notifications |
+| 23 | Smooth day swipe navigation (pager) |
+| 24 | Fit and finish + aviation UI spike |
+| 25 | Tech debt (unit tests, UI tests, architecture review) |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
 
