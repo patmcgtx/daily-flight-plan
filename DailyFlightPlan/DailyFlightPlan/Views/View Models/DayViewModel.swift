@@ -297,20 +297,45 @@ func startLiveClock() {
                 instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
             )
 
-            var parts: [String] = []
-            for item in items.filter({ $0.deadline == nil }).prefix(5) {
-                parts.append(item.title)
+            // All timed items merged and sorted by clock time — deadline plan items,
+            // calendar events, and timed reminders are equally time-sensitive.
+            struct TimedEntry {
+                let time: Date
+                let label: String
             }
-            for item in items.filter({ $0.deadline != nil }).prefix(3) {
+            var timedEntries: [TimedEntry] = []
+            for item in items where item.deadline != nil && item.status == .pending {
                 if let dl = item.deadline {
-                    parts.append("\(item.title) at \(dl.formatted(.dateTime.hour().minute()))")
+                    timedEntries.append(TimedEntry(time: dl, label: "\(item.title) at \(dl.formatted(.dateTime.hour().minute()))"))
                 }
             }
-            for event in events.prefix(3) {
-                parts.append("\(event.title) at \(event.startDate.formatted(.dateTime.hour().minute()))")
+            for event in events {
+                timedEntries.append(TimedEntry(time: event.startDate, label: "\(event.title) at \(event.startDate.formatted(.dateTime.hour().minute()))"))
             }
-            for reminder in reminders.prefix(3) {
+            for reminder in reminders where reminder.dueDate != nil {
+                if let due = reminder.dueDate {
+                    timedEntries.append(TimedEntry(time: due, label: "\(reminder.title) at \(due.formatted(.dateTime.hour().minute()))"))
+                }
+            }
+            timedEntries.sort { $0.time < $1.time }
+
+            var parts = timedEntries.prefix(6).map(\.label)
+
+            // Non-recurring pending items — one-off tasks without a fixed time
+            let oneOffItems = items.filter { $0.deadline == nil && $0.status == .pending && !$0.isRecurring }
+            for item in oneOffItems.prefix(4) {
+                parts.append(item.title)
+            }
+
+            // Untimed reminders
+            for reminder in reminders where reminder.dueDate == nil {
                 parts.append(reminder.title)
+            }
+
+            // Recurring habits — least surprising, capped tightly
+            let habitItems = items.filter { $0.deadline == nil && $0.status == .pending && $0.isRecurring }
+            for item in habitItems.prefix(2) {
+                parts.append(item.title)
             }
 
             let prompt = parts.joined(separator: "; ")
