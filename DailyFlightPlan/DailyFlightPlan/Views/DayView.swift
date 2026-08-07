@@ -342,6 +342,7 @@ struct DayView: View {
                             reminderItems: reminders,
                             projectedPills: sectionProjected,
                             summary: viewModel.sectionSummaries[section],
+                            isAllClear: isAllClear(for: section),
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
                             onToggle: {
@@ -478,6 +479,27 @@ struct DayView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 8)
+        }
+    }
+
+    // MARK: All clear
+
+    /// True when a section has no pending plan items — either empty, or all done/canceled.
+    /// Uses unfiltered allItems so it works regardless of the showCompleted toggle.
+    private func isAllClear(for section: DaySection) -> Bool {
+        let today = viewModel.selectedDate
+        let sectionItems = allItems.filter { item in
+            Calendar.current.isDate(item.date, inSameDayAs: today)
+            && item.daySection == section
+        }
+        let deadlineItemsInSection = allItems.filter { item in
+            guard Calendar.current.isDate(item.date, inSameDayAs: today),
+                  item.daySection == nil,
+                  let deadline = item.deadline else { return false }
+            return DaySection.containing(deadline) == section
+        }
+        return (sectionItems + deadlineItemsInSection).allSatisfy {
+            $0.status == .completed || $0.status == .canceled
         }
     }
 

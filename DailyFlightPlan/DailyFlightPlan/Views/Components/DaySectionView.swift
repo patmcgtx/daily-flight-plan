@@ -15,6 +15,7 @@ struct DaySectionView: View {
     let reminderItems: [ReminderItem]
     var projectedPills: [PlanItem] = []
     var summary: String? = nil
+    var isAllClear: Bool = false
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
@@ -103,7 +104,10 @@ struct DaySectionView: View {
     private var sectionHeader: some View {
         Button(action: onToggle) {
             HStack(alignment: .top, spacing: 8) {
-                if isCollapsed, let summary {
+                if isCollapsed && isAllClear {
+                    Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text("All clear ✅").font(.caption).foregroundStyle(.green))")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else if isCollapsed, let summary {
                     Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text(summary).font(.caption).foregroundStyle(.secondary))")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
