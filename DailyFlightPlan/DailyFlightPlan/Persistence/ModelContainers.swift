@@ -23,7 +23,6 @@ extension ModelContainer {
         guard (try? context.fetchCount(FetchDescriptor<PlanItem>())) == 0 else { return }
 
         let today = Date.now
-        let cal = Calendar.current
         let everyday: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
         let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
 
@@ -118,6 +117,13 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 categories: [outAndAbout]
+            ),
+            PlanItem(
+                title: "Have something fermented",
+                date: today,
+                daySection: .morning,
+                recurringWeekdays: everyday,
+                categories: [health]
             ),
             PlanItem(
                 title: "Update my Calendar",
