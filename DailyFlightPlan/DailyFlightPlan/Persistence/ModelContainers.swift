@@ -275,6 +275,13 @@ extension ModelContainer {
                 categories: [relaxing, home, fun]
             ),
             PlanItem(
+                title: "Physical therapy",
+                date: today,
+                daySection: .bedtime,
+                recurringWeekdays: everyday,
+                categories: [health, home]
+            ),
+            PlanItem(
                 title: "Full teeth cleaning",
                 date: today,
                 daySection: .bedtime,
