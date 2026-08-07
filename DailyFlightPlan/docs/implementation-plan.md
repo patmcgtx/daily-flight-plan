@@ -140,20 +140,20 @@ Items identified during early real-world use.
 - ✅ **Filter icon**: `line.3.horizontal.decrease.circle` (standard iOS filter icon, not sliders)
 
 ### Phase 14 — Usability Part 2
-- Use the app daily for a real period of time — real tasks, real calendar events, real reminders
-- Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
-- Gather a prioritized list of changes needed before shipping version 1.0
-- Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
-- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls up, rather than fetching all history at once
-- **Day navigation via swipe**: consider replacing prev/next chevrons with horizontal swipe gesture on the scroll view background
-- **Progress indicator**: decide whether to keep inline progress summary row or replace with a floating donut button + detail popover
-- **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
-- **"All clear ✅" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear ✅" in the header instead of an AI summary — a small reward for finishing the section
-- **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
+- ✅ Use the app daily for a real period of time — real tasks, real calendar events, real reminders
+- ✅ Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
+- ✅ Gather a prioritized list of changes needed before shipping version 1.0
+- ❌ Possibly rework horizontal/vertical dragging to drag-anywhere and show "buckets" to cancel or defer. Dragging to/from sections would remain like it is.
+- ✅ **"All clear ✅" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear ✅" in the header instead of an AI summary — a small reward for finishing the section
+- **Consistent indention of items and flows in a day section**: Items and flows like recurring items, deadline items, Calendar events, and Reminders are all indented by an icon. Normal items are no indented. So it looks "off". Let's indent normal items the same as the others. Add a basic "task" icon if that helps.
 - **Import Reminder as PlanItem**: tapping a `ReminderItemRow` offers an "Import as Task" action that creates a `PlanItem` from the reminder's title, notes, and due date, then assigns it to the current day's appropriate section; the original reminder is left unchanged
-- **Recurring item logic revisit**: audit the full recurring item lifecycle — `isRecurring`/`recurringDays` fields, projected ghost pills in `DayViewModel`, spillover behavior for recurring items, and how recurring items interact with completion/cancellation. Clarify the intended model (do recurring items ever get "committed" as real items? what happens when you cancel a single occurrence?) and clean up any inconsistencies
-- **Summary vs. full view** *(defer until Phase 15 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
-- **AI summary quality** *(defer until Phase 15 Quick Entry is done — both use Foundation Models)*: weight timed/deadline items and non-recurring items more heavily in the summary prompt so the most time-sensitive things surface first
+- **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
+- **Progress indicator**: decide whether to keep inline progress summary row or replace with a floating donut button + detail popover
+- **Day navigation via swipe**: consider replacing prev/next chevrons with horizontal swipe gesture on the scroll view background
+- **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once.
+- **Timeline lazy-load future days**: start with today and load future days on demand as the user scrolls, rather than fetching all of the future at once. The future will show recurring items and also items schedule for that day.
+- **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
+- **AI summary quality**: weight timed/deadline items and non-recurring items more heavily in the summary prompt so the most time-sensitive things surface first
 
 ### Phase 15 — Quick Entry (Natural Language)
 - Replace (or augment) the "Add Item" button with a free-text entry field — a compact text bar that stays visible or slides up
@@ -200,6 +200,8 @@ Items identified during early real-world use.
 - Address findings from Phase 14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
+- **Summary vs. full view** *(defer until Phase 15 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list. More flight-plan-like than a simple show/hide.
+- **Recurring item logic revisit**: audit the full recurring item lifecycle — `isRecurring`/`recurringDays` fields, projected ghost pills in `DayViewModel`, spillover behavior for recurring items, and how recurring items interact with completion/cancellation. Clarify the intended model (do recurring items ever get "committed" as real items? what happens when you cancel a single occurrence?) and clean up any inconsistencies
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
