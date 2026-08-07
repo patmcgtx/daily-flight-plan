@@ -344,6 +344,7 @@ struct DayView: View {
                             projectedPills: sectionProjected,
                             summary: viewModel.sectionSummaries[section],
                             isAllClear: isAllClear(for: section),
+                            isSummaryLoading: viewModel.loadingSummarySections.contains(section),
                             showNowBar: viewModel.currentSection == section,
                             isCollapsed: viewModel.isCollapsed(section),
                             onToggle: {
@@ -361,6 +362,15 @@ struct DayView: View {
                             },
                             onDropItem: { uuidString in
                                 handlePillDrop(uuidString: uuidString, targetSection: section)
+                            },
+                            onReloadSummary: {
+                                viewModel.clearSummary(for: section)
+                                viewModel.generateSummaryIfNeeded(
+                                    for: section,
+                                    items: pills + deadlines,
+                                    events: events,
+                                    reminders: reminders
+                                )
                             }
                         )
                         .id(section)
