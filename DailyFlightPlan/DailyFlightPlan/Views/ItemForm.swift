@@ -31,12 +31,14 @@ struct ItemForm: View {
                 titleAndNotesSection
                 detailsSection
                 scheduleSection
-                recurringSection
+                if !viewModel.isEditingInstance {
+                    recurringSection
+                }
                 if !allCategories.isEmpty {
                     categoriesSection
                 }
             }
-            .navigationTitle(isCreate ? "New Item" : "Edit Item")
+            .navigationTitle(isCreate ? "New Item" : viewModel.isEditingTemplate ? "Edit Routine" : "Edit Item")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -67,7 +69,9 @@ struct ItemForm: View {
     @ViewBuilder
     private var detailsSection: some View {
         Section("Details") {
-            DatePicker("Date", selection: Bindable(viewModel).date, displayedComponents: .date)
+            if !viewModel.isEditingInstance {
+                DatePicker("Date", selection: Bindable(viewModel).date, displayedComponents: .date)
+            }
             Toggle(isOn: Bindable(viewModel).isFlagged) {
                 Label("Flagged", systemImage: "flag.fill")
             }

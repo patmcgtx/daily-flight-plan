@@ -25,13 +25,23 @@ class PlanItem {
     /// nil when the item has a specific deadline or is explicitly "any time".
     var daySection: DaySection?
 
-    /// Considered recurring if it has any recurring days
-    var isRecurring: Bool {
-        !recurringWeekdays.isEmpty
-    }
-
-    /// The weekdays on which this item recurs
+    /// The recurring schedule. Only meaningful when isTemplate is true.
     var recurringWeekdays: [Locale.Weekday]
+
+    /// True for recurring item templates. False for one-off items and per-day instances.
+    var isTemplate: Bool = false
+
+    /// The template this instance was generated from, or nil for one-off items and templates.
+    var template: PlanItem?
+
+    /// All per-day instances generated from this template. Only populated on templates.
+    @Relationship(deleteRule: .nullify, inverse: \PlanItem.template)
+    var instances: [PlanItem] = []
+
+    /// True if this item is a recurring template, or a per-day instance of one.
+    var isRecurring: Bool {
+        isTemplate || template != nil
+    }
 
     var status: ItemStatus
 
@@ -49,6 +59,7 @@ class PlanItem {
         deadline: Date? = nil,
         daySection: DaySection? = nil,
         recurringWeekdays: [Locale.Weekday] = [],
+        isTemplate: Bool = false,
         status: ItemStatus = .pending,
         categories: [PlanCategory] = []
     ) {
@@ -59,6 +70,7 @@ class PlanItem {
         self.deadline = deadline
         self.daySection = daySection
         self.recurringWeekdays = recurringWeekdays
+        self.isTemplate = isTemplate
         self.status = status
         self.categories = categories
     }

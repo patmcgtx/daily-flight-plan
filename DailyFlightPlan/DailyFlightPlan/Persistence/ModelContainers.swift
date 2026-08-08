@@ -43,18 +43,21 @@ extension ModelContainer {
                 title: "Approach ppl",
                 date: today,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [social, outAndAbout]
             ),
             PlanItem(
                 title: "Things zero inbox",
                 date: today,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [shallow, laptop]
             ),
             PlanItem(
                 title: "Exercise",
                 date: today,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [home, health]
             ),
 
@@ -64,6 +67,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [relaxing]
             ),
             PlanItem(
@@ -71,6 +75,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [relaxing]
             ),
             PlanItem(
@@ -78,6 +83,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [home]
             ),
             PlanItem(
@@ -85,6 +91,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -92,6 +99,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -99,6 +107,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [home, health]
             ),
             PlanItem(
@@ -106,6 +115,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [home]
             ),
             PlanItem(
@@ -113,6 +123,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [home, health]
             ),
             
@@ -122,6 +133,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [outAndAbout]
             ),
             PlanItem(
@@ -129,6 +141,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -136,6 +149,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [shallow, laptop]
             ),
             PlanItem(
@@ -143,6 +157,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [shallow, laptop]
             ),
             PlanItem(
@@ -150,6 +165,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: weekdays,
+                isTemplate: true,
                 categories: [deep, laptop, career]
             ),
             PlanItem(
@@ -157,6 +173,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [fun, health, relaxing]
             ),
             PlanItem(
@@ -164,6 +181,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [outAndAbout, relaxing]
             ),
             PlanItem(
@@ -171,6 +189,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [shallow, laptop]
             ),
             
@@ -180,6 +199,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .midday,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -187,6 +207,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .midday,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -194,6 +215,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .midday,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -201,6 +223,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .midday,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [outAndAbout]
             ),
             
@@ -210,6 +233,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .afternoon,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -218,6 +242,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .afternoon,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -225,6 +250,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .afternoon,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
 
@@ -234,6 +260,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .evening,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [fun, social]
             ),
             PlanItem(
@@ -241,6 +268,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .evening,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [laptop, shallow]
             ),
             PlanItem(
@@ -248,6 +276,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .evening,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
 
@@ -257,6 +286,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [laptop, shallow]
             ),
             PlanItem(
@@ -264,6 +294,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health]
             ),
             PlanItem(
@@ -271,6 +302,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [laptop, health]
             ),
             PlanItem(
@@ -278,6 +310,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [relaxing, home, fun]
             ),
             PlanItem(
@@ -285,6 +318,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health, home]
             ),
             PlanItem(
@@ -292,6 +326,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health, home]
             ),
             PlanItem(
@@ -299,6 +334,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [laptop, fun]
             ),
             PlanItem(
@@ -307,6 +343,7 @@ extension ModelContainer {
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
+                isTemplate: true,
                 categories: [health, relaxing]
             )
         ]
@@ -339,32 +376,37 @@ extension ModelContainer {
             PlanItem(
                 title: "Approach and talk with ppl",
                 date: today,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
             PlanItem(
                 title: "Listen to news, book, or podcast 📰",
                 date: today,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
-            
+
             // First Thing
             PlanItem(
                 title: "Slow breathing",
                 date: today,
                 daySection: .firstThing,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
             PlanItem(
                 title: "Visualize success",
                 date: today,
                 daySection: .firstThing,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
             PlanItem(
                 title: "Basic stretch",
                 date: today,
                 daySection: .firstThing,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
 
             // Morning
@@ -372,7 +414,8 @@ extension ModelContainer {
                 title: "Plan the day / prioritize Things",
                 date: today,
                 daySection: .morning,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
             PlanItem(
                 title: "Team standup",
@@ -383,57 +426,65 @@ extension ModelContainer {
                     second: 0,
                     of: today
                 ),
-                recurringWeekdays: weekdays
+                recurringWeekdays: weekdays,
+                isTemplate: true
             ),
-            
+
             // Midday
             PlanItem(
                 title: "Take my pills 💊",
                 date: today,
                 daySection: .midday,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
             PlanItem(
                 title: "Eat some fruit 🍎🍊🍌",
                 date: today,
                 daySection: .midday,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
-            
+
             // Afternoon
             PlanItem(
                 title: "Hydrate (Good for hypertension etc.)",
                 date: today,
                 daySection: .afternoon,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
-            
+
             // Evening
             PlanItem(
                 title: "Be teasing and challenging women",
                 date: today,
                 daySection: .evening,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
-            
+
             // Bedtime
             PlanItem(
                 title: "Plan tomorrow",
                 date: today,
                 daySection: .bedtime,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
             PlanItem(
                 title: "Full teeth cleaning",
                 date: today,
                 daySection: .bedtime,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
             PlanItem(
                 title: "Meditate / body scan",
                 date: today,
                 daySection: .bedtime,
-                recurringWeekdays: everyday
+                recurringWeekdays: everyday,
+                isTemplate: true
             ),
         ]
 

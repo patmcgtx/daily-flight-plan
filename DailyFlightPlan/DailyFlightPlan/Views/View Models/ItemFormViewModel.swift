@@ -23,6 +23,12 @@ import SwiftData
         !title.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    /// True when editing a per-day instance (not a template or one-off item).
+    var isEditingInstance: Bool { editingItem?.template != nil }
+
+    /// True when editing a recurring template.
+    var isEditingTemplate: Bool { editingItem?.isTemplate == true }
+
     init(date: Date) {
         editingItem = nil
         title = ""
@@ -45,7 +51,8 @@ import SwiftData
         daySection = item.daySection
         hasDeadline = item.deadline != nil
         deadline = item.deadline ?? item.date
-        recurringWeekdays = item.recurringWeekdays
+        // Instances inherit their schedule from the template; show nothing in the picker.
+        recurringWeekdays = item.isTemplate ? item.recurringWeekdays : []
         selectedCategories = item.categories
     }
 
@@ -66,12 +73,17 @@ import SwiftData
             item.title = trimmedTitle
             item.notes = notes
             item.isFlagged = isFlagged
-            item.date = day
             item.deadline = alignedDeadline
             item.daySection = hasDeadline ? nil : daySection
-            item.recurringWeekdays = recurringWeekdays
             item.categories = selectedCategories
+            // Only templates and one-off items own their date and recurring schedule.
+            if !isEditingInstance {
+                item.date = day
+                item.recurringWeekdays = recurringWeekdays
+                item.isTemplate = !recurringWeekdays.isEmpty
+            }
         } else {
+            let isRecurring = !recurringWeekdays.isEmpty
             let newItem = PlanItem(
                 title: trimmedTitle,
                 notes: notes,
@@ -79,10 +91,12 @@ import SwiftData
                 date: day,
                 deadline: alignedDeadline,
                 daySection: hasDeadline ? nil : daySection,
-                recurringWeekdays: recurringWeekdays
+                recurringWeekdays: recurringWeekdays,
+                isTemplate: isRecurring
             )
             newItem.categories = selectedCategories
             context.insert(newItem)
+            // Instances for this new template are materialized by DayView on sheet dismissal.
         }
 
         try? context.save()

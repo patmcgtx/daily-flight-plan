@@ -45,8 +45,11 @@ Mock service implementations live alongside their protocols in `#if DEBUG` block
     date: Date                      // which calendar day this item belongs to
     deadline: Date?                 // specific clock time; nil = no specific time
     daySection: DaySection?         // nil if deadline-based or explicitly "Open" (any time)
-    isRecurring: Bool
-    recurringWeekdays: [Locale.Weekday]
+    recurringWeekdays: [Locale.Weekday]  // schedule; only meaningful on templates
+    isTemplate: Bool                // true for recurring habit templates
+    template: PlanItem?             // back-link from a per-day instance to its template
+    instances: [PlanItem]           // forward-link from a template to its per-day instances
+    isRecurring: Bool               // computed: isTemplate || template != nil
     status: ItemStatus              // .pending | .completed | .canceled
     categories: [PlanCategory]
     reminderIdentifier: String?     // EventKit EKReminder identifier, for future two-way sync
@@ -56,18 +59,22 @@ Mock service implementations live alongside their protocols in `#if DEBUG` block
     items: [PlanItem]               // inverse relationship
 
 enum DaySection: String, CaseIterable, Codable
-    morning    // up to 10:59am
-    midday     // 11:00am – 12:59pm
-    afternoon  // 1:00pm – 4:59pm
-    evening    // 5:00pm – 7:59pm
-    night      // 8:00pm+
+    firstThing  // before the morning rush
+    morning     // up to 10:59am
+    midday      // 11:00am – 12:59pm
+    afternoon   // 1:00pm – 4:59pm
+    evening     // 5:00pm – 7:59pm
+    bedtime     // 8:00pm+
 
 enum ItemStatus: String, Codable
     pending | completed | canceled
-    // Deferring is a date mutation (item.date = tomorrow), not a status
+    // Deferring a one-off item is a date mutation (item.date = tomorrow), not a status.
+    // Recurring instances cannot be deferred — cancel today's instance; tomorrow's appears automatically.
 ```
 
 "Missed" items (specific deadline passed, still `.pending`) are computed dynamically — no extra DB field. Section-assigned items stay in their section card regardless of whether that section's time window has passed.
+
+**Recurring habit model (template + instance):** Each recurring habit is stored as a *template* (`isTemplate = true`). Each day, `DayView` lazily creates a per-day *instance* (`template != nil`) for today only — future dates show read-only ghost projections of the template instead. Instances are independent `PlanItem` records so completing, canceling, or editing one does not affect other days or the template itself. `template` and `instances` use a self-referential `@Relationship` (not a UUID) for CloudKit compatibility. On first launch after upgrade, `migrateOldRecurringItems()` converts any pre-template recurring items to the new model.
 
 ## Services
 
@@ -105,7 +112,7 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
 - Centered: weekday + date, with a `scope` go-to-today button when not on today
 - Leading/trailing: `[<]` / `[>]` chevron buttons with `.buttonStyle(.glass)` for previous/next day
 
-**Day sections:** All five sections are always visible (past sections remain as a day-at-a-glance reference). Rounded-rect bordered cards, collapsible via tap. When viewing today, inactive sections start collapsed; the current section is always expanded and auto-expands when the clock ticks into it. Collapsed sections display a one-line AI summary (Foundation Models, on-device) inline in the header. Items draggable between sections via long-press; drop target highlights with an accent-colored border.
+**Day sections:** All six sections are always visible (past sections remain as a day-at-a-glance reference). Rounded-rect bordered cards, collapsible via tap. When viewing today, inactive sections start collapsed; the current section is always expanded and auto-expands when the clock ticks into it. Collapsed sections display a one-line AI summary (Foundation Models, on-device) inline in the header. Items draggable between sections via long-press; drop target highlights with an accent-colored border.
 
 Each expanded section body renders item sub-rows in order:
 1. **Regular pending pills** — `HFlow` row (no icon)
@@ -136,4 +143,4 @@ Each expanded section body renders item sub-rows in order:
 | Day-section item | `HFlow` pill within its section | — |
 | Open (any-time) item | `HFlow` pill in Open area | — |
 
-Pending plan items have a completion checkbox and support cancel and defer-to-tomorrow via long-press context menu. Completed and cancelled items show with strikethrough and dimmed text. Recurring items are grouped on a dedicated Habits row (∞ icon). Future dates show ghosted (35% opacity) projections of recurring habits.
+Pending plan items have a completion checkbox and support cancel and (for one-off items only) defer-to-tomorrow via long-press context menu. Completed and cancelled items show with strikethrough and dimmed text. Recurring instances are grouped on a dedicated Habits row (∞ icon). Future dates show ghosted (35% opacity, non-interactive) projections of recurring habit templates instead of real instances.

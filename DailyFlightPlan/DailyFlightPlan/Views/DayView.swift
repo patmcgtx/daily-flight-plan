@@ -13,7 +13,8 @@ struct DayView: View {
 
     @State private var viewModel = DayViewModel()
 
-    @Query private var allItems: [PlanItem]
+    @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false }) private var allItems: [PlanItem]
+    @Query(filter: #Predicate<PlanItem> { $0.isTemplate == true }) private var recurringTemplates: [PlanItem]
 
     @AppStorage(AppStorageKeys.theme.rawValue)
     private var theme: DFPTheme = .cupertino
@@ -171,6 +172,10 @@ struct DayView: View {
         .task(id: viewModel.selectedDate) {
             viewModel.clearSummaries()
             viewModel.applyAutoCollapse()
+            migrateOldRecurringItems()
+            if viewModel.isToday {
+                materializeRecurringInstances(for: viewModel.selectedDate)
+            }
             await fetchCalendarEvents()
             await fetchReminderItems()
         }
@@ -191,10 +196,14 @@ struct DayView: View {
         .sheet(isPresented: $showCategorySelector) {
             categorySelectorSheet
         }
-        .sheet(isPresented: $isAddingItem) {
+        .sheet(isPresented: $isAddingItem, onDismiss: {
+            if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
+        }) {
             ItemForm(date: viewModel.selectedDate)
         }
-        .sheet(item: $itemToEdit) { item in
+        .sheet(item: $itemToEdit, onDismiss: {
+            if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
+        }) { item in
             ItemForm(item: item)
         }
     }
@@ -319,7 +328,7 @@ struct DayView: View {
 
     private var dayScrollView: some View {
         let selectedDateItems = itemsForSelectedDate
-        let projected = viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: allItems)
+        let projected = viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: recurringTemplates)
         let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
         let visibleEvents = (showCalendarEvents && !categoriesActive) ? calendarEvents : []
         let rawReminders = (showReminderItems && !categoriesActive) ? reminderItems : []
@@ -510,8 +519,11 @@ struct DayView: View {
     // MARK: All clear
 
     /// True when a section has no pending plan items — either empty, or all done/canceled.
+    /// Never true on future dates (nothing has been done yet).
     /// Uses unfiltered allItems so it works regardless of the showCompleted toggle.
     private func isAllClear(for section: DaySection) -> Bool {
+        let cal = Calendar.current
+        guard cal.startOfDay(for: viewModel.selectedDate) <= cal.startOfDay(for: .now) else { return false }
         let today = viewModel.selectedDate
         let sectionItems = allItems.filter { item in
             Calendar.current.isDate(item.date, inSameDayAs: today)
@@ -549,6 +561,7 @@ struct DayView: View {
         let today = Calendar.current.startOfDay(for: .now)
         let toSpill = allItems.filter {
             $0.status == .pending &&
+            $0.template == nil &&
             Calendar.current.startOfDay(for: $0.date) < today
         }
         guard !toSpill.isEmpty else { return }
@@ -561,6 +574,61 @@ struct DayView: View {
         try? modelContext.save()
         withAnimation(.easeInOut(duration: 0.3)) {
             viewModel.goToToday()
+        }
+    }
+
+    // MARK: Recurring item management
+
+    /// Converts any old-style recurring items (pre-template model) to templates.
+    private func migrateOldRecurringItems() {
+        let oldStyle = allItems.filter { !$0.recurringWeekdays.isEmpty && $0.template == nil }
+        guard !oldStyle.isEmpty else { return }
+        for item in oldStyle {
+            item.isTemplate = true
+        }
+        try? modelContext.save()
+    }
+
+    /// Creates pending per-day instances for each template that matches today's weekday
+    /// and has no existing instance for the given date.
+    private func materializeRecurringInstances(for date: Date) {
+        let cal = Calendar.current
+        let startOfDay = cal.startOfDay(for: date)
+        let weekdayInt = cal.component(.weekday, from: date)
+        let weekdayMap: [Int: Locale.Weekday] = [
+            1: .sunday, 2: .monday, 3: .tuesday, 4: .wednesday,
+            5: .thursday, 6: .friday, 7: .saturday
+        ]
+        guard let weekday = weekdayMap[weekdayInt] else { return }
+
+        var didInsert = false
+        for template in recurringTemplates {
+            guard template.recurringWeekdays.contains(weekday) else { continue }
+            guard !template.instances.contains(where: { cal.isDate($0.date, inSameDayAs: date) }) else { continue }
+            let instanceDeadline: Date? = template.deadline.flatMap { dl in
+                cal.date(
+                    bySettingHour: cal.component(.hour, from: dl),
+                    minute: cal.component(.minute, from: dl),
+                    second: 0, of: startOfDay
+                )
+            }
+            let instance = PlanItem(
+                title: template.title,
+                notes: template.notes,
+                isFlagged: template.isFlagged,
+                date: startOfDay,
+                deadline: instanceDeadline,
+                daySection: template.daySection,
+                recurringWeekdays: [],
+                isTemplate: false
+            )
+            instance.categories = template.categories
+            instance.template = template
+            modelContext.insert(instance)
+            didInsert = true
+        }
+        if didInsert {
+            try? modelContext.save()
         }
     }
 
