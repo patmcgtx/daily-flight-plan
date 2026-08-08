@@ -328,7 +328,7 @@ func startLiveClock() {
             }
 
             // Untimed reminders
-            for reminder in reminders where reminder.dueDate == nil {
+            for reminder in reminders.filter({ $0.dueDate == nil }).prefix(4) {
                 parts.append(reminder.title)
             }
 
