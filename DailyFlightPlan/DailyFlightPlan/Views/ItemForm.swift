@@ -13,6 +13,7 @@ struct ItemForm: View {
     @Query(sort: \PlanCategory.name) private var allCategories: [PlanCategory]
 
     @State private var viewModel: ItemFormViewModel
+    @State private var showDemoteAlert = false
     private let isCreate: Bool
 
     init(date: Date) {
@@ -40,14 +41,27 @@ struct ItemForm: View {
             }
             .navigationTitle(isCreate ? "New Item" : viewModel.isEditingTemplate ? "Edit Routine" : "Edit Item")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Stop Repeating?", isPresented: $showDemoteAlert) {
+                Button("Stop Routine", role: .destructive) {
+                    viewModel.save(in: modelContext)
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This routine will no longer repeat. Past completions will be kept as standalone items.")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        viewModel.save(in: modelContext)
-                        dismiss()
+                        if viewModel.willDemoteTemplate {
+                            showDemoteAlert = true
+                        } else {
+                            viewModel.save(in: modelContext)
+                            dismiss()
+                        }
                     }
                     .disabled(!viewModel.isValid)
                 }

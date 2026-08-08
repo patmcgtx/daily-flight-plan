@@ -29,6 +29,9 @@ import SwiftData
     /// True when editing a recurring template.
     var isEditingTemplate: Bool { editingItem?.isTemplate == true }
 
+    /// True when saving would demote a template to a one-off item (all weekdays cleared).
+    var willDemoteTemplate: Bool { editingItem?.isTemplate == true && recurringWeekdays.isEmpty }
+
     init(date: Date) {
         editingItem = nil
         title = ""
@@ -80,6 +83,13 @@ import SwiftData
             if !isEditingInstance {
                 item.date = day
                 item.recurringWeekdays = recurringWeekdays
+                let becomingNonTemplate = item.isTemplate && recurringWeekdays.isEmpty
+                if becomingNonTemplate {
+                    // Sever back-references so instances become standalone historical records.
+                    for instance in item.instances {
+                        instance.template = nil
+                    }
+                }
                 item.isTemplate = !recurringWeekdays.isEmpty
             }
         } else {
