@@ -15,6 +15,7 @@ final class DayViewModel {
 
     // Updated each minute by startLiveClock(); drives currentSection and Past area in real time.
     private(set) var currentTime: Date = .now
+    private(set) var loadingSummarySections: Set<DaySection> = []
     private var clockTask: Task<Void, Never>?
     private var summaryTasks: [DaySection: Task<Void, Never>] = [:]
 
@@ -257,11 +258,20 @@ func startLiveClock() {
         collapsedSections = Set(activeSections.filter { $0 != currentSection })
     }
 
+    /// Clear a single section's cached summary and cancel any in-flight task, allowing regeneration.
+    func clearSummary(for section: DaySection) {
+        summaryTasks[section]?.cancel()
+        summaryTasks[section] = nil
+        sectionSummaries[section] = nil
+        loadingSummarySections.remove(section)
+    }
+
     /// Cancel any in-flight summary tasks and clear cached summaries (call on date change).
     func clearSummaries() {
         summaryTasks.values.forEach { $0.cancel() }
         summaryTasks = [:]
         sectionSummaries = [:]
+        loadingSummarySections = []
     }
 
     /// Generate a one-line AI summary for a collapsed section. Skips if already cached or in-flight.
@@ -275,28 +285,57 @@ func startLiveClock() {
         guard !items.isEmpty || !events.isEmpty || !reminders.isEmpty else { return }
         guard SystemLanguageModel.default.availability == .available else { return }
 
+        loadingSummarySections.insert(section)
         summaryTasks[section] = Task { @MainActor [weak self] in
             guard let self else { return }
-            defer { self.summaryTasks[section] = nil }
+            defer {
+                self.summaryTasks[section] = nil
+                self.loadingSummarySections.remove(section)
+            }
 
             let session = LanguageModelSession(
                 instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
             )
 
-            var parts: [String] = []
-            for item in items.filter({ $0.deadline == nil }).prefix(5) {
-                parts.append(item.title)
+            // All timed items merged and sorted by clock time — deadline plan items,
+            // calendar events, and timed reminders are equally time-sensitive.
+            struct TimedEntry {
+                let time: Date
+                let label: String
             }
-            for item in items.filter({ $0.deadline != nil }).prefix(3) {
+            var timedEntries: [TimedEntry] = []
+            for item in items where item.deadline != nil && item.status == .pending {
                 if let dl = item.deadline {
-                    parts.append("\(item.title) at \(dl.formatted(.dateTime.hour().minute()))")
+                    timedEntries.append(TimedEntry(time: dl, label: "\(item.title) at \(dl.formatted(.dateTime.hour().minute()))"))
                 }
             }
-            for event in events.prefix(3) {
-                parts.append("\(event.title) at \(event.startDate.formatted(.dateTime.hour().minute()))")
+            for event in events {
+                timedEntries.append(TimedEntry(time: event.startDate, label: "\(event.title) at \(event.startDate.formatted(.dateTime.hour().minute()))"))
             }
-            for reminder in reminders.prefix(3) {
+            for reminder in reminders where reminder.dueDate != nil {
+                if let due = reminder.dueDate {
+                    timedEntries.append(TimedEntry(time: due, label: "\(reminder.title) at \(due.formatted(.dateTime.hour().minute()))"))
+                }
+            }
+            timedEntries.sort { $0.time < $1.time }
+
+            var parts = timedEntries.prefix(6).map(\.label)
+
+            // Non-recurring pending items — one-off tasks without a fixed time
+            let oneOffItems = items.filter { $0.deadline == nil && $0.status == .pending && !$0.isRecurring }
+            for item in oneOffItems.prefix(4) {
+                parts.append(item.title)
+            }
+
+            // Untimed reminders
+            for reminder in reminders.filter({ $0.dueDate == nil }).prefix(4) {
                 parts.append(reminder.title)
+            }
+
+            // Recurring habits — least surprising, capped tightly
+            let habitItems = items.filter { $0.deadline == nil && $0.status == .pending && $0.isRecurring }
+            for item in habitItems.prefix(2) {
+                parts.append(item.title)
             }
 
             let prompt = parts.joined(separator: "; ")

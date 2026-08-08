@@ -51,6 +51,12 @@ extension ModelContainer {
                 recurringWeekdays: everyday,
                 categories: [shallow, laptop]
             ),
+            PlanItem(
+                title: "Exercise",
+                date: today,
+                recurringWeekdays: everyday,
+                categories: [home, health]
+            ),
 
             // First Thing habits
             PlanItem(
@@ -273,6 +279,13 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 categories: [relaxing, home, fun]
+            ),
+            PlanItem(
+                title: "Physical therapy",
+                date: today,
+                daySection: .bedtime,
+                recurringWeekdays: everyday,
+                categories: [health, home]
             ),
             PlanItem(
                 title: "Full teeth cleaning",

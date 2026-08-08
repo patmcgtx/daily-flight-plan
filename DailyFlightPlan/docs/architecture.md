@@ -97,7 +97,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 **Navigation bar toolbar (Focus tab only, inside `NavigationStack`):**
 - Leading: `⚙` Settings button (stub — navigates to `SettingsView`, not yet implemented)
 - Trailing: `ToolbarItemGroup` — filter menu (`line.3.horizontal.decrease.circle`), category button (`tag`), theme menu (`paintbrush`) — system groups these into a single Liquid Glass capsule on iOS 26
-- Trailing: `+` Add Item button (separate from the group; Phase 14 will move this to the thumb zone)
+- Trailing: `+` Add Item button (separate from the group; Phase 20 (Search) will move this to the thumb zone)
 
 All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`) is saved to `@AppStorage`. The filter icon fills/accents when any filter is active.
 
@@ -136,4 +136,4 @@ Each expanded section body renders item sub-rows in order:
 | Day-section item | `HFlow` pill within its section | — |
 | Open (any-time) item | `HFlow` pill in Open area | — |
 
-Pending plan items have a completion checkbox and support cancel (swipe left / long-press) and defer-to-tomorrow (swipe right / long-press). Completed and cancelled items show with strikethrough and dimmed text. Recurring items are grouped on a dedicated Habits row (∞ icon). Future dates show ghosted (35% opacity) projections of recurring habits.
+Pending plan items have a completion checkbox and support cancel and defer-to-tomorrow via long-press context menu. Completed and cancelled items show with strikethrough and dimmed text. Recurring items are grouped on a dedicated Habits row (∞ icon). Future dates show ghosted (35% opacity) projections of recurring habits.

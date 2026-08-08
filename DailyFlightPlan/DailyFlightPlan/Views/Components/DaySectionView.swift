@@ -15,11 +15,14 @@ struct DaySectionView: View {
     let reminderItems: [ReminderItem]
     var projectedPills: [PlanItem] = []
     var summary: String? = nil
+    var isAllClear: Bool = false
+    var isSummaryLoading: Bool = false
     let showNowBar: Bool
     let isCollapsed: Bool
     let onToggle: () -> Void
     /// Called with the item's UUID string when a pill is dropped onto this section.
     var onDropItem: ((String) -> Void)? = nil
+    var onReloadSummary: (() -> Void)? = nil
 
     @State private var isDropTargeted = false
 
@@ -79,6 +82,17 @@ struct DaySectionView: View {
 
     // MARK: Helpers
 
+    private var loadingDotsView: some View {
+        Text("···")
+            .font(.caption)
+            .foregroundStyle(.tertiary)
+            .phaseAnimator([1.0, 0.3]) { view, opacity in
+                view.opacity(opacity)
+            } animation: { _ in
+                .easeInOut(duration: 0.7)
+            }
+    }
+
     private func labeledPillRow(icon: String, pills: [PlanItem], isFirst: Bool) -> some View {
         HStack(alignment: .top, spacing: 6) {
             Image(systemName: icon)
@@ -103,9 +117,33 @@ struct DaySectionView: View {
     private var sectionHeader: some View {
         Button(action: onToggle) {
             HStack(alignment: .top, spacing: 8) {
-                if isCollapsed, let summary {
-                    Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text(summary).font(.caption).foregroundStyle(.secondary))")
+                if isCollapsed && isAllClear {
+                    Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text("All clear ✅").font(.caption).foregroundStyle(.green))")
                         .frame(maxWidth: .infinity, alignment: .leading)
+                } else if isCollapsed, let summary {
+                    HStack(spacing: 0) {
+                        Text("\(Text(section.displayName).font(.headline))  \(Text(section.timeRangeLabel).font(.caption).foregroundStyle(.tertiary))  \(Text(summary).font(.caption).foregroundStyle(.secondary))")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if let onReloadSummary {
+                            Button(action: onReloadSummary) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.horizontal, 4)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                } else if isCollapsed && isSummaryLoading {
+                    HStack(spacing: 6) {
+                        Text(section.displayName)
+                            .font(.headline)
+                        Text(section.timeRangeLabel)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        loadingDotsView
+                        Spacer()
+                    }
                 } else {
                     HStack(spacing: 6) {
                         Text(section.displayName)
@@ -145,14 +183,7 @@ struct DaySectionView: View {
             }
 
             if !regularPills.isEmpty {
-                HFlow(itemSpacing: 8, rowSpacing: 8) {
-                    ForEach(regularPills) { item in
-                        ItemPillView(item: item)
-                            .draggable(item.uuid.uuidString)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.top, 10)
+                labeledPillRow(icon: "list.dash", pills: regularPills, isFirst: true)
             }
 
             if !donePills.isEmpty {

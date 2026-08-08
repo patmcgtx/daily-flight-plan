@@ -22,6 +22,9 @@ extension EnvironmentValues {
     /// Invoke to open the edit form for the given item. Set by DayView via .environment(\.editItem, ...).
     @Entry var editItem: ((PlanItem) -> Void)? = nil
 
+    /// Invoke to import a Reminders item as a new PlanItem on the currently viewed day.
+    @Entry var importReminderItem: ((ReminderItem) -> Void)? = nil
+
     // MARK: Default settings
 
     @Entry var dfpTheme: DFPTheme = .cupertino
