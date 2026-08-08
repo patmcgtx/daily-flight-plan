@@ -35,7 +35,7 @@ struct DeadlineItemRow: View {
                         let predicted = value.predictedEndTranslation.width
                         if predicted < -flickThreshold {
                             flickAway(leading: true) { item.status = .canceled }
-                        } else if predicted > flickThreshold {
+                        } else if predicted > flickThreshold, !item.isRecurring {
                             flickAway(leading: false) {
                                 let cal = Calendar.current
                                 let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
@@ -103,15 +103,17 @@ struct DeadlineItemRow: View {
             } label: {
                 Label("Cancel Item", systemImage: "xmark.circle")
             }
-            Button {
-                let cal = Calendar.current
-                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
-                item.date = tomorrow
-                if let deadline = item.deadline {
-                    item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
+            if !item.isRecurring {
+                Button {
+                    let cal = Calendar.current
+                    let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
+                    item.date = tomorrow
+                    if let deadline = item.deadline {
+                        item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
+                    }
+                } label: {
+                    Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
                 }
-            } label: {
-                Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
             }
         }
     }
@@ -123,7 +125,7 @@ struct DeadlineItemRow: View {
                 .font(.caption2.bold())
                 .foregroundStyle(.red)
                 .opacity(min(1, (abs(dragOffset) - 8) / 50))
-        } else if dragOffset > 8 {
+        } else if dragOffset > 8, !item.isRecurring {
             Text("Defer")
                 .font(.caption2.bold())
                 .foregroundStyle(.green)
