@@ -158,30 +158,17 @@ func startLiveClock() {
 
     // MARK: Projected recurring items (future dates)
 
-    /// Recurring section-based items that should appear as a ghost preview on a future date.
-    /// De-duplicated by title so the same habit only projects once even if multiple instances exist.
-    /// Items already explicitly stored for that date are excluded to avoid double-showing.
-    func projectedRecurringItems(for date: Date, from allItems: [PlanItem]) -> [PlanItem] {
+    /// Recurring templates that should appear as ghost previews on a future date.
+    /// Excludes templates that already have a materialized instance for that date.
+    func projectedRecurringItems(for date: Date, from templates: [PlanItem]) -> [PlanItem] {
         guard Calendar.current.startOfDay(for: date) > Calendar.current.startOfDay(for: .now) else { return [] }
         guard let weekday = localeWeekday(of: date) else { return [] }
-
-        let titlesAlreadyForDate = Set(
-            allItems.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }.map { $0.title }
-        )
-
-        var seenTitles = Set<String>()
-        var result: [PlanItem] = []
-        for item in allItems.sorted(by: { $0.date > $1.date }) {
-            guard item.isRecurring,
-                  item.daySection != nil,
-                  item.recurringWeekdays.contains(weekday),
-                  !Calendar.current.isDate(item.date, inSameDayAs: date),
-                  !titlesAlreadyForDate.contains(item.title),
-                  !seenTitles.contains(item.title) else { continue }
-            seenTitles.insert(item.title)
-            result.append(item)
+        return templates.filter { template in
+            guard template.isTemplate,
+                  template.daySection != nil,
+                  template.recurringWeekdays.contains(weekday) else { return false }
+            return !template.instances.contains { Calendar.current.isDate($0.date, inSameDayAs: date) }
         }
-        return result
     }
 
     private func localeWeekday(of date: Date) -> Locale.Weekday? {

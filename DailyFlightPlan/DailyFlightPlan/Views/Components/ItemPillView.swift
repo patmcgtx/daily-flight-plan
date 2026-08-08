@@ -70,15 +70,17 @@ struct ItemPillView: View {
             } label: {
                 Label("Cancel Item", systemImage: "xmark.circle")
             }
-            Button {
-                let cal = Calendar.current
-                let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
-                item.date = tomorrow
-                if let deadline = item.deadline {
-                    item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
+            if !item.isRecurring {
+                Button {
+                    let cal = Calendar.current
+                    let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: item.date))!
+                    item.date = tomorrow
+                    if let deadline = item.deadline {
+                        item.deadline = cal.date(byAdding: .day, value: 1, to: deadline)
+                    }
+                } label: {
+                    Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
                 }
-            } label: {
-                Label("Defer to Tomorrow", systemImage: "arrow.right.circle")
             }
         }
     }

@@ -150,15 +150,22 @@ Items identified during early real-world use.
 - ✅ **Section summary reload option**: a small reload icon after an AI-generated section summary lets the user generate a fresh summary
 - ✅ **AI summary quality**: all timed items (deadline plan items, calendar events, and timed reminders) are merged and sorted by clock time and appear first; followed by non-recurring one-off tasks, untimed reminders, and recurring habits — so the most time-sensitive items always surface first in the summary
 
-### Phase 15 — Fix Recurring Items / Habits / Routine Behavior
-- Clearly define the rules and behavior for recurring items
-- Probably treat them more as a "template" item
-- Refactor as needed
-- Possibly a "routine" or "habits" view / tab!
-- Known issues to address:
-  - Recurring items not showing up on a new day
-  - Changing a recurring item's time of day on one day changes it forever — probably not the desired behavior unless it is an *intentional* change, not just automatic bumping
-  - Recurring items showing up in future days as completed
+### ✅ Phase 15 — Fix Recurring Items / Habits / Routine Behavior
+- Implemented a **template + per-day instance model** using a self-referential `@Relationship` on `PlanItem`:
+  - `isTemplate: Bool` — true for recurring habit templates
+  - `template: PlanItem?` — links each per-day instance back to its template
+  - `instances: [PlanItem]` — inverse relationship; populated only on templates
+  - `isRecurring: Bool` — computed: `isTemplate || template != nil`
+- **Materialization**: per-day instances are created lazily when `DayView` loads a date (`materializeRecurringInstances(for:)`); only missing instances are created, so it's idempotent
+- **Migration**: `migrateOldRecurringItems()` detects old-style recurring items (non-template with `recurringWeekdays` set) and converts them to templates on first load
+- **`@Query` split**: `allItems` now excludes templates (instances + one-off items only); `recurringTemplates` fetches templates only — this ensures templates are never shown as regular day items
+- **Spillover skips instances**: recurring instances are not spilled to the next day (each day gets a fresh instance via materialization)
+- **`ItemForm` template-aware**: hides the recurring schedule picker when editing an instance; nav title reads "Edit Routine" for templates vs. "Edit Item" for instances
+- **`ItemFormViewModel`**: saves recurring schedule and `isTemplate` only on templates/one-offs; instances inherit schedule from their template
+- **Sheets trigger re-materialization on dismiss**: so newly created templates get instances for the current day immediately
+- **Materialization is today-only**: future dates never get instances created — they show read-only ghost projections instead; past dates retain their historical instances
+- **Defer hidden for recurring instances**: "Defer to Tomorrow" is only offered for one-off items; recurring instances can only be completed or canceled, since tomorrow's habit appears automatically
+- Self-referential `@Relationship` (not UUID) used for CloudKit compatibility
 
 ### Phase 16 — Finish Timeline View
 - The timeline should show *all* days, past, present, and future — a time machine of sorts

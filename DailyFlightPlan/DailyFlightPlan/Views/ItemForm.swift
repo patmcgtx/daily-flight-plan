@@ -13,6 +13,7 @@ struct ItemForm: View {
     @Query(sort: \PlanCategory.name) private var allCategories: [PlanCategory]
 
     @State private var viewModel: ItemFormViewModel
+    @State private var showDemoteAlert = false
     private let isCreate: Bool
 
     init(date: Date) {
@@ -31,21 +32,36 @@ struct ItemForm: View {
                 titleAndNotesSection
                 detailsSection
                 scheduleSection
-                recurringSection
+                if !viewModel.isEditingInstance {
+                    recurringSection
+                }
                 if !allCategories.isEmpty {
                     categoriesSection
                 }
             }
-            .navigationTitle(isCreate ? "New Item" : "Edit Item")
+            .navigationTitle(isCreate ? "New Item" : viewModel.isEditingTemplate ? "Edit Routine" : "Edit Item")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Stop Repeating?", isPresented: $showDemoteAlert) {
+                Button("Stop Routine", role: .destructive) {
+                    viewModel.save(in: modelContext)
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This routine will no longer repeat. Past completions will be kept as standalone items.")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        viewModel.save(in: modelContext)
-                        dismiss()
+                        if viewModel.willDemoteTemplate {
+                            showDemoteAlert = true
+                        } else {
+                            viewModel.save(in: modelContext)
+                            dismiss()
+                        }
                     }
                     .disabled(!viewModel.isValid)
                 }
@@ -67,7 +83,9 @@ struct ItemForm: View {
     @ViewBuilder
     private var detailsSection: some View {
         Section("Details") {
-            DatePicker("Date", selection: Bindable(viewModel).date, displayedComponents: .date)
+            if !viewModel.isEditingInstance {
+                DatePicker("Date", selection: Bindable(viewModel).date, displayedComponents: .date)
+            }
             Toggle(isOn: Bindable(viewModel).isFlagged) {
                 Label("Flagged", systemImage: "flag.fill")
             }
