@@ -175,6 +175,10 @@ Items identified during early real-world use.
 - **Grid view built and dropped**: iterated on a 2-column grid overview with AI summary tiles; removed after review — three views is the right number
 - All three views (Cockpit, Cards, Nav Log) are live for extended usability testing before deciding what stays in 1.0
 
+### Phase 16-b — Aviation-themed day-view additions
+- Add a place to give the day a "name", like maybe "Aircraft Identification" in a real fight plan. Default to "YYYYMMDD". There are also "Flight Rules" and  "Type of Flight" (work day? weekend? vacation?) to play with.
+- A "Today's Destinatiom" field with a hint/placeholder of "What are your goals for today?" It's an open-ended text field for today's purpose.
+
 ### Phase 17 — iCloud Sync
 *Moved up from Version 2.0 — planning on Mac and executing on iPhone is the core workflow.*
 - Enable CloudKit capability in entitlements
