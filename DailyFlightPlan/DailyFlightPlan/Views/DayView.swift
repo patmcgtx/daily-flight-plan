@@ -153,8 +153,8 @@ struct DayView: View {
                 }
             }
 
-            Tab("Flight Log", systemImage: "book.pages", value: AppTab.timeline) {
-                RunwayView()
+            Tab("Nav Log", systemImage: "book.pages", value: AppTab.timeline) {
+                TimelineView(onSelectDate: { _ in }, onDismiss: {})
             }
 
             Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
