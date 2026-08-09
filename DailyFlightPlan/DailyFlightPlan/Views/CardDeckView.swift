@@ -40,6 +40,7 @@ struct CardDeckView: View {
     @State private var isAddingItem = false
     @State private var showCategorySelector = false
     @State private var isShowingCategoriesEdit = false
+    @State private var expandedSections: Set<DaySection> = []
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -122,6 +123,8 @@ struct CardDeckView: View {
                     .accessibilityLabel("Add Item")
                 }
             }
+            .onAppear { initializeExpandedSections() }
+            .onChange(of: viewModel.selectedDate) { initializeExpandedSections() }
         }
         .environment(\.editItem) { item in itemToEdit = item }
         .sheet(isPresented: $isAddingItem) { ItemForm(date: viewModel.selectedDate) }
@@ -136,6 +139,13 @@ struct CardDeckView: View {
         .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
         .sheet(isPresented: $showCategorySelector) { categorySelectorSheet }
         .sheet(isPresented: $isShowingCategoriesEdit) { CategoriesEditView() }
+    }
+
+    private func initializeExpandedSections() {
+        expandedSections = []
+        if let current = viewModel.currentSection, viewModel.isToday {
+            expandedSections = [current]
+        }
     }
 
     // MARK: Date navigation header
@@ -198,43 +208,76 @@ struct CardDeckView: View {
         let pct = total > 0 ? Double(completed) / Double(total) : 0
         let isCurrent = viewModel.currentSection == section && viewModel.isToday
         let allDone = total > 0 && completed == total
+        let expanded = expandedSections.contains(section)
 
         return VStack(alignment: .leading, spacing: 0) {
-            cardHeader(
-                title: section.displayName,
-                subtitle: section.timeRangeLabel,
-                completed: completed, total: total, pct: pct,
-                isCurrent: isCurrent, allDone: allDone,
-                onAdd: { addingToSection = section }
-            )
-
-            Divider()
-
-            if allSectionItems.isEmpty {
-                Text("Nothing scheduled")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(pills) { item in
-                        cardRow(item)
-                        if item.id != pills.last?.id || !deadlines.isEmpty {
-                            Divider().padding(.leading, 54)
-                        }
+            if expanded {
+                Button {
+                    withAnimation(.spring(duration: 0.3)) {
+                        _ = expandedSections.remove(section)
                     }
-                    ForEach(deadlines) { item in
-                        cardDeadlineRow(item)
-                        if item.id != deadlines.last?.id {
-                            Divider().padding(.leading, 54)
-                        }
-                    }
+                } label: {
+                    cardHeader(
+                        title: section.displayName,
+                        subtitle: section.timeRangeLabel,
+                        completed: completed, total: total, pct: pct,
+                        isCurrent: isCurrent, allDone: allDone,
+                        isExpanded: true
+                    )
                 }
-                .padding(.bottom, 4)
+                .buttonStyle(.plain)
+
+                Divider()
+
+                Button { addingToSection = section } label: {
+                    Label("Add item", systemImage: "plus")
+                        .font(.caption)
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 10)
+                        .padding(.bottom, 2)
+                }
+                .buttonStyle(.plain)
+
+                if allSectionItems.isEmpty {
+                    Text("Nothing scheduled")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(pills) { item in
+                            cardRow(item)
+                            if item.id != pills.last?.id || !deadlines.isEmpty {
+                                Divider().padding(.leading, 54)
+                            }
+                        }
+                        ForEach(deadlines) { item in
+                            cardDeadlineRow(item)
+                            if item.id != deadlines.last?.id {
+                                Divider().padding(.leading, 54)
+                            }
+                        }
+                    }
+                    .padding(.bottom, 4)
+                }
+            } else {
+                Button {
+                    withAnimation(.spring(duration: 0.3)) {
+                        _ = expandedSections.insert(section)
+                    }
+                } label: {
+                    collapsedSectionHeader(
+                        section: section,
+                        completed: completed, total: total,
+                        isCurrent: isCurrent, allDone: allDone
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
-        .background(.background, in: RoundedRectangle(cornerRadius: 18))
+        .background { RoundedRectangle(cornerRadius: 18).fill(.background) }
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay {
             RoundedRectangle(cornerRadius: 18)
@@ -242,6 +285,11 @@ struct CardDeckView: View {
                         lineWidth: isCurrent ? 1.5 : 0.5)
         }
         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .onAppear {
+            if !allSectionItems.isEmpty {
+                viewModel.generateSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
+            }
+        }
     }
 
     @ViewBuilder
@@ -256,10 +304,20 @@ struct CardDeckView: View {
                 subtitle: "no specific time",
                 completed: completed, total: total, pct: pct,
                 isCurrent: false, allDone: total > 0 && completed == total,
-                onAdd: { isAddingItem = true }
+                isExpanded: false
             )
 
             Divider()
+
+            Button { isAddingItem = true } label: {
+                Label("Add item", systemImage: "plus")
+                    .font(.caption)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .padding(.bottom, 2)
+            }
+            .buttonStyle(.plain)
 
             VStack(spacing: 0) {
                 ForEach(items) { item in
@@ -280,8 +338,9 @@ struct CardDeckView: View {
         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
 
-    // MARK: Card header (shared)
+    // MARK: Card headers
 
+    /// Expanded header — used for section cards (tappable to collapse) and the always-open "Open" card.
     private func cardHeader(
         title: String,
         subtitle: String,
@@ -290,13 +349,21 @@ struct CardDeckView: View {
         pct: Double,
         isCurrent: Bool,
         allDone: Bool,
-        onAdd: @escaping () -> Void
+        isExpanded: Bool
     ) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.title2.bold())
-                    .foregroundStyle(isCurrent ? Color.accentColor : Color.primary)
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.title2.bold())
+                        .foregroundStyle(isCurrent ? Color.accentColor : Color.primary)
+                    Spacer()
+                    if isExpanded {
+                        Image(systemName: "chevron.up")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
 
                 HStack(spacing: 5) {
                     if isCurrent {
@@ -309,16 +376,6 @@ struct CardDeckView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                Button {
-                    onAdd()
-                } label: {
-                    Label("Add item", systemImage: "plus")
-                        .font(.caption)
-                        .foregroundStyle(Color.accentColor)
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 2)
             }
 
             Spacer()
@@ -351,6 +408,90 @@ struct CardDeckView: View {
         }
         .padding(16)
         .background(isCurrent ? Color.accentColor.opacity(0.04) : Color.clear)
+    }
+
+    /// Collapsed header — tappable to expand.
+    private func collapsedSectionHeader(
+        section: DaySection,
+        completed: Int,
+        total: Int,
+        isCurrent: Bool,
+        allDone: Bool
+    ) -> some View {
+        let summary = viewModel.sectionSummaries[section]
+        let isLoading = viewModel.loadingSummarySections.contains(section)
+
+        return HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                // Title row
+                HStack(spacing: 5) {
+                    Text(section.displayName)
+                        .font(.headline)
+                        .foregroundStyle(isCurrent ? Color.accentColor : Color.primary)
+                    Text("·")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Text(section.timeRangeLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if isCurrent {
+                        Circle().fill(.red).frame(width: 5, height: 5)
+                        Text("NOW")
+                            .font(.caption.bold())
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                // Summary / loading / fallback
+                if let summary {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                } else if isLoading {
+                    loadingDotsView
+                } else if allDone && total > 0 {
+                    Text("All done ✓")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                } else if total > 0 {
+                    Text("\(total - completed) remaining")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Nothing scheduled")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+
+            Spacer()
+
+            HStack(spacing: 6) {
+                if total > 0 {
+                    Text(allDone ? "✓" : "\(completed)/\(total)")
+                        .font(.caption2.monospacedDigit().bold())
+                        .foregroundStyle(allDone ? .green : .secondary)
+                }
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(16)
+        .background(isCurrent ? Color.accentColor.opacity(0.04) : Color.clear)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var loadingDotsView: some View {
+        Text("···")
+            .font(.caption)
+            .foregroundStyle(.tertiary)
+            .phaseAnimator([1.0, 0.3]) { view, opacity in
+                view.opacity(opacity)
+            } animation: { _ in
+                .easeInOut(duration: 0.7)
+            }
     }
 
     // MARK: Row types
