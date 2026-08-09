@@ -2,141 +2,332 @@
 //  RunwayView.swift
 //  DailyFlightPlan
 //
-//  Paper-planner aesthetic: flat checklist with ruled section dividers.
-//  No glass cards — just clean typography and a thin accent bar on the active section.
+//  Infinite scroll timeline: ±180 days from today, flat checklist style.
+//  Each day is a pinned-header section. Each time section has its own + button.
+//  Filter, category, and theme state is shared with the Focus tab via @AppStorage.
 //
 import SwiftUI
 import SwiftData
 
 struct RunwayView: View {
 
-    var viewModel: DayViewModel
-
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
 
-    @Environment(\.modelContext) private var modelContext
-    @State private var itemToEdit: PlanItem?
-    @State private var isAddingItem = false
+    @Query(sort: \PlanCategory.name)
+    private var allCategories: [PlanCategory]
 
-    private var dateItems: [PlanItem] {
-        allItems.filter { Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate) }
+    @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
+    private var showFlaggedOnly: Bool = false
+
+    @AppStorage(AppStorageKeys.showCompleted.rawValue)
+    private var showCompleted: Bool = false
+
+    @AppStorage(AppStorageKeys.showRecurring.rawValue)
+    private var showRecurring: Bool = true
+
+    @AppStorage(AppStorageKeys.theme.rawValue)
+    private var theme: DFPTheme = .cupertino
+
+    @Environment(\.categorySelectionService)
+    private var categorySelectionService: CategorySelectionService?
+
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var addingToDate: Date? = nil
+    @State private var addingToSection: DaySection? = nil
+    @State private var itemToEdit: PlanItem? = nil
+    @State private var showCategorySelector = false
+    @State private var isShowingCategoriesEdit = false
+
+    private var isFilterActive: Bool {
+        showFlaggedOnly || showCompleted || !showRecurring
     }
-    private var activeItems: [PlanItem] { dateItems.filter { $0.status != .canceled } }
+
+    private var today: Date {
+        Calendar.current.startOfDay(for: .now)
+    }
+
+    private var dates: [Date] {
+        let cal = Calendar.current
+        return (-180...180).compactMap { cal.date(byAdding: .day, value: $0, to: today) }
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                dateNavHeader
-                progressStrip
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
-
-                ForEach(DaySection.allCases) { section in
-                    runwaySection(section)
+        NavigationStack {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        ForEach(dates, id: \.self) { date in
+                            Section {
+                                dayContent(for: date)
+                            } header: {
+                                dayHeader(for: date)
+                            }
+                        }
+                    }
                 }
-
-                let openItems = viewModel.anyTimeItems(from: activeItems)
-                if !openItems.isEmpty {
-                    sectionDivider(label: "OPEN", isCurrent: false)
-                    ForEach(openItems) { item in checkRow(item) }
+                .onAppear {
+                    proxy.scrollTo(today, anchor: .top)
                 }
+                .navigationTitle("Runway")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            withAnimation { proxy.scrollTo(today, anchor: .top) }
+                        } label: {
+                            Image(systemName: "scope")
+                        }
+                        .accessibilityLabel("Go to Today")
+                    }
 
-                Spacer(minLength: 80)
+                    ToolbarItemGroup(placement: .topBarTrailing) {
+                        Menu {
+                            Toggle(isOn: $showFlaggedOnly) {
+                                Label("Flagged Only", systemImage: "flag.fill")
+                            }
+                            Toggle(isOn: $showCompleted) {
+                                Label("Show Completed", systemImage: "checkmark")
+                            }
+                            Toggle(isOn: $showRecurring) {
+                                Label("Routines", systemImage: "infinity")
+                            }
+                        } label: {
+                            Image(systemName: isFilterActive
+                                ? "line.3.horizontal.decrease.circle.fill"
+                                : "line.3.horizontal.decrease.circle")
+                                .foregroundStyle(isFilterActive ? Color.accentColor : Color.primary)
+                        }
+                        .accessibilityLabel("Filters")
+
+                        Button { showCategorySelector = true } label: {
+                            Image(systemName: "tag")
+                        }
+                        .accessibilityLabel("Filter by Category")
+
+                        Menu {
+                            ForEach(DFPTheme.allCases) { option in
+                                Button { theme = option } label: {
+                                    Label(option.localizedName, systemImage: option.menuIconName)
+                                }
+                            }
+                        } label: {
+                            Image(systemName: theme.menuIconName)
+                                .foregroundStyle(theme == .cupertino ? Color.primary : Color.accentColor)
+                        }
+                        .accessibilityLabel("Theme")
+                    }
+
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            addingToDate = today
+                            addingToSection = nil
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityLabel("Add Item")
+                    }
+                }
             }
         }
-        .safeAreaInset(edge: .bottom) { addButton }
         .environment(\.editItem) { item in itemToEdit = item }
-        .sheet(isPresented: $isAddingItem) { ItemForm(date: viewModel.selectedDate) }
-        .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
-    }
-
-    // MARK: Header
-
-    private var dateNavHeader: some View {
-        HStack {
-            Button { withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToYesterday() } } label: {
-                Image(systemName: "chevron.left")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
+        .sheet(isPresented: Binding(
+            get: { addingToDate != nil },
+            set: { if !$0 { addingToDate = nil; addingToSection = nil } }
+        )) {
+            if let date = addingToDate {
+                ItemForm(date: date, section: addingToSection)
             }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            VStack(spacing: 2) {
-                Text(viewModel.selectedDate, format: .dateTime.weekday(.wide))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
-                Text(viewModel.selectedDate, format: .dateTime.month(.wide).day())
-                    .font(.title.bold())
-                    .monospacedDigit()
-            }
-
-            Spacer()
-
-            Button { withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToTomorrow() } } label: {
-                Image(systemName: "chevron.right")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 12)
+        .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
+        .sheet(isPresented: $showCategorySelector) { categorySelectorSheet }
+        .sheet(isPresented: $isShowingCategoriesEdit) { CategoriesEditView() }
     }
 
-    // MARK: Progress strip
+    // MARK: Category selector sheet
 
-    private var progressStrip: some View {
-        let total = activeItems.count
-        let done = activeItems.filter { $0.status == .completed }.count
-        let pct = total > 0 ? Double(done) / Double(total) : 0
-        return HStack(spacing: 10) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.secondary.opacity(0.12)).frame(height: 3)
-                    Capsule()
-                        .fill(Color.accentColor)
-                        .frame(width: geo.size.width * pct, height: 3)
-                        .animation(.spring(duration: 0.4), value: done)
+    private var categorySelectorSheet: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Filter by Category")
+                .font(.headline)
+                .padding(.horizontal)
+                .padding(.top)
+            if allCategories.isEmpty {
+                Text("No categories yet.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(allCategories) { category in
+                            CategoryCapsule(category: category)
+                        }
+                    }
+                    .padding(.horizontal)
                 }
             }
-            .frame(height: 3)
-            Text(total > 0 ? "\(done)/\(total)" : "")
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 30, alignment: .trailing)
+            Button("Manage Categories") {
+                showCategorySelector = false
+                isShowingCategoriesEdit = true
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
+            .padding(.bottom)
         }
+        .presentationDetents([.height(160)])
+        .presentationDragIndicator(.visible)
+    }
+
+    // MARK: Day header (sticky)
+
+    private func dayHeader(for date: Date) -> some View {
+        let isToday = Calendar.current.isDateInToday(date)
+        let isPast = date < today
+        return HStack(spacing: 8) {
+            Text(date, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
+                .font(.subheadline.bold())
+                .foregroundStyle(isToday ? Color.accentColor : isPast ? Color.secondary : Color.primary)
+            if isToday {
+                Text("TODAY")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.accentColor, in: Capsule())
+            }
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.background)
+        .id(date)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    // MARK: Day content
+
+    @ViewBuilder
+    private func dayContent(for date: Date) -> some View {
+        let isToday = Calendar.current.isDateInToday(date)
+        let isFuture = date > today
+        let items = itemsForDate(date)
+        let currentSection: DaySection? = isToday ? DaySection.containing(.now) : nil
+
+        ForEach(DaySection.allCases) { section in
+            let pills = sectionPills(section, from: items)
+            let deadlines = deadlineItems(section, from: items)
+            if !pills.isEmpty || !deadlines.isEmpty || isToday || isFuture {
+                runwaySection(
+                    section, date: date,
+                    pills: pills, deadlines: deadlines,
+                    isCurrent: currentSection == section
+                )
+            }
+        }
+
+        let openItems = anyTimeItems(from: items)
+        if !openItems.isEmpty {
+            openBlock(items: openItems, date: date)
+        }
+
+        // Bottom spacer between days
+        Divider()
+            .padding(.top, 12)
+            .padding(.bottom, 4)
+    }
+
+    // MARK: Item filtering
+
+    private func itemsForDate(_ date: Date) -> [PlanItem] {
+        let filtered = allItems.filter {
+            Calendar.current.isDate($0.date, inSameDayAs: date)
+            && (showCompleted || ($0.status != .completed && $0.status != .canceled))
+            && (!showFlaggedOnly || $0.isFlagged)
+            && (showRecurring || !$0.isRecurring)
+        }
+        return categorySelectionService?.filterItems(filtered) ?? filtered
+    }
+
+    private func sectionPills(_ section: DaySection, from items: [PlanItem]) -> [PlanItem] {
+        items.filter { $0.daySection == section && $0.deadline == nil }
+    }
+
+    private func deadlineItems(_ section: DaySection, from items: [PlanItem]) -> [PlanItem] {
+        items.filter {
+            $0.deadline != nil && $0.daySection == nil &&
+            DaySection.containing($0.deadline!) == section
+        }.sorted { ($0.deadline ?? .distantPast) < ($1.deadline ?? .distantPast) }
+    }
+
+    private func anyTimeItems(from items: [PlanItem]) -> [PlanItem] {
+        items.filter { $0.daySection == nil && $0.deadline == nil }
     }
 
     // MARK: Section block
 
     @ViewBuilder
-    private func runwaySection(_ section: DaySection) -> some View {
-        let pills = viewModel.sectionPills(section, from: activeItems)
-        let deadlines = viewModel.deadlineRows(section, from: activeItems)
-        let isCurrent = viewModel.currentSection == section && viewModel.isToday
-
+    private func runwaySection(
+        _ section: DaySection, date: Date,
+        pills: [PlanItem], deadlines: [PlanItem],
+        isCurrent: Bool
+    ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionDivider(label: section.displayName.uppercased(), isCurrent: isCurrent,
-                           timeRange: section.timeRangeLabel)
+            // Section divider row
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(isCurrent ? Color.accentColor : Color.clear)
+                    .frame(width: 3)
 
+                HStack(spacing: 6) {
+                    if isCurrent {
+                        Circle().fill(.red).frame(width: 5, height: 5)
+                    }
+                    Text(section.displayName.uppercased())
+                        .font(.caption2.bold())
+                        .foregroundStyle(isCurrent ? Color.accentColor : Color.secondary)
+                        .kerning(1.1)
+                    Text(section.timeRangeLabel)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Button {
+                        addingToDate = date
+                        addingToSection = section
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.caption.bold())
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 30, height: 30)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.leading, 12)
+                .padding(.trailing, 4)
+            }
+            .padding(.top, 14)
+            .padding(.bottom, 4)
+
+            // Items
             if pills.isEmpty && deadlines.isEmpty {
                 HStack(spacing: 0) {
-                    accentBar(isCurrent: isCurrent)
+                    Rectangle()
+                        .fill(isCurrent ? Color.accentColor.opacity(0.25) : Color.clear)
+                        .frame(width: 3)
                     Text("—")
                         .font(.caption)
                         .foregroundStyle(.quaternary)
                         .padding(.leading, 16)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 4)
                 }
             } else {
                 HStack(alignment: .top, spacing: 0) {
-                    accentBar(isCurrent: isCurrent)
+                    Rectangle()
+                        .fill(isCurrent ? Color.accentColor.opacity(0.25) : Color.clear)
+                        .frame(width: 3)
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(pills) { item in checkRow(item) }
                         ForEach(deadlines) { item in deadlineCheckRow(item) }
@@ -147,43 +338,43 @@ struct RunwayView: View {
         }
     }
 
-    private func sectionDivider(label: String, isCurrent: Bool, timeRange: String? = nil) -> some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(isCurrent ? Color.accentColor : Color.clear)
-                .frame(width: 3)
-
-            HStack(spacing: 6) {
-                if isCurrent {
-                    Circle().fill(.red).frame(width: 5, height: 5)
-                }
-                Text(label)
-                    .font(.caption2.bold())
-                    .foregroundStyle(isCurrent ? Color.accentColor : Color.secondary)
-                    .kerning(1.1)
-                if let tr = timeRange {
-                    Text(tr)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                Spacer()
-                Rectangle()
-                    .fill(isCurrent ? Color.accentColor.opacity(0.3) : Color.secondary.opacity(0.2))
-                    .frame(height: 0.5)
-                    .frame(maxWidth: 80)
-            }
-            .padding(.leading, 12)
-            .padding(.trailing, 20)
-        }
-        .padding(.top, 20)
-        .padding(.bottom, 8)
-    }
-
     @ViewBuilder
-    private func accentBar(isCurrent: Bool) -> some View {
-        Rectangle()
-            .fill(isCurrent ? Color.accentColor.opacity(0.25) : Color.clear)
-            .frame(width: 3)
+    private func openBlock(items: [PlanItem], date: Date) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 0) {
+                Rectangle().fill(Color.clear).frame(width: 3)
+                HStack(spacing: 6) {
+                    Text("OPEN")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.secondary)
+                        .kerning(1.1)
+                    Spacer()
+                    Button {
+                        addingToDate = date
+                        addingToSection = nil
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.caption.bold())
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 30, height: 30)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.leading, 12)
+                .padding(.trailing, 4)
+            }
+            .padding(.top, 14)
+            .padding(.bottom, 4)
+
+            HStack(alignment: .top, spacing: 0) {
+                Rectangle().fill(Color.clear).frame(width: 3)
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(items) { item in checkRow(item) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
     }
 
     // MARK: Row types
@@ -198,7 +389,9 @@ struct RunwayView: View {
             } label: {
                 Image(systemName: item.status == .completed ? "checkmark.circle.fill" : "circle")
                     .font(.body)
-                    .foregroundStyle(item.status == .completed ? Color.accentColor : Color.secondary.opacity(0.4))
+                    .foregroundStyle(item.status == .completed
+                        ? Color.accentColor
+                        : Color.secondary.opacity(0.4))
             }
             .buttonStyle(.plain)
 
@@ -241,7 +434,9 @@ struct RunwayView: View {
             } label: {
                 Image(systemName: item.status == .completed ? "checkmark.circle.fill" : "circle")
                     .font(.body)
-                    .foregroundStyle(item.status == .completed ? Color.accentColor : Color.secondary.opacity(0.4))
+                    .foregroundStyle(item.status == .completed
+                        ? Color.accentColor
+                        : Color.secondary.opacity(0.4))
             }
             .buttonStyle(.plain)
 
@@ -278,27 +473,10 @@ struct RunwayView: View {
             } label: { Label("Cancel", systemImage: "xmark.circle") }
         }
     }
-
-    // MARK: Add button
-
-    private var addButton: some View {
-        Button { isAddingItem = true } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "plus")
-                Text("Add Item")
-            }
-            .font(.body.bold())
-            .padding(.horizontal, 28)
-            .padding(.vertical, 12)
-            .background(Color.accentColor, in: Capsule())
-            .foregroundStyle(.white)
-        }
-        .padding(.bottom, 8)
-    }
 }
 
 #Preview {
-    RunwayView(viewModel: DayViewModel())
+    RunwayView()
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
