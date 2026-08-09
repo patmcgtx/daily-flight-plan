@@ -87,7 +87,7 @@ struct DayView: View {
 
     var body: some View {
         TabView(selection: $activeTab) {
-            Tab("Focus", systemImage: "airplane", value: AppTab.focus) {
+            Tab("Cockpit", systemImage: "airplane", value: AppTab.focus) {
                 NavigationStack {
                     dayScrollView
                         .id(viewModel.selectedDate)
@@ -153,16 +153,16 @@ struct DayView: View {
                 }
             }
 
+            Tab("Flight Log", systemImage: "book.pages", value: AppTab.timeline) {
+                RunwayView()
+            }
+
             Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
                 CardDeckView(viewModel: viewModel)
             }
 
             Tab("Grid", systemImage: "square.grid.2x2", value: AppTab.grid) {
                 GridOverviewView(viewModel: viewModel)
-            }
-
-            Tab("Runway", systemImage: "checklist", value: AppTab.timeline) {
-                RunwayView()
             }
             
             Tab(value: AppTab.search, role: .search) {
