@@ -18,8 +18,9 @@ DailyFlightPlan/
     ├── Components/   — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
     │                   ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/  — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
-    ├── DayView.swift
-    ├── TimelineView.swift
+    ├── DayView.swift          — Cockpit tab: main day view with section cards
+    ├── CardDeckView.swift     — Cards tab: collapsible stacked section cards with AI summaries
+    ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```
@@ -96,17 +97,20 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 
 ## UI: "Structured Flight Plan"
 
+> **Phase 16 UX experiment in progress.** Three views are live for usability testing. The tab set may shrink before 1.0.
+
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
-- **Focus** (`airplane`) — the main day view
-- **Timeline** (`calendar.day.timeline.left`) — all plan items grouped by date
+- **Cockpit** (`airplane`) — the main day view (was "Focus")
+- **Cards** (`rectangle.stack`) — vertically stacked section cards; collapsible headers with AI summary in collapsed state, full item list when expanded; date navigation; per-section add button
+- **Nav Log** (`book.pages`) — chronological multi-day list of all plan items; fully interactive (was "Timeline")
 - **Search** (`magnifyingglass`, pinned trailing via `Tab(role: .search)`) — stub, not yet implemented
 
-**Navigation bar toolbar (Focus tab only, inside `NavigationStack`):**
+**Navigation bar toolbar (Cockpit tab, inside `NavigationStack`):**
 - Leading: `⚙` Settings button (stub — navigates to `SettingsView`, not yet implemented)
 - Trailing: `ToolbarItemGroup` — filter menu (`line.3.horizontal.decrease.circle`), category button (`tag`), theme menu (`paintbrush`) — system groups these into a single Liquid Glass capsule on iOS 26
-- Trailing: `+` Add Item button (separate from the group; Phase 20 (Search) will move this to the thumb zone)
+- Trailing: `+` Add Item button (separate from the group; Phase 23 (Search) will move this to the thumb zone)
 
-All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`) is saved to `@AppStorage`. The filter icon fills/accents when any filter is active.
+All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`, `showRecurring`) is saved to `@AppStorage` and shared across all tabs. The filter icon fills/accents when any filter is active.
 
 **Scrolling date header (scrolls with content, not sticky):**
 - Centered: weekday + date, with a `scope` go-to-today button when not on today
@@ -132,7 +136,9 @@ Each expanded section body renders item sub-rows in order:
 
 **Now bar:** Red horizontal line + "NOW" label, rendered inside whichever section contains the current time.
 
-**Timeline tab:** Embedded as a tab (not a sheet). Shows all plan items grouped by date with a filter bar and today indicator. Selecting a date or row navigates the Focus tab to that date and switches back to Focus. Filters (flagged, done, category) are shared state via `@AppStorage`.
+**Nav Log tab:** Embedded as a tab (not a sheet). Shows all plan items grouped by date with a filter bar and today indicator. Items are fully interactive in-place: checkbox completes, tap opens edit form, long-press shows Edit/Cancel context menu. Filters (flagged, done, category) are shared state via `@AppStorage`.
+
+**Cards tab:** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count + chevron) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches the Cockpit tab. AI summaries are generated on `.onAppear` for all cards. `+ Add item` lives inside the expanded card content, not in the header.
 
 **Item types in the day view:**
 | Type | Layout | Visual treatment |

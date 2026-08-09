@@ -167,35 +167,59 @@ Items identified during early real-world use.
 - **Defer hidden for recurring instances**: "Defer to Tomorrow" is only offered for one-off items; recurring instances can only be completed or canceled, since tomorrow's habit appears automatically
 - Self-referential `@Relationship` (not UUID) used for CloudKit compatibility
 
-### Phase 16 — Finish Timeline View
-- The timeline should show *all* days, past, present, and future — a time machine of sorts
+### ✅ Phase 16 — Multi-View UX Experiment
+- Added two alternative views alongside the Cockpit (day view):
+  - **Cards view** (`CardDeckView`) — vertically stacked section cards; collapsible headers with AI summary (or loading dots / count fallback) in collapsed state, full progress ring + item list when expanded; current section expanded by default on today; date navigation header; full filter/category/theme toolbar; `+ Add item` inside content area
+  - **Nav Log** (`TimelineView` renamed) — chronological multi-day list; items fully interactive (checkbox completes, tap opens edit form, long-press for Edit/Cancel context menu); Flagged/Done filter bar with category capsules
+- **Tab renames**: "Focus" → "Cockpit" (`airplane` icon); "Timeline" → "Nav Log" (`book.pages` icon); "Cards" tab added (`rectangle.stack` icon)
+- **Grid view built and dropped**: iterated on a 2-column grid overview with AI summary tiles; removed after review — three views is the right number
+- All three views (Cockpit, Cards, Nav Log) are live for extended usability testing before deciding what stays in 1.0
+
+### Phase 17 — iCloud Sync
+*Moved up from Version 2.0 — planning on Mac and executing on iPhone is the core workflow.*
+- Enable CloudKit capability in entitlements
+- Switch `ModelConfiguration` to use a CloudKit container identifier
+- Verify self-referential `@Relationship` on `PlanItem` (template ↔ instances) is CloudKit-compatible (use object references, not UUIDs — already done)
+- Handle merge conflicts and sync errors gracefully
+- Test sync between iPhone and Mac (once Mac target exists in Phase 18)
+
+### Phase 18 — Mac Support
+*Moved up from Version 2.0 — needed alongside iCloud sync for the plan-on-Mac, execute-on-iPhone workflow.*
+- Enable Mac Catalyst or SwiftUI native Mac target
+- Replace `.glass` button style and swipe gestures with Mac-native equivalents (context menus, toolbar buttons)
+- Menu bar integration: keyboard shortcuts for common actions (new item, next/previous day, go to today)
+- Appropriate window minimum size and resizable layout
+- Test full keyboard navigation and VoiceOver on macOS
+
+### Phase 19 — Finish Nav Log
+- The Nav Log should show *all* days, past, present, and future — a time machine of sorts
 - Past days show a history of what was completed (and canceled)
 - Future days show scheduled items and projected recurring items, which are non-interactive
 - Allow the usual editing on today and future planned items, with swipe gestures for cancel, defer, flag, and delete
 - A share icon for each day — can be a basic first pass or even a visual placeholder for now
 - Implementation notes:
-  - **Timeline lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
-  - **Timeline lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
+  - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
+  - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
 
-### Phase 17 — Brand New Focus View
+### Phase 20 — Brand New Focus View
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
 - Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
-- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 23 (Smooth Day Swipe Navigation Pager)
+- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 26 (Smooth Day Swipe Navigation Pager)
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 - Add unit tests once happy with the behavior
 - Can we reuse the existing view models?
 
-### Phase 18 — Architecture Clean Up
+### Phase 21 — Architecture Clean Up
 - With the "Brand New Focus View" working, drop the old Focus view and all associated code
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization
 - Update the architecture doc
 
-### Phase 19 — Chat / Quick Entry (Natural Language)
+### Phase 22 — Chat / Quick Entry (Natural Language)
 - Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
   - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
   - Ask questions about your day
@@ -216,7 +240,7 @@ Items identified during early real-world use.
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 20 — Search
+### Phase 23 — Search
 - All search already handled by Chat / Quick Entry? Do we need a separate Search tab? It might be redundant.
 - Consider moving search to *only* the timeline view
 - Search bar (`.searchable`) in the day view header or as a dedicated screen
@@ -226,7 +250,7 @@ Items identified during early real-world use.
 - Filter results by status (pending / completed / canceled)
 - **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
 
-### Phase 21 — Settings
+### Phase 24 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
@@ -236,14 +260,14 @@ Items identified during early real-world use.
 - **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
 - Any other preferences surfaced here as phases are completed
 
-### Phase 22 — Local Notifications
+### Phase 25 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 21 (Settings)
+- Notification times respect custom day section boundaries from Phase 24 (Settings)
 
-### Phase 23 — Smooth Day Swipe Navigation (Pager)
-- Was this handled by Phase 17 (Brand New Focus View)?
+### Phase 26 — Smooth Day Swipe Navigation (Pager)
+- Was this handled by Phase 20 (Brand New Focus View)?
 - This may be best done as part of that brand new view rather than untangling and refactoring the existing code
 - Replace the current chevron-only navigation with a true horizontal pager where adjacent day content slides in with your finger — like Apple Calendar or Photos
 - Extract the day scroll content into a date-parameterized `DayScrollContent` view with its own `@Query` and async calendar/reminder fetching so each adjacent page is self-contained
@@ -252,7 +276,7 @@ Items identified during early real-world use.
 - Section collapse/expand state and AI summaries remain tied to `DayViewModel.selectedDate`, resetting on each navigation as they do today
 - Remove or keep the chevron buttons based on how discoverable the swipe feels after this change
 
-### Phase 24 — Fit and Finish
+### Phase 27 — Fit and Finish
 - Address findings from Phase 14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
@@ -260,7 +284,7 @@ Items identified during early real-world use.
 - Are we hiding day segments that have passed?
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
 - **Missed item rule to consider**: when a day section has passed and items are left in it, move everything to "Open"
-- **Summary vs. full view** *(defer until Phase 19 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
+- **Summary vs. full view** *(defer until Phase 22 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
 - **Make Calendar and Reminders access read-only**: no need for read/write access anymore
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
@@ -273,7 +297,7 @@ Items identified during early real-world use.
 - Add an app icon
 - Anything that must be right before calling this version 1.0
 
-### Phase 25 — Tech Debt
+### Phase 28 — Tech Debt
 - Architecture review & refactor
 - **Rename day "section" to "segment"**: make this change in the code as well
 - **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
@@ -300,11 +324,6 @@ Items identified during early real-world use.
 - `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
 - Restore purchases flow (required for App Store)
 
-### iCloud Sync
-- Enable CloudKit capability in entitlements
-- Switch `ModelConfiguration` to use a CloudKit container identifier
-- Handle merge conflicts and sync errors gracefully
-
 ### Import / Export
 - Export a day or the timeline view
 - **Import from Things**: parse a Things export (markdown or JSON) and use Foundation Models to auto-assign each task to the appropriate day section, deadline, or recurring schedule
@@ -316,13 +335,6 @@ Items identified during early real-world use.
 - Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
 - Test with Stage Manager and multitasking split views
 - Pointer/cursor hover states for trackpad users
-
-### Mac Support
-- Enable Mac Catalyst or SwiftUI native Mac target
-- Replace glass pill buttons and swipe gestures with Mac-native equivalents (context menus, toolbar buttons)
-- Menu bar integration: keyboard shortcuts for common actions (new item, next/previous day, go to today)
-- Appropriate window minimum size and resizable layout
-- Test full keyboard navigation and VoiceOver on macOS
 
 ---
 
