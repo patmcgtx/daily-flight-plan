@@ -498,28 +498,36 @@ struct CardDeckView: View {
 
     private func cardRow(_ item: PlanItem) -> some View {
         HStack(spacing: 14) {
-            Button {
-                withAnimation(.spring(duration: 0.2)) {
-                    item.status = item.status == .completed ? .pending : .completed
-                    try? modelContext.save()
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .stroke(
-                            item.status == .completed ? Color.accentColor : Color.secondary.opacity(0.3),
-                            lineWidth: 1.5
-                        )
-                        .frame(width: 26, height: 26)
-                    if item.status == .completed {
-                        Image(systemName: "checkmark")
-                            .font(.caption.bold())
-                            .foregroundStyle(Color.accentColor)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-
+Button {
+    guard item.status != .canceled else { return }
+    withAnimation(.spring(duration: 0.2)) {
+        item.status = item.status == .completed ? .pending : .completed
+        try? modelContext.save()
+    }
+} label: {
+    ZStack {
+        Circle()
+            .stroke(
+                item.status == .completed ? Color.accentColor : Color.secondary.opacity(0.3),
+                lineWidth: 1.5
+            )
+            .frame(width: 26, height: 26)
+        switch item.status {
+        case .completed:
+            Image(systemName: "checkmark")
+                .font(.caption.bold())
+                .foregroundStyle(Color.accentColor)
+        case .canceled:
+            Image(systemName: "xmark")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+        case .pending:
+            EmptyView()
+        }
+    }
+}
+.buttonStyle(.plain)
+.disabled(item.status == .canceled)
             Text(item.title)
                 .font(.body)
                 .strikethrough(item.status == .completed)
