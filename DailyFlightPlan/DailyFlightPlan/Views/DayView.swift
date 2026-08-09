@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import Flow
 
-private enum AppTab: Hashable { case focus, cards, grid, timeline, search }
+private enum AppTab: Hashable { case focus, cards, timeline, search }
 
 struct DayView: View {
 
@@ -161,10 +161,6 @@ struct DayView: View {
                 CardDeckView(viewModel: viewModel)
             }
 
-            Tab("Grid", systemImage: "square.grid.2x2", value: AppTab.grid) {
-                GridOverviewView(viewModel: viewModel)
-            }
-            
             Tab(value: AppTab.search, role: .search) {
                 Text("Search")
                     .navigationTitle("Search")
