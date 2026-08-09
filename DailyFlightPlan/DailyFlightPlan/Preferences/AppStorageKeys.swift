@@ -27,5 +27,8 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// Filter: show Reminders items inline (on by default)
     case showReminderItems
 
+    /// Filter: show recurring habit instances (on by default)
+    case showRecurring
+
     var id: String { rawValue }
 }

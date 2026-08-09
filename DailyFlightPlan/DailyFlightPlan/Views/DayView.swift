@@ -31,6 +31,9 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.showReminderItems.rawValue)
     private var showReminderItems: Bool = true
 
+    @AppStorage(AppStorageKeys.showRecurring.rawValue)
+    private var showRecurring: Bool = true
+
     @Environment(\.categorySelectionService)
     private var categorySelectionService: CategorySelectionService?
 
@@ -62,7 +65,7 @@ struct DayView: View {
     @State private var isAnyTimeDropTargeted = false
 
     private var isFilterActive: Bool {
-        showFlaggedOnly || showCompleted
+        showFlaggedOnly || showCompleted || !showRecurring
     }
 
     private var selectedDateNonCanceledItems: [PlanItem] {
@@ -77,6 +80,7 @@ struct DayView: View {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && (showCompleted || ($0.status != .completed && $0.status != .canceled))
             && (!showFlaggedOnly || $0.isFlagged)
+            && (showRecurring || !$0.isRecurring)
         }
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
@@ -104,6 +108,9 @@ struct DayView: View {
                                     }
                                     Toggle(isOn: $showCompleted) {
                                         Label("Show Completed", systemImage: "checkmark")
+                                    }
+                                    Toggle(isOn: $showRecurring) {
+                                        Label("Routines", systemImage: "infinity")
                                     }
                                     Divider()
                                     Toggle(isOn: $showCalendarEvents) {
@@ -328,7 +335,7 @@ struct DayView: View {
 
     private var dayScrollView: some View {
         let selectedDateItems = itemsForSelectedDate
-        let projected = viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: recurringTemplates)
+        let projected = showRecurring ? viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: recurringTemplates) : []
         let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
         let visibleEvents = (showCalendarEvents && !categoriesActive) ? calendarEvents : []
         let rawReminders = (showReminderItems && !categoriesActive) ? reminderItems : []
