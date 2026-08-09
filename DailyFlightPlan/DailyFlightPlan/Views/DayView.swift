@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import Flow
 
-private enum AppTab: Hashable { case focus, timeline, search }
+private enum AppTab: Hashable { case focus, runway, cards, grid, timeline, search }
 
 struct DayView: View {
 
@@ -151,6 +151,18 @@ struct DayView: View {
                             }
                         }
                 }
+            }
+
+            Tab("Runway", systemImage: "checklist", value: AppTab.runway) {
+                RunwayView(viewModel: viewModel)
+            }
+
+            Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
+                CardDeckView(viewModel: viewModel)
+            }
+
+            Tab("Grid", systemImage: "square.grid.2x2", value: AppTab.grid) {
+                GridOverviewView(viewModel: viewModel)
             }
 
             Tab("Timeline", systemImage: "calendar.day.timeline.left", value: AppTab.timeline) {
