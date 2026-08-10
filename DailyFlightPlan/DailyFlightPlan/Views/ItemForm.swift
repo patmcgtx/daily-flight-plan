@@ -67,6 +67,9 @@ struct ItemForm: View {
                 }
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 400, minHeight: 480)
+        #endif
     }
 
     // MARK: Sections

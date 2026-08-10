@@ -56,8 +56,13 @@ struct DayView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var activeTab: AppTab = .focus
+    @State private var isShowingSettings = false
+    @State private var pendingDeleteItems = false
+    @State private var pendingDeleteCategories = false
+    @State private var isDeletingData = false
     @State private var isShowingCategoriesEdit = false
     @State private var showCategorySelector = false
+    @State private var pendingCategoriesEdit = false
     @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
@@ -69,13 +74,15 @@ struct DayView: View {
     }
 
     private var selectedDateNonCanceledItems: [PlanItem] {
-        allItems.filter {
+        guard !isDeletingData else { return [] }
+        return allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && $0.status != .canceled
         }
     }
 
     private var itemsForSelectedDate: [PlanItem] {
+        guard !isDeletingData else { return [] }
         let filtered = allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && (showCompleted || ($0.status != .completed && $0.status != .canceled))
@@ -95,7 +102,7 @@ struct DayView: View {
                         .inlineNavigationTitle()
                         .toolbar {
                             ToolbarItem(placement: .leadingBar) {
-                                Button { } label: {
+                                Button { isShowingSettings = true } label: {
                                     Image(systemName: "gearshape")
                                 }
                                 .accessibilityLabel("Settings")
@@ -158,7 +165,7 @@ struct DayView: View {
             }
 
             Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
-                CardDeckView(viewModel: viewModel)
+                CardDeckView(viewModel: viewModel, isDeletingData: isDeletingData)
             }
 
             Tab(value: AppTab.search, role: .search) {
@@ -184,6 +191,7 @@ struct DayView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
+                // ModelContainer.deduplicateCategories(in: modelContext)
                 performSpilloverIfNeeded()
             }
         }
@@ -193,10 +201,39 @@ struct DayView: View {
                 await fetchReminderItems()
             }
         }
-        .sheet(isPresented: $isShowingCategoriesEdit) {
-            CategoriesEditView()
+        .sheet(isPresented: $isShowingSettings, onDismiss: {
+            guard pendingDeleteItems || pendingDeleteCategories else { return }
+            let deleteItems = pendingDeleteItems
+            let deleteCategories = pendingDeleteCategories
+            pendingDeleteItems = false
+            pendingDeleteCategories = false
+            Task { @MainActor in
+                isDeletingData = true
+                // Let the overlay fully render before touching the store
+                try? await Task.sleep(for: .milliseconds(150))
+                if deleteItems { ModelContainer.deleteAllItems(in: modelContext) }
+                if deleteCategories { ModelContainer.deleteAllCategories(in: modelContext) }
+                // Hold the overlay until @Query finishes propagating the deletions
+                try? await Task.sleep(for: .seconds(2))
+                isDeletingData = false
+            }
+        }) {
+            SettingsView(
+                onDeleteItems: { pendingDeleteItems = true },
+                onDeleteCategories: { pendingDeleteCategories = true },
+                onSeedData: { ModelContainer.seedSampleDataIfNeeded(in: modelContext) }
+            )
         }
-        .sheet(isPresented: $showCategorySelector) {
+        .sheet(isPresented: $isShowingCategoriesEdit) {
+            CategoriesEditView(allCategories: allCategories)
+                .environment(\.modelContext, modelContext)
+        }
+        .sheet(isPresented: $showCategorySelector, onDismiss: {
+            if pendingCategoriesEdit {
+                pendingCategoriesEdit = false
+                isShowingCategoriesEdit = true
+            }
+        }) {
             categorySelectorSheet
         }
         .sheet(isPresented: $isAddingItem, onDismiss: {
@@ -209,6 +246,19 @@ struct DayView: View {
         }) { item in
             ItemForm(item: item)
         }
+        .overlay {
+            if isDeletingData {
+                Rectangle()
+                    .fill(.background)
+                    .ignoresSafeArea()
+                    .overlay {
+                        ProgressView("Deleting…")
+                            .controlSize(.large)
+                    }
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isDeletingData)
     }
 
     private var dayTransition: AnyTransition {
@@ -241,8 +291,8 @@ struct DayView: View {
                 }
             }
             Button("Manage Categories") {
+                pendingCategoriesEdit = true
                 showCategorySelector = false
-                isShowingCategoriesEdit = true
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)

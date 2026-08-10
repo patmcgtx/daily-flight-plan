@@ -11,78 +11,109 @@ struct CategoriesEditView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query(sort: \PlanCategory.name) private var allCategories: [PlanCategory]
+    /// Categories passed from the parent view's @Query (avoids Mac Catalyst sheet environment issues).
+    var allCategories: [PlanCategory] = []
 
     @State private var viewModel: CategoriesEditViewModel?
     @FocusState private var isAddFieldFocused: Bool
 
     var body: some View {
+        #if os(macOS)
+        macLayout
+        #else
         NavigationStack {
-            List {
-                Section("Add Category") {
-                    HStack {
-                        TextField("New category name", text: Binding(
-                            get: { viewModel?.newCategoryName ?? "" },
-                            set: { viewModel?.newCategoryName = $0 }
-                        ))
-                        .focused($isAddFieldFocused)
-                        .onSubmit {
-                            if viewModel?.addCategory(allCategories: allCategories) == true {
-                                isAddFieldFocused = true
-                            }
-                        }
-
-                        Button {
-                            if viewModel?.addCategory(allCategories: allCategories) == true {
-                                isAddFieldFocused = true
-                            }
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
-                        }
-                        .disabled(
-                            viewModel?.newCategoryName
-                                .trimmingCharacters(in: .whitespaces).isEmpty ?? true
-                        )
+            categoryList
+                .navigationTitle("Edit Categories")
+                .inlineNavigationTitle()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
                     }
                 }
+        }
+        #endif
+    }
 
-                Section {
-                    ForEach(allCategories) { category in
-                        categoryRow(for: category)
+    // MARK: - Mac layout
+
+    #if os(macOS)
+    private var macLayout: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Edit Categories")
+                    .font(.headline)
+                Spacer()
+                Button("Done") { dismiss() }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            Divider()
+            categoryList
+        }
+        .frame(minWidth: 380, minHeight: 350)
+    }
+    #endif
+
+    // MARK: - Shared list content
+
+    private var categoryList: some View {
+        List {
+            Section("Add Category") {
+                HStack {
+                    TextField("New category name", text: Binding(
+                        get: { viewModel?.newCategoryName ?? "" },
+                        set: { viewModel?.newCategoryName = $0 }
+                    ))
+                    .focused($isAddFieldFocused)
+                    .onSubmit {
+                        if viewModel?.addCategory(allCategories: allCategories) == true {
+                            isAddFieldFocused = true
+                        }
                     }
-                } header: {
-                    Text("Existing Categories")
-                } footer: {
-                    Text("Deleting a category removes it from all items.")
+
+                    Button {
+                        if viewModel?.addCategory(allCategories: allCategories) == true {
+                            isAddFieldFocused = true
+                        }
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                    }
+                    .disabled(
+                        viewModel?.newCategoryName
+                            .trimmingCharacters(in: .whitespaces).isEmpty ?? true
+                    )
                 }
             }
-            .navigationTitle("Edit Categories")
-            .inlineNavigationTitle()
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+
+            Section {
+                ForEach(allCategories) { category in
+                    categoryRow(for: category)
                 }
+            } header: {
+                Text("Existing Categories")
+            } footer: {
+                Text("Deleting a category removes it from all items.")
             }
-            .alert(
-                "Delete Category?",
-                isPresented: Binding(
-                    get: { viewModel?.showingDeleteAlert != nil },
-                    set: { if !$0 { viewModel?.showingDeleteAlert = nil } }
-                ),
-                presenting: viewModel?.showingDeleteAlert
-            ) { category in
-                Button("Cancel", role: .cancel) { viewModel?.showingDeleteAlert = nil }
-                Button("Delete", role: .destructive) {
-                    viewModel?.deleteCategory(category)
-                    viewModel?.showingDeleteAlert = nil
-                }
-            } message: { category in
-                Text("\"\(category.name)\" will be removed from all items.")
+        }
+        .alert(
+            "Delete Category?",
+            isPresented: Binding(
+                get: { viewModel?.showingDeleteAlert != nil },
+                set: { if !$0 { viewModel?.showingDeleteAlert = nil } }
+            ),
+            presenting: viewModel?.showingDeleteAlert
+        ) { category in
+            Button("Cancel", role: .cancel) { viewModel?.showingDeleteAlert = nil }
+            Button("Delete", role: .destructive) {
+                viewModel?.deleteCategory(category)
+                viewModel?.showingDeleteAlert = nil
             }
-            .onAppear {
-                if viewModel == nil {
-                    viewModel = CategoriesEditViewModel(modelContext: modelContext)
-                }
+        } message: { category in
+            Text("\"\(category.name)\" will be removed from all items.")
+        }
+        .onAppear {
+            if viewModel == nil {
+                viewModel = CategoriesEditViewModel(modelContext: modelContext)
             }
         }
     }

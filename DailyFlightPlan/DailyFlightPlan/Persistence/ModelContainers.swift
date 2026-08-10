@@ -19,6 +19,70 @@ extension ModelContainer {
         )
     }
 
+    /// Deletes every PlanItem from the store (including routine templates).
+    /// CloudKit will propagate the deletion to all devices.
+    /// Two-pass: clears relationships before deleting to avoid self-referential nullify conflicts.
+    @MainActor
+    static func deleteAllItems(in context: ModelContext) {
+        do {
+            let all = try context.fetch(FetchDescriptor<PlanItem>())
+            for item in all {
+                item.template = nil
+                item.instances = nil
+                item.categories = nil
+            }
+            try context.save()
+            for item in all { context.delete(item) }
+            try context.save()
+        } catch {
+            print("deleteAllItems error: \(error)")
+        }
+    }
+
+    /// Deletes every PlanCategory from the store. CloudKit will propagate the deletion to all devices.
+    /// Two-pass: clears relationships before deleting to avoid nullify conflicts.
+    @MainActor
+    static func deleteAllCategories(in context: ModelContext) {
+        do {
+            let all = try context.fetch(FetchDescriptor<PlanCategory>())
+            for category in all { category.items = nil }
+            try context.save()
+            for category in all { context.delete(category) }
+            try context.save()
+        } catch {
+            print("deleteAllCategories error: \(error)")
+        }
+    }
+
+    /// Merges duplicate PlanCategory records that share the same name.
+    /// CloudKit sync can create duplicates when both devices seed data before the first sync
+    /// completes. Call on startup and on each scene activation (after CloudKit may have synced).
+    @MainActor
+    static func deduplicateCategories(in context: ModelContext) {
+        let all = (try? context.fetch(FetchDescriptor<PlanCategory>())) ?? []
+        var seen = [String: PlanCategory]()
+        var toDelete = [PlanCategory]()
+
+        for category in all {
+            let key = category.name.lowercased()
+            if let canonical = seen[key] {
+                for item in (category.items ?? []) {
+                    let current = item.categories ?? []
+                    if !current.contains(canonical) {
+                        item.categories = current + [canonical]
+                    }
+                }
+                toDelete.append(category)
+            } else {
+                seen[key] = category
+            }
+        }
+
+        guard !toDelete.isEmpty else { return }
+        for category in toDelete { context.delete(category) }
+        try? context.save()
+    }
+
     /// Seeds sample items into the persistent store on first launch (no-op if data already exists).
     @MainActor
     static func seedSampleDataIfNeeded(in context: ModelContext) {
@@ -42,7 +106,7 @@ extension ModelContainer {
         let items: [PlanItem] = [
             // Any time habits
             PlanItem(
-                title: "Approach ppl",
+                title: "Talk to ppl",
                 date: today,
                 recurringWeekdays: everyday,
                 isTemplate: true,
@@ -163,7 +227,8 @@ extension ModelContainer {
                 categories: [shallow, laptop]
             ),
             PlanItem(
-                title: "Do a Leetcode 150 challenge",
+                title: "Leetcode",
+                notes: " 150 challenge",
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: weekdays,
@@ -258,20 +323,20 @@ extension ModelContainer {
 
             // Evening habits
             PlanItem(
-                title: "Be teasing and challenging women",
-                date: today,
-                daySection: .evening,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [fun, social]
-            ),
-            PlanItem(
                 title: "Email zero inbox",
                 date: today,
                 daySection: .evening,
                 recurringWeekdays: everyday,
                 isTemplate: true,
                 categories: [laptop, shallow]
+            ),
+            PlanItem(
+                title: "Snail mail done",
+                date: today,
+                daySection: .evening,
+                recurringWeekdays: everyday,
+                isTemplate: true,
+                categories: [home, shallow]
             ),
             PlanItem(
                 title: "Take orange oil 2",
@@ -284,7 +349,7 @@ extension ModelContainer {
 
             // Bedtime habits
             PlanItem(
-                title: "Pics cleaned up",
+                title: "Photos cleaned up",
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
@@ -458,15 +523,6 @@ extension ModelContainer {
             ),
 
             // Evening
-            PlanItem(
-                title: "Be teasing and challenging women",
-                date: today,
-                daySection: .evening,
-                recurringWeekdays: everyday,
-                isTemplate: true
-            ),
-
-            // Bedtime
             PlanItem(
                 title: "Plan tomorrow",
                 date: today,

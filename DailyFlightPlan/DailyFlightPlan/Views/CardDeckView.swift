@@ -11,6 +11,7 @@ import SwiftData
 struct CardDeckView: View {
 
     var viewModel: DayViewModel
+    var isDeletingData: Bool = false
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
@@ -40,6 +41,7 @@ struct CardDeckView: View {
     @State private var isAddingItem = false
     @State private var showCategorySelector = false
     @State private var isShowingCategoriesEdit = false
+    @State private var pendingCategoriesEdit = false
     @State private var expandedSections: Set<DaySection> = []
 
     private var isFilterActive: Bool {
@@ -47,6 +49,7 @@ struct CardDeckView: View {
     }
 
     private var activeItems: [PlanItem] {
+        guard !isDeletingData else { return [] }
         let filtered = allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && (showCompleted || ($0.status != .completed && $0.status != .canceled))
@@ -137,8 +140,16 @@ struct CardDeckView: View {
             }
         }
         .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
-        .sheet(isPresented: $showCategorySelector) { categorySelectorSheet }
-        .sheet(isPresented: $isShowingCategoriesEdit) { CategoriesEditView() }
+        .sheet(isPresented: $showCategorySelector, onDismiss: {
+            if pendingCategoriesEdit {
+                pendingCategoriesEdit = false
+                isShowingCategoriesEdit = true
+            }
+        }) { categorySelectorSheet }
+        .sheet(isPresented: $isShowingCategoriesEdit) {
+            CategoriesEditView(allCategories: allCategories)
+                .environment(\.modelContext, modelContext)
+        }
     }
 
     private func initializeExpandedSections() {
