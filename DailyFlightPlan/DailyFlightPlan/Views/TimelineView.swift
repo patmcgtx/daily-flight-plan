@@ -225,13 +225,13 @@ private struct TimelineItemRow: View {
 
     @ViewBuilder
     private var checkboxButton: some View {
-Button {
-    guard item.status != .canceled else { return }
-    withAnimation(.spring(duration: 0.2)) {
-        item.status = item.status == .completed ? .pending : .completed
-        try? modelContext.save()
-    }
-} label: {
+        Button {
+            guard item.status != .canceled else { return }
+            withAnimation(.spring(duration: 0.2)) {
+                item.status = item.status == .completed ? .pending : .completed
+                try? modelContext.save()
+            }
+        } label: {
             switch item.status {
             case .completed:
                 Image(systemName: "checkmark.circle.fill")
