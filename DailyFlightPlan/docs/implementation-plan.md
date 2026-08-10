@@ -200,11 +200,15 @@ Items identified during early real-world use.
 - **Deferred**: keyboard shortcuts, menu bar integration, window minimum size, VoiceOver testing — deferred until post-iCloud sync when the Mac workflow can be exercised end-to-end
 
 
-### Phase 16-b — Aviation-themed day-view additions
-- Add a place to give the day a "name", like maybe "Aircraft Identification" in a real fight plan. Default to "YYYYMMDD". There are also "Flight Rules" and  "Type of Flight" (work day? weekend? vacation?) to play with.
-- A "Today's Destinatiom" field with a hint/placeholder of "What are your goals for today?" It's an open-ended text field for today's purpose.
+### Phase 19 — UX Sprint
+Mac and iCloud sync usability testing, plus day-view UX experiments and aviation-themed polish.
 
-### Phase 19 — Finish Nav Log
+- **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
+- **Mac usability testing**: Exercise the plan-on-Mac / execute-on-iPhone workflow end-to-end; identify and fix Mac-specific friction points, layout issues, and missing keyboard/pointer affordances
+- **iCloud sync usability testing**: Verify sync reliability across devices and platforms; monitor for duplicate records, stale data, or sync conflicts; refine the developer reset tools (seed / delete) as needed
+- **UX experiment tweaks**: Triage findings from Phase 16 (Cards, Cockpit, Nav Log) and make targeted improvements based on real-world use; decide which views stay, which get merged or cut
+
+### Phase 20 — Finish Nav Log
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts
 - Past days show a history of what was completed (and canceled)
 - Future days show scheduled items and projected recurring items, which are non-interactive
@@ -214,23 +218,17 @@ Items identified during early real-world use.
   - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
   - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
 
-### Phase 20 — Brand New Focus View
+### Phase 21 — Brand New Focus View
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
 - Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
-- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 26 (Smooth Day Swipe Navigation Pager)
+- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 27 (Smooth Day Swipe Navigation Pager)
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 - Add unit tests once happy with the behavior
 - Can we reuse the existing view models?
-
-### Phase 21 — Architecture Clean Up
-- With the "Brand New Focus View" working, drop the old Focus view and all associated code
-- Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
-- Check and clean up file and class organization
-- Update the architecture doc
 
 ### Phase 22 — Chat / Quick Entry (Natural Language)
 - Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
@@ -263,7 +261,13 @@ Items identified during early real-world use.
 - Filter results by status (pending / completed / canceled)
 - **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
 
-### Phase 24 — Settings
+### Phase 24 — Architecture Clean Up
+- With the "Brand New Focus View" working, drop the old Focus view and all associated code
+- Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
+- Check and clean up file and class organization
+- Update the architecture doc
+
+### Phase 25 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
@@ -273,14 +277,14 @@ Items identified during early real-world use.
 - **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
 - Any other preferences surfaced here as phases are completed
 
-### Phase 25 — Local Notifications
+### Phase 26 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 24 (Settings)
+- Notification times respect custom day section boundaries from Phase 25 (Settings)
 
-### Phase 26 — Smooth Day Swipe Navigation (Pager)
-- Was this handled by Phase 20 (Brand New Focus View)?
+### Phase 27 — Smooth Day Swipe Navigation (Pager)
+- Was this handled by Phase 21 (Brand New Focus View)?
 - This may be best done as part of that brand new view rather than untangling and refactoring the existing code
 - Replace the current chevron-only navigation with a true horizontal pager where adjacent day content slides in with your finger — like Apple Calendar or Photos
 - Extract the day scroll content into a date-parameterized `DayScrollContent` view with its own `@Query` and async calendar/reminder fetching so each adjacent page is self-contained
@@ -289,7 +293,7 @@ Items identified during early real-world use.
 - Section collapse/expand state and AI summaries remain tied to `DayViewModel.selectedDate`, resetting on each navigation as they do today
 - Remove or keep the chevron buttons based on how discoverable the swipe feels after this change
 
-### Phase 27 — Fit and Finish
+### Phase 28 — Fit and Finish
 - Address findings from Phase 14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
@@ -309,7 +313,7 @@ Items identified during early real-world use.
 - **Per-section add button**: consider a small `+` button on each section header (or in the section content area) so the user can add an item directly into that section without going through the main Add form and re-selecting the section
 - Add an app icon
 
-### Phase 28 — Tech Debt
+### Phase 29 — Tech Debt
 - Architecture review & refactor
 - **Rename day "section" to "segment"**: make this change in the code as well
 - **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
@@ -318,7 +322,7 @@ Items identified during early real-world use.
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
-### Phase 29: Beta testing
+### Phase 30 — Beta Testing
 Get this in other people's hands for initial impressions, questions, bugs and just - do they find it usefuL?
 
 WIll want to get them to test In-App Purcahse, etc. too. (I pay them back!)
