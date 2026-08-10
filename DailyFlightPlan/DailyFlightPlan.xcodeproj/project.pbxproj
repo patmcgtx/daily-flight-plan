@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6949596F302996B200889101 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6949596E302996B200889101 /* CloudKit.framework */; };
 		69917BBD301E444B00109086 /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = 69917BBC301E444B00109086 /* Flow */; };
 /* End PBXBuildFile section */
 
@@ -28,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6949596E302996B200889101 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
 		69B4708F3013A306005A13D5 /* DailyFlightPlan.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyFlightPlan.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		69B470A03013A307005A13D5 /* DailyFlightPlanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFlightPlanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		69B470AA3013A307005A13D5 /* DailyFlightPlanUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFlightPlanUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,6 +72,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				69917BBD301E444B00109086 /* Flow in Frameworks */,
+				6949596F302996B200889101 /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,12 +93,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6949596D302996B200889101 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				6949596E302996B200889101 /* CloudKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		69B470863013A306005A13D5 = {
 			isa = PBXGroup;
 			children = (
 				69B470913013A306005A13D5 /* DailyFlightPlan */,
 				69B470A33013A307005A13D5 /* DailyFlightPlanTests */,
 				69B470AD3013A307005A13D5 /* DailyFlightPlanUITests */,
+				6949596D302996B200889101 /* Frameworks */,
 				69B470903013A306005A13D5 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -306,6 +318,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DailyFlightPlan/Info.plist;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Daily Flight Plan displays your calendar events alongside your tasks to give you a complete picture of your day.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Daily Flight Plan displays your reminders alongside your tasks so nothing falls through the cracks.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -352,6 +366,8 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DailyFlightPlan/Info.plist;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Daily Flight Plan displays your calendar events alongside your tasks to give you a complete picture of your day.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Daily Flight Plan displays your reminders alongside your tasks so nothing falls through the cracks.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

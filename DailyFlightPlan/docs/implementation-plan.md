@@ -175,10 +175,6 @@ Items identified during early real-world use.
 - **Grid view built and dropped**: iterated on a 2-column grid overview with AI summary tiles; removed after review — three views is the right number
 - All three views (Cockpit, Cards, Nav Log) are live for extended usability testing before deciding what stays in 1.0
 
-### Phase 16-b — Aviation-themed day-view additions
-- Add a place to give the day a "name", like maybe "Aircraft Identification" in a real fight plan. Default to "YYYYMMDD". There are also "Flight Rules" and  "Type of Flight" (work day? weekend? vacation?) to play with.
-- A "Today's Destinatiom" field with a hint/placeholder of "What are your goals for today?" It's an open-ended text field for today's purpose.
-
 ### ✅ Phase 17 — iCloud Sync
 *Moved up from Version 2.0 — planning on Mac and executing on iPhone is the core workflow.*
 - Added `iCloud.com.patmcg.DailyFlightPlan` to `com.apple.developer.icloud-container-identifiers` in entitlements (Background Modes + remote-notification were already in `Info.plist`)
@@ -202,6 +198,11 @@ Items identified during early real-world use.
 - Applied `.trailingBar` / `.leadingBar` in `DayView` and `CardDeckView` toolbar items
 - Fixed `.listStyle(.insetGrouped)` → `#if os(macOS) .inset #else .insetGrouped #endif` in `TimelineView`
 - **Deferred**: keyboard shortcuts, menu bar integration, window minimum size, VoiceOver testing — deferred until post-iCloud sync when the Mac workflow can be exercised end-to-end
+
+
+### Phase 16-b — Aviation-themed day-view additions
+- Add a place to give the day a "name", like maybe "Aircraft Identification" in a real fight plan. Default to "YYYYMMDD". There are also "Flight Rules" and  "Type of Flight" (work day? weekend? vacation?) to play with.
+- A "Today's Destinatiom" field with a hint/placeholder of "What are your goals for today?" It's an open-ended text field for today's purpose.
 
 ### Phase 19 — Finish Nav Log
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts
@@ -307,7 +308,6 @@ Items identified during early real-world use.
 - **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or replaced with a minimal, generic example set before shipping
 - **Per-section add button**: consider a small `+` button on each section header (or in the section content area) so the user can add an item directly into that section without going through the main Add form and re-selecting the section
 - Add an app icon
-- Anything that must be right before calling this version 1.0
 
 ### Phase 28 — Tech Debt
 - Architecture review & refactor
@@ -317,6 +317,18 @@ Items identified during early real-world use.
 - **Bug: completed/canceled items still accept context menu actions**: pills in the done or cancelled rows still show the "Cancel Item" context menu action. Fix: gate the context menu destructive action in `ItemPillView` on `item.status == .pending`.
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
+
+### Phase 29: Beta testing
+Get this in other people's hands for initial impressions, questions, bugs and just - do they find it usefuL?
+
+WIll want to get them to test In-App Purcahse, etc. too. (I pay them back!)
+
+#### CloudKit initialization
+CloudKit needs its schema initialized once. Steps:
+
+Run a DEBUG build (once the entitlement above is fixed) on a device signed into a real iCloud account — this creates the record types/fields in the Development environment of the CloudKit dashboard automatically, inferred from your SwiftData models.
+Check CloudKit Console → your container → Schema, confirm CD_PlanItem/CD_PlanCategory (or similar) record types appear under Development.
+Before you ship to the App Store, use Console's Deploy Schema Changes to Production — Production schema doesn't auto-update from a release build, so skipping this step means TestFlight/App Store users get failures.
 
 ---
 
