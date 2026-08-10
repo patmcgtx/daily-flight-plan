@@ -11,6 +11,7 @@ import SwiftData
 struct CardDeckView: View {
 
     var viewModel: DayViewModel
+    var isDeletingData: Bool = false
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
@@ -47,6 +48,7 @@ struct CardDeckView: View {
     }
 
     private var activeItems: [PlanItem] {
+        guard !isDeletingData else { return [] }
         let filtered = allItems.filter {
             Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
             && (showCompleted || ($0.status != .completed && $0.status != .canceled))
@@ -77,9 +79,9 @@ struct CardDeckView: View {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .trailingBar) {
                     Menu {
                         Toggle(isOn: $showFlaggedOnly) {
                             Label("Flagged Only", systemImage: "flag.fill")
@@ -116,7 +118,7 @@ struct CardDeckView: View {
                     .accessibilityLabel("Theme")
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .trailingBar) {
                     Button { isAddingItem = true } label: {
                         Image(systemName: "plus")
                     }
@@ -138,7 +140,10 @@ struct CardDeckView: View {
         }
         .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
         .sheet(isPresented: $showCategorySelector) { categorySelectorSheet }
-        .sheet(isPresented: $isShowingCategoriesEdit) { CategoriesEditView() }
+        .sheet(isPresented: $isShowingCategoriesEdit) {
+            CategoriesEditView(allCategories: allCategories)
+                .environment(\.modelContext, modelContext)
+        }
     }
 
     private func initializeExpandedSections() {

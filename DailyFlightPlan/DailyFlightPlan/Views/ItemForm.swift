@@ -40,7 +40,7 @@ struct ItemForm: View {
                 }
             }
             .navigationTitle(isCreate ? "New Item" : viewModel.isEditingTemplate ? "Edit Routine" : "Edit Item")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .alert("Stop Repeating?", isPresented: $showDemoteAlert) {
                 Button("Stop Routine", role: .destructive) {
                     viewModel.save(in: modelContext)
@@ -67,6 +67,9 @@ struct ItemForm: View {
                 }
             }
         }
+        #if os(macOS)
+        .frame(minWidth: 400, minHeight: 480)
+        #endif
     }
 
     // MARK: Sections

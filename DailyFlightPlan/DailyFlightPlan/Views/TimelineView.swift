@@ -67,10 +67,14 @@ struct TimelineView: View {
                         .id(group.date)
                     }
                 }
+                #if os(macOS)
+                .listStyle(.inset)
+                #else
                 .listStyle(.insetGrouped)
+                #endif
                 .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
                 .navigationTitle("Nav Log")
-                .navigationBarTitleDisplayMode(.inline)
+                .inlineNavigationTitle()
                 .toolbar {
                     if onDismiss == nil {
                         ToolbarItem(placement: .cancellationAction) {

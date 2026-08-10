@@ -3,7 +3,6 @@
 //  DailyFlightPlan
 //
 import SwiftUI
-import SwiftData
 
 extension EnvironmentValues {
 
@@ -38,11 +37,11 @@ extension View {
 
 /// Injects all live services into the environment. Add new services here as phases are completed.
 struct InjectLiveServicesModifier: ViewModifier {
-    @Environment(\.modelContext) private var modelContext
+    @State private var categoryService = CategorySelectionService()
 
     func body(content: Content) -> some View {
         content
-            .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
+            .environment(\.categorySelectionService, categoryService)
             .environment(\.calendarService, EventKitCalendarService())
             .environment(\.remindersService, EventKitRemindersService())
     }
@@ -51,11 +50,11 @@ struct InjectLiveServicesModifier: ViewModifier {
 #if DEBUG
 
 struct InjectMockServicesModifier: ViewModifier {
-    @Environment(\.modelContext) private var modelContext
+    @State private var categoryService = CategorySelectionService()
 
     func body(content: Content) -> some View {
         content
-            .environment(\.categorySelectionService, CategorySelectionService(modelContext: modelContext))
+            .environment(\.categorySelectionService, categoryService)
             .environment(\.calendarService, MockCalendarService())
             .environment(\.remindersService, MockRemindersService())
     }
