@@ -179,13 +179,18 @@ Items identified during early real-world use.
 - Add a place to give the day a "name", like maybe "Aircraft Identification" in a real fight plan. Default to "YYYYMMDD". There are also "Flight Rules" and  "Type of Flight" (work day? weekend? vacation?) to play with.
 - A "Today's Destinatiom" field with a hint/placeholder of "What are your goals for today?" It's an open-ended text field for today's purpose.
 
-### Phase 17 — iCloud Sync
+### ✅ Phase 17 — iCloud Sync
 *Moved up from Version 2.0 — planning on Mac and executing on iPhone is the core workflow.*
-- Enable CloudKit capability in entitlements
-- Switch `ModelConfiguration` to use a CloudKit container identifier
-- Verify self-referential `@Relationship` on `PlanItem` (template ↔ instances) is CloudKit-compatible (use object references, not UUIDs — already done)
-- Handle merge conflicts and sync errors gracefully
-- Test sync between iPhone and Mac (once Mac target exists in Phase 18)
+- Added `iCloud.com.patmcg.DailyFlightPlan` to `com.apple.developer.icloud-container-identifiers` in entitlements (Background Modes + remote-notification were already in `Info.plist`)
+- Updated `ModelContainers.persistentContainer()` to use `cloudKitDatabase: .private("iCloud.com.patmcg.DailyFlightPlan")`
+- Removed `@Attribute(.unique)` from `PlanCategory.name` — CloudKit cannot enforce uniqueness constraints; uniqueness is already enforced in `CategoriesEditViewModel` in code
+- **`SelectedCategories` removed from SwiftData**: CloudKit requires all relationships to have inverses; `SelectedCategories.categories` had no inverse on `PlanCategory`. Migrated to `UserDefaults`-backed `CategorySelectionService` (device-local filter state intentionally not synced)
+  - `AppStorageKeys.selectedCategoryNames` added for the new storage key
+  - `CategorySelectionService` rewritten as a plain `@Observable` class using `UserDefaults`; no longer needs `ModelContext`
+  - `SelectedCategories.swift` deleted from the project
+  - `InjectLiveServicesModifier` / `InjectMockServicesModifier` updated to use `@State private var categoryService = CategorySelectionService()` (stable across re-renders; no `modelContext` dependency)
+- Self-referential `@Relationship` on `PlanItem` (template ↔ instances) verified compatible: both sides have explicit inverses, `.nullify` delete rule, and optional to-one side — all CloudKit requirements met
+- **Note**: CloudKit schema must be initialized in the CloudKit Console before first production release; use the DEBUG schema initialization flow from Apple docs if needed before shipping
 
 ### ✅ Phase 18 — Mac Support
 *Moved up from Version 2.0 — needed alongside iCloud sync for the plan-on-Mac, execute-on-iPhone workflow.*

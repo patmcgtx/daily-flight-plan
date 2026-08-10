@@ -48,30 +48,7 @@ struct CategoriesEditView: View {
 
                 Section {
                     ForEach(allCategories) { category in
-                        if viewModel?.editingCategory?.id == category.id {
-                            editRow(for: category)
-                        } else {
-                            HStack {
-                                Text(category.name)
-                                Text("\(category.items.count) item\(category.items.count == 1 ? "" : "s")")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button {
-                                    withAnimation { viewModel?.startEditing(category) }
-                                } label: {
-                                    Image(systemName: "pencil")
-                                }
-                                .buttonStyle(.borderless)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    viewModel?.showingDeleteAlert = category
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        }
+                        categoryRow(for: category)
                     }
                 } header: {
                     Text("Existing Categories")
@@ -105,6 +82,37 @@ struct CategoriesEditView: View {
             .onAppear {
                 if viewModel == nil {
                     viewModel = CategoriesEditViewModel(modelContext: modelContext)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func categoryRow(for category: PlanCategory) -> some View {
+        let editingId = viewModel?.editingCategory?.id
+        if editingId == category.id {
+            editRow(for: category)
+        } else {
+            let itemCount = category.items?.count ?? 0
+            let itemLabel = "\(itemCount) item\(itemCount == 1 ? "" : "s")"
+            HStack {
+                Text(category.name)
+                Text(itemLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    withAnimation { viewModel?.startEditing(category) }
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.borderless)
+            }
+            .swipeActions(edge: .trailing) {
+                Button(role: .destructive) {
+                    viewModel?.showingDeleteAlert = category
+                } label: {
+                    Label("Delete", systemImage: "trash")
                 }
             }
         }

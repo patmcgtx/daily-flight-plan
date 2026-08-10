@@ -56,7 +56,7 @@ import SwiftData
         deadline = item.deadline ?? item.date
         // Instances inherit their schedule from the template; show nothing in the picker.
         recurringWeekdays = item.isTemplate ? item.recurringWeekdays : []
-        selectedCategories = item.categories
+        selectedCategories = item.categories ?? []
     }
 
     func save(in context: ModelContext) {
@@ -86,7 +86,7 @@ import SwiftData
                 let becomingNonTemplate = item.isTemplate && recurringWeekdays.isEmpty
                 if becomingNonTemplate {
                     // Sever back-references so instances become standalone historical records.
-                    for instance in item.instances {
+                    for instance in item.instances ?? [] {
                         instance.template = nil
                     }
                 }

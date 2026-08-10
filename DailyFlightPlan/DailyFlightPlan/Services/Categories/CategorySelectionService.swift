@@ -2,69 +2,54 @@
 //  CategorySelectionService.swift
 //  DailyFlightPlan
 //
+import Foundation
 import SwiftData
 
-/// Manages which categories are selected for filtering plan items.
-/// Backed by SwiftData, so no protocol/mock needed — use an in-memory container in previews.
+/// Manages which categories are currently selected for filtering plan items.
+/// Selection state is device-local (UserDefaults); it is intentionally not synced to iCloud.
 @Observable
 class CategorySelectionService {
 
-    private let modelContext: ModelContext
-    private var _model: SelectedCategories?
+    private(set) var selectedNames: Set<String>
 
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
+    init() {
+        let raw = UserDefaults.standard.string(forKey: AppStorageKeys.selectedCategoryNames.rawValue) ?? ""
+        selectedNames = Set(raw.split(separator: ",").map(String.init).filter { !$0.isEmpty })
     }
 
-    var selectedCategories: [PlanCategory] {
-        model?.categories ?? []
-    }
-
-    var hasSelectedCategories: Bool {
-        !selectedCategories.isEmpty
-    }
+    var hasSelectedCategories: Bool { !selectedNames.isEmpty }
 
     func isSelected(_ category: PlanCategory) -> Bool {
-        model?.contains(category) ?? false
+        selectedNames.contains(category.name)
     }
 
     func toggle(_ category: PlanCategory) {
-        guard let m = model else { return }
-        m.toggle(category)
-        save()
+        if selectedNames.contains(category.name) {
+            selectedNames.remove(category.name)
+        } else {
+            selectedNames.insert(category.name)
+        }
+        persist()
     }
 
     func clearAll() {
-        model?.clearAll()
-        save()
+        selectedNames.removeAll()
+        persist()
     }
 
-    /// Returns items filtered to those belonging to any selected category.
-    /// If no categories are selected, all items are returned.
     func filterItems(_ items: [PlanItem]) -> [PlanItem] {
         guard hasSelectedCategories else { return items }
-        let selected = selectedCategories
+        let names = selectedNames
         return items.filter { item in
-            item.categories.contains { selected.contains($0) }
+            let categories = item.categories ?? []
+            return categories.contains { names.contains($0.name) }
         }
     }
 
-    // MARK: Private
-
-    private var model: SelectedCategories? {
-        if let existing = _model { return existing }
-        if let fetched = try? modelContext.fetch(FetchDescriptor<SelectedCategories>()).first {
-            _model = fetched
-            return fetched
-        }
-        let newModel = SelectedCategories()
-        modelContext.insert(newModel)
-        _model = newModel
-        save()
-        return newModel
-    }
-
-    private func save() {
-        try? modelContext.save()
+    private func persist() {
+        UserDefaults.standard.set(
+            selectedNames.joined(separator: ","),
+            forKey: AppStorageKeys.selectedCategoryNames.rawValue
+        )
     }
 }

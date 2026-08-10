@@ -607,7 +607,8 @@ struct DayView: View {
         var didInsert = false
         for template in recurringTemplates {
             guard template.recurringWeekdays.contains(weekday) else { continue }
-            guard !template.instances.contains(where: { cal.isDate($0.date, inSameDayAs: date) }) else { continue }
+            let instances = template.instances ?? []
+            guard !instances.contains(where: { cal.isDate($0.date, inSameDayAs: date) }) else { continue }
             let instanceDeadline: Date? = template.deadline.flatMap { dl in
                 cal.date(
                     bySettingHour: cal.component(.hour, from: dl),

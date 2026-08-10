@@ -7,12 +7,14 @@ import Foundation
 
 extension ModelContainer {
 
-    /// Creates a persistent container that saves to disk.
+    /// Creates a persistent container that saves to disk, synced via CloudKit.
     @MainActor
     static func persistentContainer() throws -> ModelContainer {
-        let config = ModelConfiguration()
+        let config = ModelConfiguration(
+            cloudKitDatabase: .private("iCloud.com.patmcg.DailyFlightPlan")
+        )
         return try ModelContainer(
-            for: PlanItem.self, PlanCategory.self, SelectedCategories.self,
+            for: PlanItem.self, PlanCategory.self,
             configurations: config
         )
     }
@@ -362,7 +364,7 @@ extension ModelContainer {
     static func inMemorySampleContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(
-            for: PlanItem.self, PlanCategory.self, SelectedCategories.self,
+            for: PlanItem.self, PlanCategory.self,
             configurations: config
         )
 

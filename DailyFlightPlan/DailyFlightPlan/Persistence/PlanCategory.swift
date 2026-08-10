@@ -7,10 +7,9 @@ import SwiftData
 @Model
 class PlanCategory {
 
-    @Attribute(.unique)
-    var name: String
+    var name: String = "Unknown"
 
-    var items: [PlanItem]
+    var items: [PlanItem]?
 
     init(name: String) {
         self.name = name

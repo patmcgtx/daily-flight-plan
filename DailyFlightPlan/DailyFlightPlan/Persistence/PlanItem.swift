@@ -11,12 +11,12 @@ class PlanItem {
     /// Stable identifier used for drag-and-drop payload. Separate from SwiftData's persistentModelID.
     var uuid: UUID = UUID()
 
-    var title: String
-    var notes: String
-    var isFlagged: Bool
+    var title: String = "Unknown"
+    var notes: String = ""
+    var isFlagged: Bool = false
 
     /// The calendar day this item belongs to
-    var date: Date
+    var date: Date = Date()
 
     /// A specific clock-time deadline. nil means the item is not time-specific.
     var deadline: Date?
@@ -26,27 +26,27 @@ class PlanItem {
     var daySection: DaySection?
 
     /// The recurring schedule. Only meaningful when isTemplate is true.
-    var recurringWeekdays: [Locale.Weekday]
+    var recurringWeekdays: [Locale.Weekday] = []
 
     /// True for recurring item templates. False for one-off items and per-day instances.
     var isTemplate: Bool = false
 
     /// The template this instance was generated from, or nil for one-off items and templates.
-    var template: PlanItem?
+    var template: PlanItem? = nil
 
     /// All per-day instances generated from this template. Only populated on templates.
     @Relationship(deleteRule: .nullify, inverse: \PlanItem.template)
-    var instances: [PlanItem] = []
+    var instances: [PlanItem]?
 
     /// True if this item is a recurring template, or a per-day instance of one.
     var isRecurring: Bool {
         isTemplate || template != nil
     }
 
-    var status: ItemStatus
+    var status: ItemStatus = ItemStatus.pending
 
     @Relationship(deleteRule: .nullify, inverse: \PlanCategory.items)
-    var categories: [PlanCategory]
+    var categories: [PlanCategory]?
 
     /// The EventKit reminder identifier this item was synced from, if any.
     var reminderIdentifier: String?

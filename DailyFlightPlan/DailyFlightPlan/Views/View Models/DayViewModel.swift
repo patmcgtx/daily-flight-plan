@@ -167,7 +167,8 @@ func startLiveClock() {
             guard template.isTemplate,
                   template.daySection != nil,
                   template.recurringWeekdays.contains(weekday) else { return false }
-            return !template.instances.contains { Calendar.current.isDate($0.date, inSameDayAs: date) }
+            let instances = template.instances ?? []
+            return !instances.contains { Calendar.current.isDate($0.date, inSameDayAs: date) }
         }
     }
 
