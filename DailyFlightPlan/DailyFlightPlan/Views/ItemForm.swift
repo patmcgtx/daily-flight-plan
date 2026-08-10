@@ -16,9 +16,9 @@ struct ItemForm: View {
     @State private var showDemoteAlert = false
     private let isCreate: Bool
 
-    init(date: Date) {
+    init(date: Date, section: DaySection? = nil) {
         isCreate = true
-        _viewModel = State(initialValue: ItemFormViewModel(date: date))
+        _viewModel = State(initialValue: ItemFormViewModel(date: date, section: section))
     }
 
     init(item: PlanItem) {

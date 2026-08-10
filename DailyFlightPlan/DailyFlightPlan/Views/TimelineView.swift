@@ -16,6 +16,9 @@ struct TimelineView: View {
 
     @Environment(\.dismiss) private var envDismiss
     @Environment(\.categorySelectionService) private var categorySelectionService
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var itemToEdit: PlanItem? = nil
 
     private func handleDismiss() {
         if let onDismiss { onDismiss() } else { envDismiss() }
@@ -53,12 +56,9 @@ struct TimelineView: View {
                                     .foregroundStyle(.tertiary)
                             } else {
                                 ForEach(sortedItems(group.items)) { item in
-                                    TimelineItemRow(item: item)
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            onSelectDate(group.date)
-                                            handleDismiss()
-                                        }
+                                    TimelineItemRow(item: item) {
+                                        itemToEdit = item
+                                    }
                                 }
                             }
                         } header: {
@@ -68,7 +68,8 @@ struct TimelineView: View {
                     }
                 }
                 .listStyle(.insetGrouped)
-                .navigationTitle("Timeline")
+                .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
+                .navigationTitle("Nav Log")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     if onDismiss == nil {
@@ -194,10 +195,13 @@ struct TimelineView: View {
 private struct TimelineItemRow: View {
 
     let item: PlanItem
+    let onEdit: () -> Void
+
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         HStack(spacing: 10) {
-            statusIcon
+            checkboxButton
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
                     .strikethrough(item.status == .completed || item.status == .canceled)
@@ -205,7 +209,42 @@ private struct TimelineItemRow: View {
                     .lineLimit(1)
                 subtitle
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture { onEdit() }
         }
+        .contextMenu {
+            Button { onEdit() } label: { Label("Edit", systemImage: "pencil") }
+            Divider()
+            Button(role: .destructive) {
+                item.status = .canceled
+                try? modelContext.save()
+            } label: { Label("Cancel", systemImage: "xmark.circle") }
+        }
+    }
+
+    @ViewBuilder
+    private var checkboxButton: some View {
+        Button {
+            guard item.status != .canceled else { return }
+            withAnimation(.spring(duration: 0.2)) {
+                item.status = item.status == .completed ? .pending : .completed
+                try? modelContext.save()
+            }
+        } label: {
+            switch item.status {
+            case .completed:
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.accentColor)
+            case .canceled:
+                Image(systemName: "xmark.circle")
+                    .foregroundStyle(.secondary)
+            case .pending:
+                Image(systemName: "circle")
+                    .foregroundStyle(Color.secondary.opacity(0.5))
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -217,21 +256,6 @@ private struct TimelineItemRow: View {
         } else if let section = item.daySection {
             Text(section.displayName)
                 .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder
-    private var statusIcon: some View {
-        switch item.status {
-        case .completed:
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-        case .canceled:
-            Image(systemName: "xmark.circle")
-                .foregroundStyle(.secondary)
-        case .pending:
-            Image(systemName: "circle")
                 .foregroundStyle(.secondary)
         }
     }

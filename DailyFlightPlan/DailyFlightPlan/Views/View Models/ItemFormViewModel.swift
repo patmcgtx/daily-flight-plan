@@ -32,13 +32,13 @@ import SwiftData
     /// True when saving would demote a template to a one-off item (all weekdays cleared).
     var willDemoteTemplate: Bool { editingItem?.isTemplate == true && recurringWeekdays.isEmpty }
 
-    init(date: Date) {
+    init(date: Date, section: DaySection? = nil) {
         editingItem = nil
         title = ""
         notes = ""
         isFlagged = false
         self.date = Calendar.current.startOfDay(for: date)
-        daySection = nil
+        daySection = section
         hasDeadline = false
         deadline = date
         recurringWeekdays = []

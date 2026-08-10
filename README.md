@@ -22,7 +22,7 @@ Daily Flight Plan is about execution, not planning. It's a lightweight layer on 
 - **Context on your terms.** Calendar events and Reminders appear inline for full context, but can be toggled off instantly when you need to narrow your focus to just your own plan.
 - **Finishing feels good.** Progress is always visible; completing your plan feels like landing the plane.
 
-**Version 1.0 target:** A personal daily-use tool that integrates cleanly with Calendar and Reminders, works great on iPhone, and is good enough to ship. iPad, Watch, iCloud sync, and Siri come later.
+**Version 1.0 target:** A personal daily-use tool that integrates cleanly with Calendar and Reminders, works great on iPhone and Mac (via iCloud sync), and is good enough to ship. iPad, Watch, and Siri come later.
 
 ## The original idea
 
@@ -49,26 +49,38 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 
 ## Features (current)
 
-- Day view with five collapsible time-of-day sections — all always visible, including past sections for day-at-a-glance reference
-- **Auto-collapse + AI summary**: inactive sections collapse automatically; collapsed headers show a one-line on-device AI summary (Foundation Models)
-- **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring); completed and cancelled items show with strikethrough
-- Navigate between days with a directional slide animation
-- "Go to today" button (appears only when you've navigated away)
+**Three tabs — UX experiment in progress (Phase 16):**
+
+- **Cockpit** — main day view with time-of-day section cards
+  - All six sections always visible, including past sections for day-at-a-glance reference
+  - **Auto-collapse + AI summary**: inactive sections collapse automatically; collapsed headers show a one-line on-device AI summary (Foundation Models)
+  - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring); completed and cancelled items show with strikethrough
+  - Scroll-to-now on appear; live clock auto-expands the current section as the day progresses
+  - Drag-and-drop items between day sections; drop on "Open" to clear section assignment
+
+- **Cards** — vertically stacked section cards, alternative layout
+  - Cards start collapsed with AI summary (or count fallback), time range, and completion count
+  - Tap header to expand to full item list; current section expanded by default
+  - Date navigation to browse any day; full filter/theme toolbar
+
+- **Nav Log** — chronological multi-day list
+  - Shows all plan items across all dates with a filter bar
+  - Fully interactive: checkbox completes, tap to edit, long-press for cancel
+
+**Shared across all tabs:**
+- Navigate between days with a directional slide animation; "Go to today" button
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
 - Long-press any item for a context menu: cancel, defer to tomorrow, edit
-- Drag-and-drop items between day sections; drop on "Open" to clear section assignment
-- Recurring items with weekday picker; grouped on a dedicated Habits row
+- Recurring habit templates with weekday picker; per-day instances materialized lazily
 - Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
-- Scroll-to-now on appear; live clock auto-expands the current section as the day progresses
 - Progress ring showing completed/total items for the day
-- Filter bar: flagged, done, calendar, reminders, and category filters
+- Filter bar: flagged, done, calendar, reminders, routines, and category filters
 - Category management (add, rename, delete)
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
 - Calendar events from EventKit shown inline in each day section
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
 - **Spillover**: pending items from previous days automatically move to today on launch or at midnight
-- **Future date preview**: recurring habits for a future weekday appear ghosted in their section — not yet committed, just a projection
-- **Timeline sheet**: all plan items grouped by date with filter bar; tap a date or row to navigate DayView
+- **Future date preview**: recurring habits for a future weekday appear ghosted in their section
 
 ## Project structure
 
@@ -86,30 +98,31 @@ DailyFlightPlan/
     ├── Components/      — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
     │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/     — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
-    ├── DayView.swift
-    ├── TimelineView.swift
+    ├── DayView.swift          — Cockpit tab
+    ├── CardDeckView.swift     — Cards tab
+    ├── TimelineView.swift     — Nav Log tab
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```
 
 ## Build plan
 
-Phases 1–13 are complete. Remaining MVP phases:
+Phases 1–16 are complete. Up next:
 
 | Phase | Description |
 |-------|-------------|
-| 14 | Usability Part 2 (in progress) |
-| 15 | Fix recurring items / habits behavior |
-| 16 | Finish timeline view (lazy-load, full history + future) |
-| 17 | Brand new focus view |
-| 18 | Architecture clean up |
-| 19 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
-| 20 | Search |
-| 21 | Settings (calendar/reminders selection, section boundaries) |
-| 22 | Local notifications |
-| 23 | Smooth day swipe navigation (pager) |
-| 24 | Fit and finish + aviation UI spike |
-| 25 | Tech debt (unit tests, UI tests, architecture review) |
+| 17 | **iCloud Sync** — plan on Mac, execute on iPhone |
+| 18 | **Mac Support** — Catalyst or native SwiftUI Mac target |
+| 19 | Finish Nav Log (lazy-load, full history + future) |
+| 20 | Brand new Cockpit view |
+| 21 | Architecture clean up |
+| 22 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
+| 23 | Search |
+| 24 | Settings (calendar/reminders selection, section boundaries) |
+| 25 | Local notifications |
+| 26 | Smooth day swipe navigation (pager) |
+| 27 | Fit and finish + aviation UI spike |
+| 28 | Tech debt (unit tests, UI tests, architecture review) |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
 

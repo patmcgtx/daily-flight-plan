@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import Flow
 
-private enum AppTab: Hashable { case focus, timeline, search }
+private enum AppTab: Hashable { case focus, cards, timeline, search }
 
 struct DayView: View {
 
@@ -87,7 +87,7 @@ struct DayView: View {
 
     var body: some View {
         TabView(selection: $activeTab) {
-            Tab("Focus", systemImage: "airplane", value: AppTab.focus) {
+            Tab("Cockpit", systemImage: "airplane", value: AppTab.focus) {
                 NavigationStack {
                     dayScrollView
                         .id(viewModel.selectedDate)
@@ -153,18 +153,14 @@ struct DayView: View {
                 }
             }
 
-            Tab("Timeline", systemImage: "calendar.day.timeline.left", value: AppTab.timeline) {
-                TimelineView(
-                    onSelectDate: { date in
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            viewModel.navigate(to: date)
-                        }
-                        activeTab = .focus
-                    },
-                    onDismiss: { activeTab = .focus }
-                )
+            Tab("Nav Log", systemImage: "book.pages", value: AppTab.timeline) {
+                TimelineView(onSelectDate: { _ in }, onDismiss: {})
             }
-            
+
+            Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
+                CardDeckView(viewModel: viewModel)
+            }
+
             Tab(value: AppTab.search, role: .search) {
                 Text("Search")
                     .navigationTitle("Search")
