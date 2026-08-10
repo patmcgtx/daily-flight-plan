@@ -77,9 +77,9 @@ struct CardDeckView: View {
                 .padding(.top, 4)
                 .padding(.bottom, 16)
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .trailingBar) {
                     Menu {
                         Toggle(isOn: $showFlaggedOnly) {
                             Label("Flagged Only", systemImage: "flag.fill")
@@ -116,7 +116,7 @@ struct CardDeckView: View {
                     .accessibilityLabel("Theme")
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .trailingBar) {
                     Button { isAddingItem = true } label: {
                         Image(systemName: "plus")
                     }

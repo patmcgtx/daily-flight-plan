@@ -187,13 +187,16 @@ Items identified during early real-world use.
 - Handle merge conflicts and sync errors gracefully
 - Test sync between iPhone and Mac (once Mac target exists in Phase 18)
 
-### Phase 18 — Mac Support
+### ✅ Phase 18 — Mac Support
 *Moved up from Version 2.0 — needed alongside iCloud sync for the plan-on-Mac, execute-on-iPhone workflow.*
-- Enable Mac Catalyst or SwiftUI native Mac target
-- Replace `.glass` button style and swipe gestures with Mac-native equivalents (context menus, toolbar buttons)
-- Menu bar integration: keyboard shortcuts for common actions (new item, next/previous day, go to today)
-- Appropriate window minimum size and resizable layout
-- Test full keyboard navigation and VoiceOver on macOS
+- Project already had `TARGETED_DEVICE_FAMILY = "1,2,7"`, `SUPPORTED_PLATFORMS` including `macosx`, and `MACOSX_DEPLOYMENT_TARGET = 26.5` — no project file changes needed
+- Created `Common/ViewExtensions.swift` with platform-conditional View + `ToolbarItemPlacement` extensions:
+  - `inlineNavigationTitle()` — no-op on macOS (`.navigationBarTitleDisplayMode(.inline)` is iOS-only)
+  - `.trailingBar` / `.leadingBar` — resolves to `.automatic` on macOS (`.topBarTrailing` / `.topBarLeading` are iOS-only)
+- Applied `inlineNavigationTitle()` across `DayView`, `CardDeckView`, `TimelineView`, `ItemForm`, `CategoriesEditView`
+- Applied `.trailingBar` / `.leadingBar` in `DayView` and `CardDeckView` toolbar items
+- Fixed `.listStyle(.insetGrouped)` → `#if os(macOS) .inset #else .insetGrouped #endif` in `TimelineView`
+- **Deferred**: keyboard shortcuts, menu bar integration, window minimum size, VoiceOver testing — deferred until post-iCloud sync when the Mac workflow can be exercised end-to-end
 
 ### Phase 19 — Finish Nav Log
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts

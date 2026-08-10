@@ -92,16 +92,16 @@ struct DayView: View {
                     dayScrollView
                         .id(viewModel.selectedDate)
                         .transition(dayTransition)
-                        .navigationBarTitleDisplayMode(.inline)
+                        .inlineNavigationTitle()
                         .toolbar {
-                            ToolbarItem(placement: .topBarLeading) {
+                            ToolbarItem(placement: .leadingBar) {
                                 Button { } label: {
                                     Image(systemName: "gearshape")
                                 }
                                 .accessibilityLabel("Settings")
                             }
 
-                            ToolbarItemGroup(placement: .topBarTrailing) {
+                            ToolbarItemGroup(placement: .trailingBar) {
                                 Menu {
                                     Toggle(isOn: $showFlaggedOnly) {
                                         Label("Flagged Only", systemImage: "flag.fill")
@@ -143,7 +143,7 @@ struct DayView: View {
                                 .accessibilityLabel("Theme")
                             }
 
-                            ToolbarItem(placement: .topBarTrailing) {
+                            ToolbarItem(placement: .trailingBar) {
                                 Button { isAddingItem = true } label: {
                                     Image(systemName: "plus")
                                 }

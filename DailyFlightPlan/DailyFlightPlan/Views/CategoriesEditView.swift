@@ -80,7 +80,7 @@ struct CategoriesEditView: View {
                 }
             }
             .navigationTitle("Edit Categories")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
