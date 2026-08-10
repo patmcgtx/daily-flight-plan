@@ -6,7 +6,7 @@ import SwiftUI
 
 extension View {
     /// Applies `.navigationBarTitleDisplayMode(.inline)` on iOS/iPadOS only.
-    /// On macOS (Mac Catalyst), this modifier is unavailable and is a no-op.
+    /// On native macOS, this modifier is unavailable and is a no-op.
     @ViewBuilder
     func inlineNavigationTitle() -> some View {
         #if os(macOS)

@@ -3,7 +3,6 @@
 //  DailyFlightPlan
 //
 import Foundation
-import SwiftData
 
 /// Manages which categories are currently selected for filtering plan items.
 /// Selection state is device-local (UserDefaults); it is intentionally not synced to iCloud.
@@ -13,8 +12,8 @@ class CategorySelectionService {
     private(set) var selectedNames: Set<String>
 
     init() {
-        let raw = UserDefaults.standard.string(forKey: AppStorageKeys.selectedCategoryNames.rawValue) ?? ""
-        selectedNames = Set(raw.split(separator: ",").map(String.init).filter { !$0.isEmpty })
+        let stored = UserDefaults.standard.stringArray(forKey: AppStorageKeys.selectedCategoryNames.rawValue) ?? []
+        selectedNames = Set(stored)
     }
 
     var hasSelectedCategories: Bool { !selectedNames.isEmpty }
@@ -48,7 +47,7 @@ class CategorySelectionService {
 
     private func persist() {
         UserDefaults.standard.set(
-            selectedNames.joined(separator: ","),
+            Array(selectedNames),
             forKey: AppStorageKeys.selectedCategoryNames.rawValue
         )
     }

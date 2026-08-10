@@ -3,7 +3,6 @@
 //  DailyFlightPlan
 //
 import SwiftUI
-import SwiftData
 
 struct SettingsView: View {
 

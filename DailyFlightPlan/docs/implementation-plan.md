@@ -323,9 +323,8 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
 ### Phase 30 — Beta Testing
-Get this in other people's hands for initial impressions, questions, bugs and just - do they find it usefuL?
-
-WIll want to get them to test In-App Purcahse, etc. too. (I pay them back!)
+- Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
+- We'll want to get them to test In-App Purchase, etc. too.
 
 #### CloudKit initialization
 CloudKit needs its schema initialized once. Steps:

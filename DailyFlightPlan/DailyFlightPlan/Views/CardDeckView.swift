@@ -41,7 +41,6 @@ struct CardDeckView: View {
     @State private var isAddingItem = false
     @State private var showCategorySelector = false
     @State private var isShowingCategoriesEdit = false
-    @State private var pendingCategoriesEdit = false
     @State private var expandedSections: Set<DaySection> = []
 
     private var isFilterActive: Bool {
@@ -140,12 +139,7 @@ struct CardDeckView: View {
             }
         }
         .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
-        .sheet(isPresented: $showCategorySelector, onDismiss: {
-            if pendingCategoriesEdit {
-                pendingCategoriesEdit = false
-                isShowingCategoriesEdit = true
-            }
-        }) { categorySelectorSheet }
+        .sheet(isPresented: $showCategorySelector) { categorySelectorSheet }
         .sheet(isPresented: $isShowingCategoriesEdit) {
             CategoriesEditView(allCategories: allCategories)
                 .environment(\.modelContext, modelContext)

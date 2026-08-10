@@ -30,7 +30,7 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// Filter: show recurring habit instances (on by default)
     case showRecurring
 
-    /// Comma-separated category names currently selected for filtering (empty = no filter)
+    /// Category names currently selected for filtering (empty = no filter)
     case selectedCategoryNames
 
     var id: String { rawValue }
