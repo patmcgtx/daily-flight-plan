@@ -55,8 +55,7 @@ extension ModelContainer {
     }
 
     /// Merges duplicate PlanCategory records that share the same name.
-    /// CloudKit sync can create duplicates when both devices seed data before the first sync
-    /// completes. Call on startup and on each scene activation (after CloudKit may have synced).
+    /// Handles records that arrived before the #Unique constraint was added.
     @MainActor
     static func deduplicateCategories(in context: ModelContext) {
         let all = (try? context.fetch(FetchDescriptor<PlanCategory>())) ?? []
@@ -83,7 +82,44 @@ extension ModelContainer {
         try? context.save()
     }
 
-    /// Seeds sample items into the persistent store on first launch (no-op if data already exists).
+    /// Merges duplicate template PlanItem records that share the same sourceID.
+    /// Handles records that arrived before the #Unique constraint was added.
+    @MainActor
+    static func deduplicateItems(in context: ModelContext) {
+        let all = (try? context.fetch(FetchDescriptor<PlanItem>())) ?? []
+        var seen = [String: PlanItem]()
+        var toDelete = [PlanItem]()
+
+        for item in all.filter({ $0.isTemplate }) {
+            if let canonical = seen[item.sourceID] {
+                for instance in (item.instances ?? []) {
+                    instance.template = canonical
+                }
+                item.instances = nil
+                item.categories = nil
+                toDelete.append(item)
+            } else {
+                seen[item.sourceID] = item
+            }
+        }
+
+        guard !toDelete.isEmpty else { return }
+        for item in toDelete { context.delete(item) }
+        try? context.save()
+    }
+
+    /// Computes a stable, deterministic sourceID for seeded items.
+    /// The same title+section always produces the same string on every device.
+    private static func sid(_ title: String, _ section: DaySection? = nil) -> String {
+        let slug = title
+            .filter { $0.isLetter || $0.isNumber || $0 == " " }
+            .lowercased()
+            .split(separator: " ")
+            .joined(separator: "-")
+        return "seed.\(slug).\(section?.rawValue ?? "any")"
+    }
+
+    /// Seeds sample items into the persistent store (no-op if data already exists).
     @MainActor
     static func seedSampleDataIfNeeded(in context: ModelContext) {
         guard (try? context.fetchCount(FetchDescriptor<PlanItem>())) == 0 else { return }
@@ -110,21 +146,24 @@ extension ModelContainer {
                 date: today,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [social, outAndAbout]
+                categories: [social, outAndAbout],
+                sourceID: sid("Talk to ppl")
             ),
             PlanItem(
                 title: "Things zero inbox",
                 date: today,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [shallow, laptop]
+                categories: [shallow, laptop],
+                sourceID: sid("Things zero inbox")
             ),
             PlanItem(
                 title: "Exercise",
                 date: today,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [home, health]
+                categories: [home, health],
+                sourceID: sid("Exercise")
             ),
 
             // First Thing habits
@@ -134,7 +173,8 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [relaxing]
+                categories: [relaxing],
+                sourceID: sid("Slow breathing", .firstThing)
             ),
             PlanItem(
                 title: "Visualize success",
@@ -142,7 +182,8 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [relaxing]
+                categories: [relaxing],
+                sourceID: sid("Visualize success", .firstThing)
             ),
             PlanItem(
                 title: "Check my weight",
@@ -150,7 +191,17 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [home]
+                categories: [home],
+                sourceID: sid("Check my weight", .firstThing)
+            ),
+            PlanItem(
+                title: "Brush my teeth 🪥",
+                date: today,
+                daySection: .firstThing,
+                recurringWeekdays: everyday,
+                isTemplate: true,
+                categories: [home],
+                sourceID: sid("Brush my teeth", .firstThing)
             ),
             PlanItem(
                 title: "Basic stretch",
@@ -158,7 +209,8 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Basic stretch", .firstThing)
             ),
             PlanItem(
                 title: "Jump up and down 50 times",
@@ -166,7 +218,8 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Jump up and down 50 times", .firstThing)
             ),
             PlanItem(
                 title: "Chant or sing",
@@ -174,7 +227,8 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [home, health]
+                categories: [home, health],
+                sourceID: sid("Chant or sing", .firstThing)
             ),
             PlanItem(
                 title: "Dress like the GQ guy",
@@ -182,7 +236,8 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [home]
+                categories: [home],
+                sourceID: sid("Dress like the GQ guy", .firstThing)
             ),
             PlanItem(
                 title: "Take orange oil 1",
@@ -190,17 +245,19 @@ extension ModelContainer {
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [home, health]
+                categories: [home, health],
+                sourceID: sid("Take orange oil 1", .firstThing)
             ),
-            
-            // Morning habits (Off to the races)
+
+            // Morning habits
             PlanItem(
                 title: "Use reusable cup",
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [outAndAbout]
+                categories: [outAndAbout],
+                sourceID: sid("Use reusable cup", .morning)
             ),
             PlanItem(
                 title: "Have something fermented",
@@ -208,7 +265,8 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Have something fermented", .morning)
             ),
             PlanItem(
                 title: "Update my Calendar",
@@ -216,7 +274,8 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [shallow, laptop]
+                categories: [shallow, laptop],
+                sourceID: sid("Update my Calendar", .morning)
             ),
             PlanItem(
                 title: "Plan the day",
@@ -224,7 +283,8 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [shallow, laptop]
+                categories: [shallow, laptop],
+                sourceID: sid("Plan the day", .morning)
             ),
             PlanItem(
                 title: "Leetcode",
@@ -233,7 +293,8 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: weekdays,
                 isTemplate: true,
-                categories: [deep, laptop, career]
+                categories: [deep, laptop, career],
+                sourceID: sid("Leetcode", .morning)
             ),
             PlanItem(
                 title: "Sing along with songs 🎤",
@@ -241,7 +302,8 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [fun, health, relaxing]
+                categories: [fun, health, relaxing],
+                sourceID: sid("Sing along with songs", .morning)
             ),
             PlanItem(
                 title: "Listen to news, book, or podcast 📰",
@@ -249,17 +311,19 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [outAndAbout, relaxing]
+                categories: [outAndAbout, relaxing],
+                sourceID: sid("Listen to news book or podcast", .morning)
             ),
             PlanItem(
-                title: "YNAB done",
+                title: "YNAB done",
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [shallow, laptop]
+                categories: [shallow, laptop],
+                sourceID: sid("YNAB done", .morning)
             ),
-            
+
             // Midday habits
             PlanItem(
                 title: "Take my pills 💊",
@@ -267,7 +331,8 @@ extension ModelContainer {
                 daySection: .midday,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Take my pills", .midday)
             ),
             PlanItem(
                 title: "Eat some fruit 🍎🍊🍌",
@@ -275,7 +340,8 @@ extension ModelContainer {
                 daySection: .midday,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Eat some fruit", .midday)
             ),
             PlanItem(
                 title: "Eat some nuts 🥜",
@@ -283,7 +349,8 @@ extension ModelContainer {
                 daySection: .midday,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Eat some nuts", .midday)
             ),
             PlanItem(
                 title: "Use reusable cup",
@@ -291,9 +358,10 @@ extension ModelContainer {
                 daySection: .midday,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [outAndAbout]
+                categories: [outAndAbout],
+                sourceID: sid("Use reusable cup", .midday)
             ),
-            
+
             // Afternoon habits
             PlanItem(
                 title: "Macha + rooibos 🍵",
@@ -301,7 +369,8 @@ extension ModelContainer {
                 daySection: .afternoon,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Macha rooibos", .afternoon)
             ),
             PlanItem(
                 title: "Hydrate",
@@ -310,7 +379,8 @@ extension ModelContainer {
                 daySection: .afternoon,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Hydrate", .afternoon)
             ),
             PlanItem(
                 title: "Easy calf stretches 🏃🏻‍♂️🎾",
@@ -318,7 +388,8 @@ extension ModelContainer {
                 daySection: .afternoon,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Easy calf stretches", .afternoon)
             ),
 
             // Evening habits
@@ -328,7 +399,8 @@ extension ModelContainer {
                 daySection: .evening,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [laptop, shallow]
+                categories: [laptop, shallow],
+                sourceID: sid("Email zero inbox", .evening)
             ),
             PlanItem(
                 title: "Snail mail done",
@@ -336,7 +408,8 @@ extension ModelContainer {
                 daySection: .evening,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [home, shallow]
+                categories: [home, shallow],
+                sourceID: sid("Snail mail done", .evening)
             ),
             PlanItem(
                 title: "Take orange oil 2",
@@ -344,7 +417,8 @@ extension ModelContainer {
                 daySection: .evening,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Take orange oil 2", .evening)
             ),
 
             // Bedtime habits
@@ -354,7 +428,8 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [laptop, shallow]
+                categories: [laptop, shallow],
+                sourceID: sid("Photos cleaned up", .bedtime)
             ),
             PlanItem(
                 title: "Balance",
@@ -362,7 +437,8 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health]
+                categories: [health],
+                sourceID: sid("Balance", .bedtime)
             ),
             PlanItem(
                 title: "Plan tomorrow",
@@ -370,7 +446,8 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [laptop, health]
+                categories: [laptop, health],
+                sourceID: sid("Plan tomorrow", .bedtime)
             ),
             PlanItem(
                 title: "Work on my repertoire 🎶",
@@ -378,7 +455,8 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [relaxing, home, fun]
+                categories: [relaxing, home, fun],
+                sourceID: sid("Work on my repertoire", .bedtime)
             ),
             PlanItem(
                 title: "Physical therapy",
@@ -386,7 +464,8 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health, home]
+                categories: [health, home],
+                sourceID: sid("Physical therapy", .bedtime)
             ),
             PlanItem(
                 title: "Full teeth cleaning",
@@ -394,7 +473,8 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health, home]
+                categories: [health, home],
+                sourceID: sid("Full teeth cleaning", .bedtime)
             ),
             PlanItem(
                 title: "Catch up on Wins journal",
@@ -402,7 +482,8 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [laptop, fun]
+                categories: [laptop, fun],
+                sourceID: sid("Catch up on Wins journal", .bedtime)
             ),
             PlanItem(
                 title: "Meditate",
@@ -411,12 +492,13 @@ extension ModelContainer {
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [health, relaxing]
-            )
+                categories: [health, relaxing],
+                sourceID: sid("Meditate", .bedtime)
+            ),
         ]
 
         for item in items { context.insert(item) }
-        
+
         do {
             try context.save()
         } catch {
@@ -444,13 +526,15 @@ extension ModelContainer {
                 title: "Approach and talk with ppl",
                 date: today,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Approach and talk with ppl")
             ),
             PlanItem(
                 title: "Listen to news, book, or podcast 📰",
                 date: today,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Listen to news book or podcast")
             ),
 
             // First Thing
@@ -459,21 +543,24 @@ extension ModelContainer {
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Slow breathing", .firstThing)
             ),
             PlanItem(
                 title: "Visualize success",
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Visualize success", .firstThing)
             ),
             PlanItem(
                 title: "Basic stretch",
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Basic stretch", .firstThing)
             ),
 
             // Morning
@@ -482,19 +569,16 @@ extension ModelContainer {
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Plan the day  prioritize Things", .morning)
             ),
             PlanItem(
                 title: "Team standup",
                 date: today,
-                deadline: cal.date(
-                    bySettingHour: 9,
-                    minute: 30,
-                    second: 0,
-                    of: today
-                ),
+                deadline: cal.date(bySettingHour: 9, minute: 30, second: 0, of: today),
                 recurringWeekdays: weekdays,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Team standup")
             ),
 
             // Midday
@@ -503,14 +587,16 @@ extension ModelContainer {
                 date: today,
                 daySection: .midday,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Take my pills", .midday)
             ),
             PlanItem(
                 title: "Eat some fruit 🍎🍊🍌",
                 date: today,
                 daySection: .midday,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Eat some fruit", .midday)
             ),
 
             // Afternoon
@@ -519,30 +605,34 @@ extension ModelContainer {
                 date: today,
                 daySection: .afternoon,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Hydrate Good for hypertension etc", .afternoon)
             ),
 
-            // Evening
+            // Bedtime
             PlanItem(
                 title: "Plan tomorrow",
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Plan tomorrow", .bedtime)
             ),
             PlanItem(
                 title: "Full teeth cleaning",
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Full teeth cleaning", .bedtime)
             ),
             PlanItem(
                 title: "Meditate / body scan",
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
-                isTemplate: true
+                isTemplate: true,
+                sourceID: sid("Meditate  body scan", .bedtime)
             ),
         ]
 

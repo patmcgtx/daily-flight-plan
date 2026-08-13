@@ -26,11 +26,10 @@ struct DailyFlightPlanApp: App {
                 .injectLiveServices()
                 .apply(theme: theme)
                 .onAppear {
-                    // ModelContainer.deduplicateCategories(in: modelContainer.mainContext)
+                    // Clean up any duplicates that arrived before #Unique constraints were enforced.
+                    ModelContainer.deduplicateCategories(in: modelContainer.mainContext)
+                    ModelContainer.deduplicateItems(in: modelContainer.mainContext)
                     // Auto-seed disabled — use Settings > Developer > Seed Sample Data instead.
-                    // #if DEBUG
-                    // ModelContainer.seedSampleDataIfNeeded(in: modelContainer.mainContext)
-                    // #endif
                 }
         }
         .modelContainer(modelContainer)

@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import Flow
 
-private enum AppTab: Hashable { case focus, cards, timeline, search }
+private enum AppTab: Hashable { case focus, cards, flightDeck, timeline, search }
 
 struct DayView: View {
 
@@ -166,6 +166,14 @@ struct DayView: View {
 
             Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
                 CardDeckView(viewModel: viewModel, isDeletingData: isDeletingData)
+            }
+
+            Tab("Flight Deck", systemImage: "airplane.departure", value: AppTab.flightDeck) {
+                FlightDeckView(
+                    viewModel: viewModel,
+                    isDeletingData: isDeletingData,
+                    onShowSettings: { isShowingSettings = true }
+                )
             }
 
             Tab(value: AppTab.search, role: .search) {
