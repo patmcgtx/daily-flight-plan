@@ -124,9 +124,25 @@ struct ItemForm: View {
     @ViewBuilder
     private var categoriesSection: some View {
         Section("Categories") {
+            #if os(macOS)
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(allCategories) { category in
+                        categoryRow(for: category)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 7)
+                        if category.persistentModelID != allCategories.last?.persistentModelID {
+                            Divider()
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 200)
+            #else
             ForEach(allCategories) { category in
                 categoryRow(for: category)
             }
+            #endif
         }
     }
 
@@ -154,6 +170,7 @@ struct ItemForm: View {
                 }
             }
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: Weekday picker

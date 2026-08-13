@@ -8,6 +8,10 @@ import Foundation
 @Model
 class PlanItem {
 
+    /// Cross-device deduplication key. Seeded templates use a deterministic string so all
+    /// devices converge to one copy after CloudKit sync. User-created items get a random UUID.
+    var sourceID: String = UUID().uuidString
+
     /// Stable identifier used for drag-and-drop payload. Separate from SwiftData's persistentModelID.
     var uuid: UUID = UUID()
 
@@ -61,7 +65,8 @@ class PlanItem {
         recurringWeekdays: [Locale.Weekday] = [],
         isTemplate: Bool = false,
         status: ItemStatus = .pending,
-        categories: [PlanCategory] = []
+        categories: [PlanCategory] = [],
+        sourceID: String = UUID().uuidString
     ) {
         self.title = title
         self.notes = notes
@@ -73,5 +78,6 @@ class PlanItem {
         self.isTemplate = isTemplate
         self.status = status
         self.categories = categories
+        self.sourceID = sourceID
     }
 }
