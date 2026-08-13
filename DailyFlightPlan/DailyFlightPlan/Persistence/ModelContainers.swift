@@ -55,7 +55,6 @@ extension ModelContainer {
     }
 
     /// Merges duplicate PlanCategory records that share the same name.
-    /// Handles records that arrived before the #Unique constraint was added.
     @MainActor
     static func deduplicateCategories(in context: ModelContext) {
         let all = (try? context.fetch(FetchDescriptor<PlanCategory>())) ?? []
@@ -83,7 +82,6 @@ extension ModelContainer {
     }
 
     /// Merges duplicate template PlanItem records that share the same sourceID.
-    /// Handles records that arrived before the #Unique constraint was added.
     @MainActor
     static func deduplicateItems(in context: ModelContext) {
         let all = (try? context.fetch(FetchDescriptor<PlanItem>())) ?? []
