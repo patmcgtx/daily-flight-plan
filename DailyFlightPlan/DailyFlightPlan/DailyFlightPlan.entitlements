@@ -14,5 +14,9 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
+	<key>com.apple.security.personal-information.reminders-data</key>
+	<true/>
 </dict>
 </plist>
