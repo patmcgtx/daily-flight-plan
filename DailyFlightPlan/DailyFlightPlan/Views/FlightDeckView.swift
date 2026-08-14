@@ -194,21 +194,31 @@ struct FlightPlanView: View {
     }
 
     private func dayLabel(for date: Date) -> some View {
-        VStack(spacing: 2) {
-            Text(date, format: .dateTime.weekday(.wide))
-                .font(.subheadline).foregroundStyle(.secondary)
-            HStack(spacing: 6) {
+        let isToday = Calendar.current.isDateInToday(date)
+        return ZStack {
+            VStack(spacing: 2) {
+                Text(isToday ? "Today" : date.formatted(.dateTime.weekday(.wide)))
+                    .font(.subheadline)
+                    .foregroundStyle(isToday ? Color.accentColor : Color.secondary)
                 Text(date, format: .dateTime.month(.abbreviated).day())
-                    .font(.title2.bold()).monospacedDigit()
-                if !Calendar.current.isDateInToday(date) && Calendar.current.isDateInToday(viewModel.selectedDate) == false {
-                    // non-today page: show "go to today" only from the selected date display
-                    EmptyView()
-                }
+                    .font(.title2.bold())
+                    .monospacedDigit()
             }
-            if Calendar.current.isDateInToday(date) {
-                Text("Today")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+
+            if !isToday {
+                HStack {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
+                    } label: {
+                        Image(systemName: "scope")
+                            .font(.title3)
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Go to Today")
+                    Spacer()
+                }
             }
         }
         .padding(.vertical, 8)
