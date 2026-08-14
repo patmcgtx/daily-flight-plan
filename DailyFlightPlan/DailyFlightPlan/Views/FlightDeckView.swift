@@ -4,6 +4,7 @@
 //
 import SwiftUI
 import SwiftData
+import Flow
 
 // NOTE: struct is named FlightPlanView; file kept as FlightDeckView.swift to avoid
 // Xcode project file churn until a clean rename can be done via Xcode.
@@ -304,12 +305,18 @@ struct FlightPlanView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
                 } else {
-                    VStack(spacing: 0) {
-                        ForEach(pills) { item in
-                            cardRow(item)
-                            if item.id != pills.last?.id || !deadlines.isEmpty {
-                                Divider().padding(.leading, 54)
+                    VStack(alignment: .leading, spacing: 0) {
+                        if !pills.isEmpty {
+                            HFlow(spacing: 8) {
+                                ForEach(pills) { item in
+                                    ItemPillView(item: item)
+                                }
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                        }
+                        if !pills.isEmpty && !deadlines.isEmpty {
+                            Divider()
                         }
                         ForEach(deadlines) { item in
                             cardDeadlineRow(item)
@@ -379,14 +386,13 @@ struct FlightPlanView: View {
             }
             .buttonStyle(.plain)
 
-            VStack(spacing: 0) {
+            HFlow(spacing: 8) {
                 ForEach(items) { item in
-                    cardRow(item)
-                    if item.id != items.last?.id {
-                        Divider().padding(.leading, 54)
-                    }
+                    ItemPillView(item: item)
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .padding(.bottom, 4)
         }
         .background(.background, in: RoundedRectangle(cornerRadius: 18))
