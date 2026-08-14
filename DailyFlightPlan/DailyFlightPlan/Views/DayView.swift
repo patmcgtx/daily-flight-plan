@@ -94,7 +94,24 @@ struct DayView: View {
 
     var body: some View {
         TabView(selection: $activeTab) {
-            Tab("Cockpit", systemImage: "airplane", value: AppTab.focus) {
+
+            Tab("Flight Plan", systemImage: "airplane", value: AppTab.flightDeck) {
+                FlightPlanView(
+                    viewModel: viewModel,
+                    isDeletingData: isDeletingData,
+                    onShowSettings: { isShowingSettings = true }
+                )
+            }
+
+            Tab("Nav Log", systemImage: "book.pages", value: AppTab.timeline) {
+                TimelineView(onSelectDate: { _ in }, onDismiss: {})
+            }
+
+            Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
+                CardDeckView(viewModel: viewModel, isDeletingData: isDeletingData)
+            }
+            
+            Tab("Cockpit", systemImage: "airplane.departure", value: AppTab.focus) {
                 NavigationStack {
                     dayScrollView
                         .id(viewModel.selectedDate)
@@ -158,22 +175,6 @@ struct DayView: View {
                             }
                         }
                 }
-            }
-
-            Tab("Nav Log", systemImage: "book.pages", value: AppTab.timeline) {
-                TimelineView(onSelectDate: { _ in }, onDismiss: {})
-            }
-
-            Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
-                CardDeckView(viewModel: viewModel, isDeletingData: isDeletingData)
-            }
-
-            Tab("Flight Plan", systemImage: "airplane.departure", value: AppTab.flightDeck) {
-                FlightPlanView(
-                    viewModel: viewModel,
-                    isDeletingData: isDeletingData,
-                    onShowSettings: { isShowingSettings = true }
-                )
             }
 
             Tab(value: AppTab.search, role: .search) {

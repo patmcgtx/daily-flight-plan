@@ -303,6 +303,7 @@ struct FlightPlanView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .contentShape(Rectangle())
 
                 Divider()
 
@@ -361,6 +362,7 @@ struct FlightPlanView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .contentShape(Rectangle())
             }
         }
         .background { RoundedRectangle(cornerRadius: 18).fill(.background) }
@@ -481,6 +483,7 @@ struct FlightPlanView: View {
         }
         .padding(16)
         .background(isCurrent ? Color.accentColor.opacity(0.04) : Color.clear)
+        .contentShape(Rectangle())
     }
 
     private func collapsedSectionHeader(
@@ -545,6 +548,7 @@ struct FlightPlanView: View {
         }
         .padding(16)
         .background(isCurrent ? Color.accentColor.opacity(0.04) : Color.clear)
+        .contentShape(Rectangle())
         .frame(maxWidth: .infinity)
     }
 
