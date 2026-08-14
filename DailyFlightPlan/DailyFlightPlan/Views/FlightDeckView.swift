@@ -235,6 +235,15 @@ struct FlightPlanView: View {
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
+    // Unfiltered items for a date — used for raw section counts in the ring.
+    private func rawItems(for date: Date) -> [PlanItem] {
+        guard !isDeletingData else { return [] }
+        return allItems.filter {
+            Calendar.current.isDate($0.date, inSameDayAs: date)
+            && $0.status != .canceled
+        }
+    }
+
     private func initializeExpandedSections() {
         expandedSections = []
         if let current = viewModel.currentSection, viewModel.isToday {
@@ -248,8 +257,10 @@ struct FlightPlanView: View {
         let pills = viewModel.sectionPills(section, from: activeItems(for: date))
         let deadlines = viewModel.deadlineRows(section, from: activeItems(for: date))
         let allSectionItems = pills + deadlines
-        let completed = allSectionItems.filter { $0.status == .completed }.count
-        let total = allSectionItems.count
+        let rawAll = viewModel.sectionPills(section, from: rawItems(for: date))
+                   + viewModel.deadlineRows(section, from: rawItems(for: date))
+        let completed = rawAll.filter { $0.status == .completed }.count
+        let total = rawAll.count
         let pct = total > 0 ? Double(completed) / Double(total) : 0
         let isCurrent = viewModel.currentSection == section && Calendar.current.isDateInToday(date)
         let allDone = total > 0 && completed == total
@@ -435,15 +446,9 @@ struct FlightPlanView: View {
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(duration: 0.4), value: completed)
                 }
-                if allDone {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.green)
-                } else {
-                    Text(total > 0 ? "\(completed)/\(total)" : "—")
-                        .font(.caption2.monospacedDigit().bold())
-                        .foregroundStyle(.secondary)
-                }
+                Text("\(completed)/\(total)")
+                    .font(.caption2.monospacedDigit().bold())
+                    .foregroundStyle(allDone && total > 0 ? Color.green : Color.secondary)
             }
             .frame(width: 56, height: 56)
         }
