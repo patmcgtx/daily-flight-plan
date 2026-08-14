@@ -203,9 +203,9 @@ Items identified during early real-world use.
 ### ✅ Phase 19 — UX and Usability Sprint
 Mac and iCloud sync usability testing, plus day-view UX experiments and aviation-themed polish.
 
-- ✅ **Mac Calendar/Reminders fix**: Added `com.apple.security.personal-information.calendars` and `com.apple.security.personal-information.reminders-data` sandbox entitlements to the macOS app — EventKit access was silently blocked without them
-- ✅ **ItemForm scrollable on macOS**: Categories section wrapped in a `ScrollView` with `maxHeight: 200` so the form fits on screen regardless of category count
-- ✅ **Flight Plan view** (`FlightDeckView.swift`, struct `FlightPlanView`) — new primary day view replacing the Cockpit tab:
+- **Mac Calendar/Reminders fix**: Added `com.apple.security.personal-information.calendars` and `com.apple.security.personal-information.reminders-data` sandbox entitlements to the macOS app — EventKit access was silently blocked without them
+- **ItemForm scrollable on macOS**: Categories section wrapped in a `ScrollView` with `maxHeight: 200` so the form fits on screen regardless of category count
+- **Flight Plan view** (`FlightDeckView.swift`, struct `FlightPlanView`) — new primary day view replacing the Cockpit tab:
   - Left/right swipe between days: `TabView(.page)` infinite-reset pattern on iOS (3 pages: yesterday/today/tomorrow; snap back to center page silently after each swipe); `DragGesture` fallback on macOS
   - Card-based layout: one collapsible `RoundedRectangle(cornerRadius: 18)` card per day section, matching `CardDeckView` style
   - "Today" label in the date header when viewing today (accent colored); `scope` go-to-today button appears on non-today dates at the leading edge
@@ -216,10 +216,10 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
   - Calendar events and Reminders: shown in expanded section cards (`CalendarEventRow`, `ReminderItemRow`) and in the Open card; passed from `DayView` (which already fetches them); only shown for the currently-selected date (side swipe pages get plan items only)
   - Drag-and-drop between sections: pills are `.draggable`; each section card and the Open card are `.dropDestination`; drop target highlights with accent border
   - Filter menu includes Calendar Events and Reminders toggles (with Divider before them)
-- ✅ **Tab restructure**: Cockpit and Cards tabs commented out; Flight Plan now first tab; Nav Log second; two new placeholder tabs added:
+- **Tab restructure**: Cockpit and Cards tabs commented out; Flight Plan now first tab; Nav Log second; two new placeholder tabs added:
   - **Routines** (`infinity` icon) — `ContentUnavailableView` placeholder for future routine editing
   - **Chat** (`apple.intelligence` icon) — `ContentUnavailableView` placeholder for future AI chat
-- ✅ **macOS keyboard shortcuts**: `Cmd+1`–`Cmd+4` switch between the four active tabs; implemented as hidden zero-size `opacity(0)` buttons in an `.overlay` (`.hidden()` would disable keyboard shortcut dispatch)
+- **macOS keyboard shortcuts**: `Cmd+1`–`Cmd+4` switch between the four active tabs; implemented as hidden zero-size `opacity(0)` buttons in an `.overlay` (`.hidden()` would disable keyboard shortcut dispatch)
 
 ### Phase 20 — Finish Nav Log
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts
