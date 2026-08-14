@@ -266,8 +266,7 @@ struct FlightPlanView: View {
                         title: section.displayName,
                         subtitle: section.timeRangeLabel,
                         completed: completed, total: total, pct: pct,
-                        isCurrent: isCurrent, allDone: allDone,
-                        isExpanded: true
+                        isCurrent: isCurrent, allDone: allDone
                     )
                 }
                 .buttonStyle(.plain)
@@ -351,8 +350,7 @@ struct FlightPlanView: View {
                 title: "Open",
                 subtitle: "no specific time",
                 completed: completed, total: total, pct: pct,
-                isCurrent: false, allDone: total > 0 && completed == total,
-                isExpanded: false
+                isCurrent: false, allDone: total > 0 && completed == total
             )
 
             Divider()
@@ -398,8 +396,7 @@ struct FlightPlanView: View {
         total: Int,
         pct: Double,
         isCurrent: Bool,
-        allDone: Bool,
-        isExpanded: Bool
+        allDone: Bool
     ) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -408,11 +405,6 @@ struct FlightPlanView: View {
                         .font(.title2.bold())
                         .foregroundStyle(isCurrent ? Color.accentColor : Color.primary)
                     Spacer()
-                    if isExpanded {
-                        Image(systemName: "chevron.up")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
                 }
 
                 HStack(spacing: 5) {
@@ -513,15 +505,10 @@ struct FlightPlanView: View {
 
             Spacer()
 
-            HStack(spacing: 6) {
-                if total > 0 {
-                    Text(allDone ? "✓" : "\(completed)/\(total)")
-                        .font(.caption2.monospacedDigit().bold())
-                        .foregroundStyle(allDone ? .green : .secondary)
-                }
-                Image(systemName: "chevron.right")
-                    .font(.caption.bold())
-                    .foregroundStyle(.tertiary)
+            if total > 0 {
+                Text(allDone ? "✓" : "\(completed)/\(total)")
+                    .font(.caption2.monospacedDigit().bold())
+                    .foregroundStyle(allDone ? .green : .secondary)
             }
         }
         .padding(16)
