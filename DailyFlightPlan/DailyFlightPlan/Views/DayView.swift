@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import Flow
 
-private enum AppTab: Hashable { case focus, cards, flightDeck, timeline, search }
+private enum AppTab: Hashable { case focus, cards, flightDeck, timeline, search, routines, chat }
 
 struct DayView: View {
 
@@ -105,8 +105,24 @@ struct DayView: View {
                 )
             }
 
-            Tab("Nav Log", systemImage: "book.pages", value: AppTab.timeline) {
+            Tab("Nav Log", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onSelectDate: { _ in }, onDismiss: {})
+            }
+
+            Tab("Routines", systemImage: "infinity", value: AppTab.routines) {
+                ContentUnavailableView(
+                    "Routines",
+                    systemImage: "repeat",
+                    description: Text("Manage your recurring items here. Coming soon.")
+                )
+            }
+
+            Tab("Chat", systemImage: "apple.intelligence", value: AppTab.chat) {
+                ContentUnavailableView(
+                    "AI Chat",
+                    systemImage: "bubble.left.and.right",
+                    description: Text("Plan your day with AI assistance. Coming soon.")
+                )
             }
 
             /*
@@ -181,6 +197,20 @@ struct DayView: View {
             }
              */
         }
+        #if os(macOS)
+        .overlay(alignment: .topLeading) {
+            // Hidden buttons so Cmd+1–4 switch tabs on macOS.
+            // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
+            VStack {
+                Button("") { activeTab = .flightDeck }.keyboardShortcut("0", modifiers: .command)
+                Button("") { activeTab = .timeline }.keyboardShortcut("1", modifiers: .command)
+                Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
+                Button("") { activeTab = .chat }.keyboardShortcut("3", modifiers: .command)
+            }
+            .opacity(0)
+            .frame(width: 0, height: 0)
+        }
+        #endif
         .environment(\.editItem) { item in itemToEdit = item }
         .environment(\.importReminderItem) { reminder in importReminder(reminder) }
         .task {
