@@ -48,6 +48,7 @@ struct FlightPlanView: View {
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
+            || !(categorySelectionService?.selectedNames.isEmpty ?? true)
     }
 
     var body: some View {
@@ -265,7 +266,8 @@ struct FlightPlanView: View {
         let pct = total > 0 ? Double(completed) / Double(total) : 0
         let isCurrent = viewModel.currentSection == section && Calendar.current.isDateInToday(date)
         let allDone = total > 0 && completed == total
-        let expanded = expandedSections.contains(section)
+        // When a filter is active, drive expand/collapse from content rather than manual state.
+        let expanded = isFilterActive ? !allSectionItems.isEmpty : expandedSections.contains(section)
 
         return VStack(alignment: .leading, spacing: 0) {
             if expanded {
