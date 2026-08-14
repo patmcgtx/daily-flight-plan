@@ -11,6 +11,8 @@ import Flow
 struct FlightPlanView: View {
 
     var viewModel: DayViewModel
+    var calendarEvents: [CalendarEvent] = []
+    var reminderItems: [ReminderItem] = []
     var isDeletingData: Bool = false
     let onShowSettings: () -> Void
 
@@ -28,6 +30,12 @@ struct FlightPlanView: View {
 
     @AppStorage(AppStorageKeys.showRecurring.rawValue)
     private var showRecurring: Bool = true
+
+    @AppStorage(AppStorageKeys.showCalendarEvents.rawValue)
+    private var showCalendarEvents: Bool = true
+
+    @AppStorage(AppStorageKeys.showReminderItems.rawValue)
+    private var showReminderItems: Bool = true
 
     @AppStorage(AppStorageKeys.theme.rawValue)
     private var theme: DFPTheme = .cupertino
@@ -73,6 +81,13 @@ struct FlightPlanView: View {
                             }
                             Toggle(isOn: $showRecurring) {
                                 Label("Routines", systemImage: "infinity")
+                            }
+                            Divider()
+                            Toggle(isOn: $showCalendarEvents) {
+                                Label("Calendar Events", systemImage: "calendar")
+                            }
+                            Toggle(isOn: $showReminderItems) {
+                                Label("Reminders", systemImage: "bell")
                             }
                         } label: {
                             Image(systemName: isFilterActive
@@ -175,17 +190,30 @@ struct FlightPlanView: View {
 
     @ViewBuilder
     private func dayContent(for date: Date) -> some View {
+        // Only show calendar/reminder data for the currently-selected date.
+        // Side swipe pages are transient previews, so they show plan items only.
+        let isSelectedDate = Calendar.current.isDate(date, inSameDayAs: viewModel.selectedDate)
+        let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
+        let visibleEvents = (showCalendarEvents && !categoriesActive && isSelectedDate) ? calendarEvents : []
+        let rawReminders = (showReminderItems && !categoriesActive && isSelectedDate) ? reminderItems : []
+        let visibleReminders = showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
+
         ScrollView {
             VStack(spacing: 16) {
                 dayLabel(for: date)
 
                 ForEach(DaySection.allCases) { section in
-                    sectionCard(section, date: date)
+                    sectionCard(
+                        section, date: date,
+                        events: viewModel.calendarEventsForSection(section, from: visibleEvents),
+                        reminders: viewModel.reminderItemsForSection(section, from: visibleReminders)
+                    )
                 }
 
                 let openItems = viewModel.anyTimeItems(from: activeItems(for: date))
-                if !openItems.isEmpty {
-                    openCard(openItems, date: date)
+                let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
+                if !openItems.isEmpty || !anyTimeReminders.isEmpty {
+                    openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
                 }
 
                 Spacer(minLength: 60)
@@ -263,10 +291,16 @@ struct FlightPlanView: View {
 
     private func applyFilterToExpandedSections() {
         if isFilterActive {
+            let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
+            let visibleEvents = (showCalendarEvents && !categoriesActive) ? calendarEvents : []
+            let rawReminders = (showReminderItems && !categoriesActive) ? reminderItems : []
+            let visibleReminders = showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
             expandedSections = Set(DaySection.allCases.filter { section in
                 let items = viewModel.sectionPills(section, from: activeItems(for: viewModel.selectedDate))
                            + viewModel.deadlineRows(section, from: activeItems(for: viewModel.selectedDate))
-                return !items.isEmpty
+                let events = viewModel.calendarEventsForSection(section, from: visibleEvents)
+                let reminders = viewModel.reminderItemsForSection(section, from: visibleReminders)
+                return !items.isEmpty || !events.isEmpty || !reminders.isEmpty
             })
         } else {
             initializeExpandedSections()
@@ -275,10 +309,16 @@ struct FlightPlanView: View {
 
     // MARK: - Section card
 
-    private func sectionCard(_ section: DaySection, date: Date) -> some View {
+    private func sectionCard(
+        _ section: DaySection,
+        date: Date,
+        events: [CalendarEvent],
+        reminders: [ReminderItem]
+    ) -> some View {
         let pills = viewModel.sectionPills(section, from: activeItems(for: date))
         let deadlines = viewModel.deadlineRows(section, from: activeItems(for: date))
         let allSectionItems = pills + deadlines
+        let hasContent = !allSectionItems.isEmpty || !events.isEmpty || !reminders.isEmpty
         let rawAll = viewModel.sectionPills(section, from: rawItems(for: date))
                    + viewModel.deadlineRows(section, from: rawItems(for: date))
         let completed = rawAll.filter { $0.status == .completed }.count
@@ -320,7 +360,7 @@ struct FlightPlanView: View {
                 }
                 .buttonStyle(.plain)
 
-                if allSectionItems.isEmpty {
+                if !hasContent {
                     Text("Nothing scheduled")
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
@@ -344,6 +384,22 @@ struct FlightPlanView: View {
                             cardDeadlineRow(item)
                             if item.id != deadlines.last?.id {
                                 Divider().padding(.leading, 54)
+                            }
+                        }
+                        if !events.isEmpty {
+                            if !allSectionItems.isEmpty { Divider() }
+                            VStack(spacing: 0) {
+                                ForEach(events) { event in
+                                    CalendarEventRow(event: event)
+                                }
+                            }
+                        }
+                        if !reminders.isEmpty {
+                            if !allSectionItems.isEmpty || !events.isEmpty { Divider() }
+                            VStack(spacing: 0) {
+                                ForEach(reminders) { reminder in
+                                    ReminderItemRow(item: reminder)
+                                }
                             }
                         }
                     }
@@ -374,14 +430,14 @@ struct FlightPlanView: View {
         }
         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
         .onAppear {
-            if !allSectionItems.isEmpty {
-                viewModel.generateSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
+            if hasContent {
+                viewModel.generateSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
             }
         }
     }
 
     @ViewBuilder
-    private func openCard(_ items: [PlanItem], date: Date) -> some View {
+    private func openCard(_ items: [PlanItem], date: Date, anyTimeReminders: [ReminderItem]) -> some View {
         let completed = items.filter { $0.status == .completed }.count
         let total = items.count
         let pct = total > 0 ? Double(completed) / Double(total) : 0
@@ -409,15 +465,25 @@ struct FlightPlanView: View {
             }
             .buttonStyle(.plain)
 
-            HFlow(spacing: 8) {
-                ForEach(items) { item in
-                    ItemPillView(item: item)
+            if !items.isEmpty {
+                HFlow(spacing: 8) {
+                    ForEach(items) { item in
+                        ItemPillView(item: item)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+            }
+            if !anyTimeReminders.isEmpty {
+                if !items.isEmpty { Divider() }
+                VStack(spacing: 0) {
+                    ForEach(anyTimeReminders) { reminder in
+                        ReminderItemRow(item: reminder)
+                    }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .padding(.bottom, 4)
         }
+        .padding(.bottom, 4)
         .background(.background, in: RoundedRectangle(cornerRadius: 18))
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay {

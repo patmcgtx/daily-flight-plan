@@ -98,6 +98,8 @@ struct DayView: View {
             Tab("Flight Plan", systemImage: "airplane", value: AppTab.flightDeck) {
                 FlightPlanView(
                     viewModel: viewModel,
+                    calendarEvents: calendarEvents,
+                    reminderItems: reminderItems,
                     isDeletingData: isDeletingData,
                     onShowSettings: { isShowingSettings = true }
                 )
