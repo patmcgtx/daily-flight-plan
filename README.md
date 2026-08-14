@@ -51,24 +51,25 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 
 **Four tabs:**
 
-- **Flight Plan** — primary day view with swipe-between-days pager
+- **Day** — primary day view (Flight Plan) with swipe-between-days pager
   - Swipe left/right to navigate days (iOS: `TabView(.page)` pager; macOS: drag gesture)
   - "Today" label in accent color; `scope` go-to-today button on non-today dates
   - Collapsible section cards with per-section progress ring (`completed/total`, filter-independent)
-  - `HFlow` pills for non-deadline items; timed rows for deadline items
+  - `HFlow` pills for non-deadline items (regular items and routine items on separate rows); timed rows for deadline items
+  - Notes indicator icon on pills when notes are populated
   - Calendar events and Reminders shown inline in expanded section cards
   - Drag-and-drop items between section cards; drop on Open card to clear section assignment
   - Filter-driven expand/collapse: active filters auto-expand sections with matches
 
-- **Nav Log** — chronological multi-day list
+- **Log** — chronological multi-day list
   - Shows all plan items across all dates with a filter bar
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
-- **Routines** — placeholder for future recurring-item management
+- **Routine** — placeholder for future recurring-item management
 
-- **Chat** — placeholder for future AI chat / natural language quick entry
+- **Comm** — placeholder for future AI chat / natural language quick entry
 
-**macOS keyboard shortcuts:** `Cmd+1` Flight Plan · `Cmd+2` Nav Log · `Cmd+3` Routines · `Cmd+4` Chat
+**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Log · `Cmd+3` Routine · `Cmd+4` Comm
 
 **Shared across tabs:**
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)

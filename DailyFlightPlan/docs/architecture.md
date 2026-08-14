@@ -99,12 +99,12 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 ## UI: "Structured Flight Plan"
 
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
-- **Flight Plan** (`airplane`) — primary day view; swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
-- **Nav Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
-- **Routines** (`infinity`) — placeholder for future recurring-item management
-- **Chat** (`apple.intelligence`) — placeholder for future AI chat / quick entry
+- **Day** (`airplane`) — primary day view (Flight Plan); swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
+- **Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
+- **Routine** (`infinity`) — placeholder for future recurring-item management
+- **Comm** (`apple.intelligence`) — placeholder for future AI chat / quick entry
 - **Cockpit** (`airplane.departure`) and **Cards** (`rectangle.stack`) — commented out; available for re-evaluation
-- macOS keyboard shortcuts: `Cmd+1` Flight Plan, `Cmd+2` Nav Log, `Cmd+3` Routines, `Cmd+4` Chat
+- macOS keyboard shortcuts: `Cmd+1` Day, `Cmd+2` Log, `Cmd+3` Routine, `Cmd+4` Comm
 
 **Navigation bar toolbar (Flight Plan tab, inside `NavigationStack`):**
 - Leading: `⚙` Settings button

@@ -216,10 +216,17 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
   - Calendar events and Reminders: shown in expanded section cards (`CalendarEventRow`, `ReminderItemRow`) and in the Open card; passed from `DayView` (which already fetches them); only shown for the currently-selected date (side swipe pages get plan items only)
   - Drag-and-drop between sections: pills are `.draggable`; each section card and the Open card are `.dropDestination`; drop target highlights with accent border
   - Filter menu includes Calendar Events and Reminders toggles (with Divider before them)
-- **Tab restructure**: Cockpit and Cards tabs commented out; Flight Plan now first tab; Nav Log second; two new placeholder tabs added:
-  - **Routines** (`infinity` icon) — `ContentUnavailableView` placeholder for future routine editing
-  - **Chat** (`apple.intelligence` icon) — `ContentUnavailableView` placeholder for future AI chat
+- **Tab restructure**: Cockpit and Cards tabs commented out; four active tabs:
+  - **Day** (`airplane`) — Flight Plan view (primary day view)
+  - **Log** (`checklist`) — Nav Log / Timeline
+  - **Routine** (`infinity`) — `ContentUnavailableView` placeholder for future routine editing
+  - **Comm** (`apple.intelligence`) — `ContentUnavailableView` placeholder for future AI chat
 - **macOS keyboard shortcuts**: `Cmd+1`–`Cmd+4` switch between the four active tabs; implemented as hidden zero-size `opacity(0)` buttons in an `.overlay` (`.hidden()` would disable keyboard shortcut dispatch)
+- **Routine items row**: in expanded section cards, recurring (routine) pills are separated from regular pills onto their own `HFlow` row with a single `∞` icon at the leading edge; per-pill infinity badge suppressed (`showRecurringBadge: false`); regular pills get a matching `calendar.day.timeline.left` icon for visual symmetry
+- **Notes indicator on pills**: `ItemPillView` shows a `note.text` icon (`.tertiary`) after the title when `item.notes` is non-empty — a subtle at-a-glance signal that notes exist
+- **Progress row in Flight Plan view**: `progressRow(for:)` shows a `ProgressRingView` + completion text ("All done!" / "N of M complete" / "No items planned") at the bottom of each day's scroll content
+- **Overdue section badge**: when viewing today and a section's time window has passed with pending items remaining, the header count shows `! N/M` in orange; all-done sections show `✓ N/N` in green
+- **Reminders deep link**: tapping a `ReminderItemRow` opens the Reminders app via `x-apple-reminderkit://` URL; an `arrow.up.right.square` icon at the trailing edge signals the deep link; "Open in Reminders" also in the context menu
 
 ### Phase 20 — Finish Nav Log
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts
