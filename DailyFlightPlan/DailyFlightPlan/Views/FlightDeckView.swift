@@ -128,6 +128,7 @@ struct FlightPlanView: View {
         }
         .onAppear { initializeExpandedSections() }
         .onChange(of: viewModel.selectedDate) { initializeExpandedSections() }
+        .onChange(of: filterKey) { applyFilterToExpandedSections() }
     }
 
     // MARK: - Swipe navigation
@@ -246,10 +247,29 @@ struct FlightPlanView: View {
         }
     }
 
+    // Combines all filter states into a single comparable string so a single
+    // onChange can react to any filter change (including category toggles).
+    private var filterKey: String {
+        let cats = categorySelectionService?.selectedNames.sorted().joined() ?? ""
+        return "\(showFlaggedOnly)-\(showCompleted)-\(showRecurring)-\(cats)"
+    }
+
     private func initializeExpandedSections() {
         expandedSections = []
         if let current = viewModel.currentSection, viewModel.isToday {
             expandedSections = [current]
+        }
+    }
+
+    private func applyFilterToExpandedSections() {
+        if isFilterActive {
+            expandedSections = Set(DaySection.allCases.filter { section in
+                let items = viewModel.sectionPills(section, from: activeItems(for: viewModel.selectedDate))
+                           + viewModel.deadlineRows(section, from: activeItems(for: viewModel.selectedDate))
+                return !items.isEmpty
+            })
+        } else {
+            initializeExpandedSections()
         }
     }
 
@@ -266,8 +286,7 @@ struct FlightPlanView: View {
         let pct = total > 0 ? Double(completed) / Double(total) : 0
         let isCurrent = viewModel.currentSection == section && Calendar.current.isDateInToday(date)
         let allDone = total > 0 && completed == total
-        // When a filter is active, drive expand/collapse from content rather than manual state.
-        let expanded = isFilterActive ? !allSectionItems.isEmpty : expandedSections.contains(section)
+        let expanded = expandedSections.contains(section)
 
         return VStack(alignment: .leading, spacing: 0) {
             if expanded {
