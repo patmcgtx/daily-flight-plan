@@ -107,6 +107,7 @@ struct DayView: View {
                 TimelineView(onSelectDate: { _ in }, onDismiss: {})
             }
 
+            /*
             Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
                 CardDeckView(viewModel: viewModel, isDeletingData: isDeletingData)
             }
@@ -176,11 +177,7 @@ struct DayView: View {
                         }
                 }
             }
-
-            Tab(value: AppTab.search, role: .search) {
-                Text("Search")
-                    .navigationTitle("Search")
-            }
+             */
         }
         .environment(\.editItem) { item in itemToEdit = item }
         .environment(\.importReminderItem) { reminder in importReminder(reminder) }
