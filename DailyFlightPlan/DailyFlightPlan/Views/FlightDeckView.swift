@@ -53,6 +53,8 @@ struct FlightPlanView: View {
     @State private var showCategorySelector = false
     @State private var isShowingCategoriesEdit = false
     @State private var expandedSections: Set<DaySection> = []
+    @State private var dropTargetedSection: DaySection? = nil
+    @State private var isOpenDropTargeted = false
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -307,6 +309,17 @@ struct FlightPlanView: View {
         }
     }
 
+    private func handlePillDrop(uuidString: String, targetSection: DaySection?) {
+        guard let uuid = UUID(uuidString: uuidString),
+              let item = allItems.first(where: { $0.uuid == uuid }) else { return }
+        guard item.daySection != targetSection || item.deadline != nil else { return }
+        withAnimation(.spring(duration: 0.3)) {
+            item.daySection = targetSection
+            item.deadline = nil
+        }
+        try? modelContext.save()
+    }
+
     // MARK: - Section card
 
     private func sectionCard(
@@ -372,6 +385,7 @@ struct FlightPlanView: View {
                             HFlow(spacing: 8) {
                                 ForEach(pills) { item in
                                     ItemPillView(item: item)
+                                        .draggable(item.uuid.uuidString)
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -424,11 +438,22 @@ struct FlightPlanView: View {
         .background { RoundedRectangle(cornerRadius: 18).fill(.background) }
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay {
+            let isDropTargeted = dropTargetedSection == section
             RoundedRectangle(cornerRadius: 18)
-                .stroke(isCurrent ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2),
-                        lineWidth: isCurrent ? 1.5 : 0.5)
+                .stroke(
+                    isDropTargeted ? Color.accentColor : isCurrent ? Color.accentColor.opacity(0.5) : Color.secondary.opacity(0.2),
+                    lineWidth: isDropTargeted ? 2 : isCurrent ? 1.5 : 0.5
+                )
         }
         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .dropDestination(for: String.self) { dropItems, _ in
+            guard let uuidString = dropItems.first else { return false }
+            handlePillDrop(uuidString: uuidString, targetSection: section)
+            return true
+        } isTargeted: { targeted in
+            dropTargetedSection = targeted ? section : nil
+        }
+        .animation(.easeInOut(duration: 0.15), value: dropTargetedSection == section)
         .onAppear {
             if hasContent {
                 viewModel.generateSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
@@ -469,6 +494,7 @@ struct FlightPlanView: View {
                 HFlow(spacing: 8) {
                     ForEach(items) { item in
                         ItemPillView(item: item)
+                            .draggable(item.uuid.uuidString)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -488,9 +514,18 @@ struct FlightPlanView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay {
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
+                .stroke(isOpenDropTargeted ? Color.accentColor : Color.secondary.opacity(0.2),
+                        lineWidth: isOpenDropTargeted ? 2 : 0.5)
         }
         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .dropDestination(for: String.self) { dropItems, _ in
+            guard let uuidString = dropItems.first else { return false }
+            handlePillDrop(uuidString: uuidString, targetSection: nil)
+            return true
+        } isTargeted: { targeted in
+            isOpenDropTargeted = targeted
+        }
+        .animation(.easeInOut(duration: 0.15), value: isOpenDropTargeted)
     }
 
     // MARK: - Card headers
