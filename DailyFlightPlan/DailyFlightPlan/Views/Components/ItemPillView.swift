@@ -47,6 +47,11 @@ struct ItemPillView: View {
                     .foregroundStyle(.red)
             }
 
+            if !item.notes.isEmpty {
+                Image(systemName: "note.text")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
             if item.isRecurring && showRecurringBadge {
                 Image(systemName: "infinity")
                     .font(.caption2)

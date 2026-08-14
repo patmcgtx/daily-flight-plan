@@ -218,12 +218,39 @@ struct FlightPlanView: View {
                     openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
                 }
 
+                progressRow(for: date)
+
                 Spacer(minLength: 60)
             }
             .padding(.horizontal, 16)
             .padding(.top, 4)
             .padding(.bottom, 16)
         }
+    }
+
+    private func progressRow(for date: Date) -> some View {
+        let items = rawItems(for: date)
+        let completed = items.filter { $0.status == .completed }.count
+        let total = items.count
+        let progress = total > 0 ? Double(completed) / Double(total) : 0
+        return HStack(spacing: 12) {
+            ProgressRingView(progress: progress, completed: completed, total: total)
+            if total == 0 {
+                Text("No items planned")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else if completed == total {
+                Text("All done!")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.green)
+            } else {
+                Text("\(completed) of \(total) complete")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 4)
     }
 
     private func dayLabel(for date: Date) -> some View {
@@ -329,6 +356,8 @@ struct FlightPlanView: View {
         reminders: [ReminderItem]
     ) -> some View {
         let pills = viewModel.sectionPills(section, from: activeItems(for: date))
+        let regularPills = pills.filter { !$0.isRecurring }
+        let routinePills = pills.filter { $0.isRecurring }
         let deadlines = viewModel.deadlineRows(section, from: activeItems(for: date))
         let allSectionItems = pills + deadlines
         let hasContent = !allSectionItems.isEmpty || !events.isEmpty || !reminders.isEmpty
@@ -339,6 +368,12 @@ struct FlightPlanView: View {
         let pct = total > 0 ? Double(completed) / Double(total) : 0
         let isCurrent = viewModel.currentSection == section && Calendar.current.isDateInToday(date)
         let allDone = total > 0 && completed == total
+        let hasOverdue: Bool = {
+            guard Calendar.current.isDateInToday(date) else { return false }
+            let comps = Calendar.current.dateComponents([.hour, .minute], from: .now)
+            let nowMinutes = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
+            return nowMinutes > section.endMinutes && rawAll.contains { $0.status == .pending }
+        }()
         let expanded = expandedSections.contains(section)
 
         return VStack(alignment: .leading, spacing: 0) {
@@ -352,7 +387,8 @@ struct FlightPlanView: View {
                         title: section.displayName,
                         subtitle: section.timeRangeLabel,
                         completed: completed, total: total, pct: pct,
-                        isCurrent: isCurrent, allDone: allDone
+                        isCurrent: isCurrent, allDone: allDone,
+                        hasOverdue: hasOverdue
                     )
                 }
                 .buttonStyle(.plain)
@@ -381,15 +417,41 @@ struct FlightPlanView: View {
                         .padding(.vertical, 10)
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
-                        if !pills.isEmpty {
-                            HFlow(spacing: 8) {
-                                ForEach(pills) { item in
-                                    ItemPillView(item: item)
-                                        .draggable(item.uuid.uuidString)
+                        if !regularPills.isEmpty {
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "calendar.day.timeline.left")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 16)
+                                    .padding(.top, 7)
+                                HFlow(spacing: 8) {
+                                    ForEach(regularPills) { item in
+                                        ItemPillView(item: item)
+                                            .draggable(item.uuid.uuidString)
+                                    }
                                 }
                             }
                             .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
+                            .padding(.top, 10)
+                            .padding(.bottom, routinePills.isEmpty ? 10 : 6)
+                        }
+                        if !routinePills.isEmpty {
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "infinity")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 16)
+                                    .padding(.top, 7)
+                                HFlow(spacing: 8) {
+                                    ForEach(routinePills) { item in
+                                        ItemPillView(item: item, showRecurringBadge: false)
+                                            .draggable(item.uuid.uuidString)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, regularPills.isEmpty ? 10 : 0)
+                            .padding(.bottom, 10)
                         }
                         if !pills.isEmpty && !deadlines.isEmpty {
                             Divider()
@@ -428,7 +490,8 @@ struct FlightPlanView: View {
                     collapsedSectionHeader(
                         section: section,
                         completed: completed, total: total,
-                        isCurrent: isCurrent, allDone: allDone
+                        isCurrent: isCurrent, allDone: allDone,
+                        hasOverdue: hasOverdue
                     )
                 }
                 .buttonStyle(.plain)
@@ -537,7 +600,8 @@ struct FlightPlanView: View {
         total: Int,
         pct: Double,
         isCurrent: Bool,
-        allDone: Bool
+        allDone: Bool,
+        hasOverdue: Bool = false
     ) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -576,9 +640,9 @@ struct FlightPlanView: View {
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(duration: 0.4), value: completed)
                 }
-                Text("\(completed)/\(total)")
+                Text(hasOverdue ? "! \(completed)/\(total)" : "\(completed)/\(total)")
                     .font(.caption2.monospacedDigit().bold())
-                    .foregroundStyle(allDone && total > 0 ? Color.green : Color.secondary)
+                    .foregroundStyle(allDone && total > 0 ? Color.green : hasOverdue ? Color.orange : Color.secondary)
             }
             .frame(width: 56, height: 56)
         }
@@ -592,7 +656,8 @@ struct FlightPlanView: View {
         completed: Int,
         total: Int,
         isCurrent: Bool,
-        allDone: Bool
+        allDone: Bool,
+        hasOverdue: Bool = false
     ) -> some View {
         let summary = viewModel.sectionSummaries[section]
         let isLoading = viewModel.loadingSummarySections.contains(section)
@@ -642,9 +707,9 @@ struct FlightPlanView: View {
             Spacer()
 
             if total > 0 {
-                Text(allDone ? "✓" : "\(completed)/\(total)")
+                Text(allDone ? "✓ \(completed)/\(total)" : hasOverdue ? "! \(completed)/\(total)" : "\(completed)/\(total)")
                     .font(.caption2.monospacedDigit().bold())
-                    .foregroundStyle(allDone ? .green : .secondary)
+                    .foregroundStyle(allDone ? .green : hasOverdue ? Color.orange : .secondary)
             }
         }
         .padding(16)
