@@ -49,38 +49,40 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 
 ## Features (current)
 
-**Three tabs — UX experiment in progress (Phase 16):**
+**Four tabs:**
 
-- **Cockpit** — main day view with time-of-day section cards
-  - All six sections always visible, including past sections for day-at-a-glance reference
-  - **Auto-collapse + AI summary**: inactive sections collapse automatically; collapsed headers show a one-line on-device AI summary (Foundation Models)
-  - **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring); completed and cancelled items show with strikethrough
-  - Scroll-to-now on appear; live clock auto-expands the current section as the day progresses
-  - Drag-and-drop items between day sections; drop on "Open" to clear section assignment
-
-- **Cards** — vertically stacked section cards, alternative layout
-  - Cards start collapsed with AI summary (or count fallback), time range, and completion count
-  - Tap header to expand to full item list; current section expanded by default
-  - Date navigation to browse any day; full filter/theme toolbar
+- **Flight Plan** — primary day view with swipe-between-days pager
+  - Swipe left/right to navigate days (iOS: `TabView(.page)` pager; macOS: drag gesture)
+  - "Today" label in accent color; `scope` go-to-today button on non-today dates
+  - Collapsible section cards with per-section progress ring (`completed/total`, filter-independent)
+  - `HFlow` pills for non-deadline items; timed rows for deadline items
+  - Calendar events and Reminders shown inline in expanded section cards
+  - Drag-and-drop items between section cards; drop on Open card to clear section assignment
+  - Filter-driven expand/collapse: active filters auto-expand sections with matches
 
 - **Nav Log** — chronological multi-day list
   - Shows all plan items across all dates with a filter bar
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
-**Shared across all tabs:**
-- Navigate between days with a directional slide animation; "Go to today" button
+- **Routines** — placeholder for future recurring-item management
+
+- **Chat** — placeholder for future AI chat / natural language quick entry
+
+**macOS keyboard shortcuts:** `Cmd+1` Flight Plan · `Cmd+2` Nav Log · `Cmd+3` Routines · `Cmd+4` Chat
+
+**Shared across tabs:**
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
 - Long-press any item for a context menu: cancel, defer to tomorrow, edit
 - Recurring habit templates with weekday picker; per-day instances materialized lazily
 - Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
-- Progress ring showing completed/total items for the day
-- Filter bar: flagged, done, calendar, reminders, routines, and category filters
+- Filter menu: flagged, done, calendar, reminders, routines, and category filters
 - Category management (add, rename, delete)
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
-- Calendar events from EventKit shown inline in each day section
+- Calendar events from EventKit shown inline, with calendar color indicator
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
 - **Spillover**: pending items from previous days automatically move to today on launch or at midnight
 - **Future date preview**: recurring habits for a future weekday appear ghosted in their section
+- iCloud sync via CloudKit (plan on Mac, execute on iPhone)
 
 ## Project structure
 
@@ -98,8 +100,9 @@ DailyFlightPlan/
     ├── Components/      — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
     │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/     — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
-    ├── DayView.swift          — Cockpit tab
-    ├── CardDeckView.swift     — Cards tab
+    ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
+    ├── FlightDeckView.swift   — Flight Plan tab (primary day view, swipe pager)
+    ├── CardDeckView.swift     — Cards tab (commented out)
     ├── TimelineView.swift     — Nav Log tab
     ├── ItemForm.swift
     └── CategoriesEditView.swift
@@ -107,20 +110,17 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–16 are complete. Up next:
+Phases 1–19 are complete. Up next:
 
 | Phase | Description |
 |-------|-------------|
-| 17 | **iCloud Sync** — plan on Mac, execute on iPhone |
-| 18 | **Mac Support** — Catalyst or native SwiftUI Mac target |
-| 19 | Finish Nav Log (lazy-load, full history + future) |
-| 20 | Brand new Cockpit view |
-| 21 | Architecture clean up |
-| 22 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
-| 23 | Search |
-| 24 | Settings (calendar/reminders selection, section boundaries) |
-| 25 | Local notifications |
-| 26 | Smooth day swipe navigation (pager) |
+| 20 | Finish Nav Log (lazy-load, full history + future) |
+| 21 | Brand new Focus view (partial — Flight Plan view covers swipe pager + Calendar/Reminders) |
+| 22 | Architecture clean up |
+| 23 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
+| 24 | Search |
+| 25 | Settings (calendar/reminders selection, section boundaries) |
+| 26 | Local notifications |
 | 27 | Fit and finish + aviation UI spike |
 | 28 | Tech debt (unit tests, UI tests, architecture review) |
 
