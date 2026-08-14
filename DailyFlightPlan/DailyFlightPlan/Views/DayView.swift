@@ -95,7 +95,7 @@ struct DayView: View {
     var body: some View {
         TabView(selection: $activeTab) {
 
-            Tab("Flight Plan", systemImage: "airplane", value: AppTab.flightDeck) {
+            Tab("Day", systemImage: "airplane", value: AppTab.flightDeck) {
                 FlightPlanView(
                     viewModel: viewModel,
                     calendarEvents: calendarEvents,
@@ -105,11 +105,11 @@ struct DayView: View {
                 )
             }
 
-            Tab("Nav Log", systemImage: "checklist", value: AppTab.timeline) {
+            Tab("Log", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onSelectDate: { _ in }, onDismiss: {})
             }
 
-            Tab("Routines", systemImage: "infinity", value: AppTab.routines) {
+            Tab("Routine", systemImage: "infinity", value: AppTab.routines) {
                 ContentUnavailableView(
                     "Routines",
                     systemImage: "repeat",
@@ -117,7 +117,7 @@ struct DayView: View {
                 )
             }
 
-            Tab("Chat", systemImage: "apple.intelligence", value: AppTab.chat) {
+            Tab("Comm", systemImage: "apple.intelligence", value: AppTab.chat) {
                 ContentUnavailableView(
                     "AI Chat",
                     systemImage: "bubble.left.and.right",
