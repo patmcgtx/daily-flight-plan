@@ -168,8 +168,8 @@ struct DayView: View {
                 CardDeckView(viewModel: viewModel, isDeletingData: isDeletingData)
             }
 
-            Tab("Flight Deck", systemImage: "airplane.departure", value: AppTab.flightDeck) {
-                FlightDeckView(
+            Tab("Flight Plan", systemImage: "airplane.departure", value: AppTab.flightDeck) {
+                FlightPlanView(
                     viewModel: viewModel,
                     isDeletingData: isDeletingData,
                     onShowSettings: { isShowingSettings = true }
