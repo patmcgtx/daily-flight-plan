@@ -65,7 +65,12 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Shows all plan items across all dates with a filter bar
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
-- **Routine** — placeholder for future recurring-item management
+- **Routine** — recurring habit template management
+  - Sections grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
+  - Each section subdivided by day segment (First Thing, Morning, …); timed items get their own row, untimed items flow as `HFlow` pills
+  - Tap any item to edit; long-press for Edit / Delete context menu
+  - Drag items between sections to reassign their weekday pattern
+  - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
 - **Comm** — placeholder for future AI chat / natural language quick entry
 
@@ -102,7 +107,8 @@ DailyFlightPlan/
     │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/     — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
-    ├── FlightDeckView.swift   — Flight Plan tab (primary day view, swipe pager)
+    ├── FlightPlanView.swift   — Flight Plan tab (primary day view, swipe pager)
+    ├── RoutineView.swift      — Routine tab (recurring habit template management)
     ├── CardDeckView.swift     — Cards tab (commented out)
     ├── TimelineView.swift     — Nav Log tab
     ├── ItemForm.swift
@@ -111,19 +117,18 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–19 are complete. Up next:
+Phases 1–20 are complete. Up next:
 
 | Phase | Description |
 |-------|-------------|
-| 20 | Finish Nav Log (lazy-load, full history + future) |
-| 21 | Brand new Focus view (partial — Flight Plan view covers swipe pager + Calendar/Reminders) |
-| 22 | Architecture clean up |
+| 21 | Finish Nav Log (lazy-load, full history + future, search) |
+| 22 | Finish Day / Flight view |
 | 23 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
-| 24 | Search |
-| 25 | Settings (calendar/reminders selection, section boundaries) |
-| 26 | Local notifications |
+| 24 | Settings (calendar/reminders selection, section boundaries) |
+| 25 | Local notifications |
 | 27 | Fit and finish + aviation UI spike |
 | 28 | Tech debt (unit tests, UI tests, architecture review) |
+| 29 | Beta testing |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
 

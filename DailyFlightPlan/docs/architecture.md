@@ -19,7 +19,8 @@ DailyFlightPlan/
     │                   ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/  — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
-    ├── FlightDeckView.swift   — Flight Plan tab (struct FlightPlanView): primary day view, swipe pager
+    ├── FlightPlanView.swift   — Flight Plan tab (struct FlightPlanView): primary day view, swipe pager
+    ├── RoutineView.swift      — Routine tab: manage recurring habit templates; grouped by weekday pattern and day segment
     ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
     ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
     ├── ItemForm.swift
@@ -101,7 +102,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
 - **Day** (`airplane`) — primary day view (Flight Plan); swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
 - **Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
-- **Routine** (`infinity`) — placeholder for future recurring-item management
+- **Routine** (`infinity`) — recurring habit template management: sections grouped by weekday pattern (Every Day / Weekdays / Weekends / custom), subdivided by day segment with `HFlow` pills for untimed items and full-width rows for timed deadline items; tap to edit, long-press context menu (Edit/Delete), drag between sections; add/delete custom weekday sections
 - **Comm** (`apple.intelligence`) — placeholder for future AI chat / quick entry
 - **Cockpit** (`airplane.departure`) and **Cards** (`rectangle.stack`) — commented out; available for re-evaluation
 - macOS keyboard shortcuts: `Cmd+1` Day, `Cmd+2` Log, `Cmd+3` Routine, `Cmd+4` Comm
@@ -113,7 +114,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 
 All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`, `showRecurring`) is saved to `@AppStorage` and shared across all tabs. The filter icon fills/accents when any filter is active.
 
-**Flight Plan tab (`FlightDeckView.swift`):**
+**Flight Plan tab (`FlightPlanView.swift`):**
 - **Day pager**: `TabView(.page)` with 3 pages (yesterday / today / tomorrow) on iOS; infinite-reset pattern silently snaps back to center page after each swipe. `DragGesture` fallback on macOS.
 - **Date header**: "Today" label in accent color when on today; weekday label otherwise. `scope` go-to-today button at the leading edge when not on today.
 - **Section cards**: one `RoundedRectangle(cornerRadius: 18)` card per day section. Collapsed (header + count) / expanded (full content). Tap anywhere in the header to toggle. Current section highlighted with accent border.
