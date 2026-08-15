@@ -197,6 +197,9 @@ struct DayView: View {
             }
              */
         }
+        .onAppear {
+            if activeTab == .focus { activeTab = .flightDeck }
+        }
         #if os(macOS)
         .overlay(alignment: .topLeading) {
             // Hidden buttons so Cmd+1–4 switch tabs on macOS.
@@ -209,6 +212,7 @@ struct DayView: View {
             }
             .opacity(0)
             .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
         }
         #endif
         .environment(\.editItem) { item in itemToEdit = item }
