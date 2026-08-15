@@ -145,17 +145,7 @@ struct RoutineView: View {
             } else {
                 VStack(alignment: .leading, spacing: 14) {
                     ForEach(segments) { entry in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(entry.segment?.displayName ?? "Open")
-                                .font(.caption.bold())
-                                .foregroundStyle(.secondary)
-                                .textCase(.uppercase)
-                            HFlow(itemSpacing: 6, rowSpacing: 6) {
-                                ForEach(entry.items) { template in
-                                    routinePill(template)
-                                }
-                            }
-                        }
+                        segmentGroupContent(for: entry)
                     }
                 }
                 .padding(14)
@@ -201,6 +191,72 @@ struct RoutineView: View {
             Button { itemToEdit = template } label: {
                 Label("Edit", systemImage: "pencil")
             }
+            Divider()
+            Button("Delete", role: .destructive) { deleteTemplate(template) }
+        }
+        .draggable(template.uuid.uuidString)
+    }
+
+    // MARK: Segment group content
+
+    @ViewBuilder
+    private func segmentGroupContent(for entry: SegmentGroup) -> some View {
+        let deadlineItems = entry.items.filter { $0.deadline != nil }
+        let pillItems = entry.items.filter { $0.deadline == nil }
+        VStack(alignment: .leading, spacing: 6) {
+            Text(entry.segment?.displayName ?? "Open")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            if !deadlineItems.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(deadlineItems) { template in
+                        routineDeadlineRow(template)
+                        if template.id != deadlineItems.last?.id {
+                            Divider().padding(.leading, 58)
+                        }
+                    }
+                }
+            }
+            if !pillItems.isEmpty {
+                HFlow(itemSpacing: 6, rowSpacing: 6) {
+                    ForEach(pillItems) { template in
+                        routinePill(template)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func routineDeadlineRow(_ template: PlanItem) -> some View {
+        Button { itemToEdit = template } label: {
+            HStack(spacing: 10) {
+                if let deadline = template.deadline {
+                    Text(deadline, format: .dateTime.hour().minute())
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 44, alignment: .trailing)
+                }
+                Text(template.title)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 4) {
+                    if template.isFlagged {
+                        Image(systemName: "flag.fill").font(.caption2).foregroundStyle(.orange)
+                    }
+                    if !template.notes.isEmpty {
+                        Image(systemName: "note.text").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button { itemToEdit = template } label: { Label("Edit", systemImage: "pencil") }
             Divider()
             Button("Delete", role: .destructive) { deleteTemplate(template) }
         }
