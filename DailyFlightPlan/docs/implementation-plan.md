@@ -249,7 +249,7 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
   - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
   - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
 
-### Phase 22 — Brand New Focus View
+### Phase 22 — Finish Day/Flight View
 > **Partially addressed by Phase 19 (Flight Plan view).** The swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
