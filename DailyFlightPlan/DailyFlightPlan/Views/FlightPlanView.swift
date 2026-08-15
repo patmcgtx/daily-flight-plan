@@ -1,5 +1,5 @@
 //
-//  FlightDeckView.swift
+//  FlightPlanView.swift
 //  DailyFlightPlan
 //
 import SwiftUI
