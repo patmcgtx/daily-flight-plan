@@ -4,6 +4,7 @@
 //
 import SwiftUI
 import SwiftData
+import Flow
 
 struct RoutineView: View {
 
@@ -35,14 +36,17 @@ struct RoutineView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                routineSection(name: "Every Day", pattern: Self.everyDay, isDeletable: false)
-                routineSection(name: "Weekdays", pattern: Self.weekdays, isDeletable: false)
-                routineSection(name: "Weekends", pattern: Self.weekends, isDeletable: false)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    scheduleCard("Every Day", pattern: Self.everyDay, isDeletable: false)
+                    scheduleCard("Weekdays", pattern: Self.weekdays, isDeletable: false)
+                    scheduleCard("Weekends", pattern: Self.weekends, isDeletable: false)
 
-                ForEach(sortedCustomGroups, id: \.key) { group in
-                    routineSection(name: group.name, pattern: group.pattern, isDeletable: true)
+                    ForEach(sortedCustomGroups, id: \.key) { group in
+                        scheduleCard(group.name, pattern: group.pattern, isDeletable: true)
+                    }
                 }
+                .padding()
             }
             .navigationTitle("Routine")
             .toolbar {
@@ -102,90 +106,147 @@ struct RoutineView: View {
         }
     }
 
-    // MARK: Section builder
+    // MARK: Schedule card
 
     @ViewBuilder
-    private func routineSection(name: String, pattern: Set<Locale.Weekday>, isDeletable: Bool) -> some View {
-        let sectionItems = items(for: pattern)
-        Section {
-            ForEach(sectionItems) { template in
-                templateRow(template)
-            }
-            .onDelete { offsets in
-                for i in offsets { deleteTemplate(sectionItems[i]) }
-            }
-            addButton(for: pattern)
-        } header: {
-            HStack {
+    private func scheduleCard(_ name: String, pattern: Set<Locale.Weekday>, isDeletable: Bool) -> some View {
+        let segments = sortedSegments(for: pattern)
+        VStack(alignment: .leading, spacing: 0) {
+            // Card header
+            HStack(spacing: 12) {
                 Text(name)
+                    .font(.headline)
                 Spacer()
+                Button {
+                    addingWithWeekdays = pattern
+                } label: {
+                    Image(systemName: "plus")
+                        .fontWeight(.semibold)
+                }
                 if isDeletable {
                     Button {
                         sectionToDelete = (name, pattern)
                     } label: {
                         Image(systemName: "trash")
-                            .font(.caption)
                     }
                     .foregroundStyle(.secondary)
-                    .buttonStyle(.plain)
                 }
             }
-            .contentShape(Rectangle())
-            .dropDestination(for: String.self) { dropped, _ in
-                guard let uuidString = dropped.first else { return false }
-                return reassign(uuidString: uuidString, to: pattern)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            Divider()
+
+            if segments.isEmpty {
+                Text("No routines yet.")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+                    .padding(14)
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(segments) { entry in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(entry.segment?.displayName ?? "Open")
+                                .font(.caption.bold())
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                            HFlow(itemSpacing: 6, rowSpacing: 6) {
+                                ForEach(entry.items) { template in
+                                    routinePill(template)
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(14)
             }
+        }
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .dropDestination(for: String.self) { dropped, _ in
+            guard let uuidString = dropped.first else { return false }
+            return reassign(uuidString: uuidString, to: pattern)
         }
     }
 
-    // MARK: Template row
+    // MARK: Routine pill
 
     @ViewBuilder
-    private func templateRow(_ template: PlanItem) -> some View {
-        Button {
-            itemToEdit = template
-        } label: {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(template.title)
-                        .foregroundStyle(.primary)
-                    if let section = template.daySection {
-                        Text(section.displayName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else if let deadline = template.deadline {
-                        Text(deadline, format: .dateTime.hour().minute())
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Spacer()
+    private func routinePill(_ template: PlanItem) -> some View {
+        Button { itemToEdit = template } label: {
+            HStack(spacing: 4) {
                 if template.isFlagged {
                     Image(systemName: "flag.fill")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.orange)
                 }
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                Text(template.title)
+                    .font(.subheadline)
+                if let deadline = template.deadline {
+                    Text(deadline, format: .dateTime.hour().minute())
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                if !template.notes.isEmpty {
+                    Image(systemName: "note.text")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
-            .contentShape(Rectangle())
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.regularMaterial, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button { itemToEdit = template } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            Divider()
+            Button("Delete", role: .destructive) { deleteTemplate(template) }
         }
         .draggable(template.uuid.uuidString)
     }
 
-    @ViewBuilder
-    private func addButton(for pattern: Set<Locale.Weekday>) -> some View {
-        Button {
-            addingWithWeekdays = pattern
-        } label: {
-            Label("Add Routine", systemImage: "plus.circle")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
+    // MARK: Data helpers
+
+    private struct SegmentGroup: Identifiable {
+        let segment: DaySection?
+        let items: [PlanItem]
+        var id: String { segment?.rawValue ?? "open" }
     }
 
-    // MARK: Data helpers
+    private func sortedSegments(for pattern: Set<Locale.Weekday>) -> [SegmentGroup] {
+        var grouped: [DaySection?: [PlanItem]] = [:]
+        for item in items(for: pattern) {
+            if let section = item.daySection {
+                grouped[section, default: []].append(item)
+            } else if let deadline = item.deadline, let section = DaySection.containing(deadline) {
+                grouped[section, default: []].append(item)
+            } else {
+                grouped[nil, default: []].append(item)
+            }
+        }
+        // Sort within each group: timed items first by time, then alphabetically
+        for key in grouped.keys {
+            grouped[key]?.sort { a, b in
+                switch (a.deadline, b.deadline) {
+                case let (.some(da), .some(db)): return da < db
+                case (.some, .none): return true
+                case (.none, .some): return false
+                case (.none, .none): return a.title.localizedCompare(b.title) == .orderedAscending
+                }
+            }
+        }
+        // Emit in DaySection order, Open group at end
+        var result = DaySection.allCases.compactMap { section -> SegmentGroup? in
+            guard let items = grouped[DaySection?.some(section)], !items.isEmpty else { return nil }
+            return SegmentGroup(segment: section, items: items)
+        }
+        if let openItems = grouped[nil], !openItems.isEmpty {
+            result.append(SegmentGroup(segment: nil, items: openItems))
+        }
+        return result
+    }
 
     private func items(for pattern: Set<Locale.Weekday>) -> [PlanItem] {
         templates.filter { Set($0.recurringWeekdays) == pattern }
