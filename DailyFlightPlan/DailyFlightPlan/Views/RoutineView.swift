@@ -203,11 +203,19 @@ struct RoutineView: View {
     private func segmentGroupContent(for entry: SegmentGroup) -> some View {
         let deadlineItems = entry.items.filter { $0.deadline != nil }
         let pillItems = entry.items.filter { $0.deadline == nil }
-        VStack(alignment: .leading, spacing: 6) {
-            Text(entry.segment?.displayName ?? "Open")
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 5) {
+                Text(entry.segment?.displayName ?? "Open")
+                    .font(.subheadline.bold())
+                if let segment = entry.segment {
+                    Text("·")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Text(segment.timeRangeLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             if !deadlineItems.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(deadlineItems) { template in
