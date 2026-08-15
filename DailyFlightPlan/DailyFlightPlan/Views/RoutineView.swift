@@ -456,6 +456,8 @@ private struct WeekdayPickerSheet: View {
     }
 }
 
+}
+
 #Preview {
     RoutineView()
         .injectMockServices()
