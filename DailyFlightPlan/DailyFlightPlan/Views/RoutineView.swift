@@ -117,20 +117,22 @@ struct RoutineView: View {
                 Text(name)
                     .font(.headline)
                 Spacer()
-                Button {
-                    addingWithWeekdays = pattern
-                } label: {
-                    Image(systemName: "plus")
-                        .fontWeight(.semibold)
-                }
-                if isDeletable {
-                    Button {
-                        sectionToDelete = (name, pattern)
-                    } label: {
-                        Image(systemName: "trash")
-                    }
-                    .foregroundStyle(.secondary)
-                }
+Button {
+    addingWithWeekdays = pattern
+} label: {
+    Image(systemName: "plus")
+        .fontWeight(.semibold)
+}
+.accessibilityLabel("Add Routine")
+if isDeletable {
+    Button {
+        sectionToDelete = (name, pattern)
+    } label: {
+        Image(systemName: "trash")
+    }
+    .accessibilityLabel("Delete Section")
+    .foregroundStyle(.secondary)
+}
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -360,18 +362,22 @@ struct RoutineView: View {
         return true
     }
 
-    private func deleteSection(pattern: Set<Locale.Weekday>) {
-        for template in items(for: pattern) {
-            deleteTemplate(template)
-        }
+private func deleteSection(pattern: Set<Locale.Weekday>) {
+    let templatesToDelete = items(for: pattern)
+    guard !templatesToDelete.isEmpty else { return }
+    for template in templatesToDelete {
+        deleteTemplate(template, shouldSave: false)
     }
+    try? modelContext.save()
+}
 
-    private func deleteTemplate(_ template: PlanItem) {
-        // Sever instances so they become standalone historical records
-        for instance in template.instances ?? [] {
-            instance.template = nil
-        }
-        modelContext.delete(template)
+private func deleteTemplate(_ template: PlanItem, shouldSave: Bool = true) {
+    // Sever instances so they become standalone historical records
+    for instance in template.instances ?? [] {
+        instance.template = nil
+    }
+    modelContext.delete(template)
+    if shouldSave {
         try? modelContext.save()
     }
 }
