@@ -115,7 +115,7 @@ struct RoutineView: View {
             // Card header
             HStack(spacing: 12) {
                 Text(name)
-                    .font(.headline)
+                    .font(.title2.bold())
                 Spacer()
                 Button {
                     addingWithWeekdays = pattern
@@ -136,6 +136,7 @@ struct RoutineView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+            .background(Color.accentColor.opacity(0.04))
 
             Divider()
 
@@ -153,7 +154,13 @@ struct RoutineView: View {
                 .padding(14)
             }
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .background { RoundedRectangle(cornerRadius: 18).fill(.background) }
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
         .dropDestination(for: String.self) { dropped, _ in
             guard let uuidString = dropped.first else { return false }
             return reassign(uuidString: uuidString, to: pattern)
