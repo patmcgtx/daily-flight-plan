@@ -5,9 +5,8 @@
 import SwiftUI
 import SwiftData
 import EventKit
-import Flow
 
-private enum AppTab: Hashable { case focus, cards, flightDeck, timeline, search }
+private enum AppTab: Hashable { case focus, flightDeck, timeline, routines, chat }
 
 struct DayView: View {
 
@@ -15,27 +14,6 @@ struct DayView: View {
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false }) private var allItems: [PlanItem]
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == true }) private var recurringTemplates: [PlanItem]
-
-    @AppStorage(AppStorageKeys.theme.rawValue)
-    private var theme: DFPTheme = .cupertino
-
-    @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
-    private var showFlaggedOnly: Bool = false
-
-    @AppStorage(AppStorageKeys.showCompleted.rawValue)
-    private var showCompleted: Bool = false
-
-    @AppStorage(AppStorageKeys.showCalendarEvents.rawValue)
-    private var showCalendarEvents: Bool = true
-
-    @AppStorage(AppStorageKeys.showReminderItems.rawValue)
-    private var showReminderItems: Bool = true
-
-    @AppStorage(AppStorageKeys.showRecurring.rawValue)
-    private var showRecurring: Bool = true
-
-    @Environment(\.categorySelectionService)
-    private var categorySelectionService: CategorySelectionService?
 
     @Environment(\.calendarService)
     private var calendarService: CalendarService?
@@ -49,9 +27,6 @@ struct DayView: View {
     @AppStorage(AppStorageKeys.selectedReminderListIDs.rawValue)
     private var selectedReminderListIDsRaw: String = ""
 
-    @Query(sort: \PlanCategory.name)
-    private var allCategories: [PlanCategory]
-
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var modelContext
 
@@ -60,127 +35,61 @@ struct DayView: View {
     @State private var pendingDeleteItems = false
     @State private var pendingDeleteCategories = false
     @State private var isDeletingData = false
-    @State private var isShowingCategoriesEdit = false
-    @State private var showCategorySelector = false
-    @State private var pendingCategoriesEdit = false
-    @State private var isAddingItem = false
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
-    @State private var isAnyTimeDropTargeted = false
-
-    private var isFilterActive: Bool {
-        showFlaggedOnly || showCompleted || !showRecurring
-    }
-
-    private var selectedDateNonCanceledItems: [PlanItem] {
-        guard !isDeletingData else { return [] }
-        return allItems.filter {
-            Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
-            && $0.status != .canceled
-        }
-    }
-
-    private var itemsForSelectedDate: [PlanItem] {
-        guard !isDeletingData else { return [] }
-        let filtered = allItems.filter {
-            Calendar.current.isDate($0.date, inSameDayAs: viewModel.selectedDate)
-            && (showCompleted || ($0.status != .completed && $0.status != .canceled))
-            && (!showFlaggedOnly || $0.isFlagged)
-            && (showRecurring || !$0.isRecurring)
-        }
-        return categorySelectionService?.filterItems(filtered) ?? filtered
-    }
 
     var body: some View {
         TabView(selection: $activeTab) {
-            Tab("Cockpit", systemImage: "airplane", value: AppTab.focus) {
-                NavigationStack {
-                    dayScrollView
-                        .id(viewModel.selectedDate)
-                        .transition(dayTransition)
-                        .inlineNavigationTitle()
-                        .toolbar {
-                            ToolbarItem(placement: .leadingBar) {
-                                Button { isShowingSettings = true } label: {
-                                    Image(systemName: "gearshape")
-                                }
-                                .accessibilityLabel("Settings")
-                            }
 
-                            ToolbarItemGroup(placement: .trailingBar) {
-                                Menu {
-                                    Toggle(isOn: $showFlaggedOnly) {
-                                        Label("Flagged Only", systemImage: "flag.fill")
-                                    }
-                                    Toggle(isOn: $showCompleted) {
-                                        Label("Show Completed", systemImage: "checkmark")
-                                    }
-                                    Toggle(isOn: $showRecurring) {
-                                        Label("Routines", systemImage: "infinity")
-                                    }
-                                    Divider()
-                                    Toggle(isOn: $showCalendarEvents) {
-                                        Label("Calendar Events", systemImage: "calendar")
-                                    }
-                                    Toggle(isOn: $showReminderItems) {
-                                        Label("Reminders", systemImage: "bell")
-                                    }
-                                } label: {
-                                    Image(systemName: isFilterActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                                        .foregroundStyle(isFilterActive ? Color.accentColor : Color.primary)
-                                }
-                                .accessibilityLabel("Filters")
-
-                                Button { showCategorySelector = true } label: {
-                                    Image(systemName: "tag")
-                                }
-                                .accessibilityLabel("Filter by Category")
-
-                                Menu {
-                                    ForEach(DFPTheme.allCases) { option in
-                                        Button { theme = option } label: {
-                                            Label(option.localizedName, systemImage: option.menuIconName)
-                                        }
-                                    }
-                                } label: {
-                                    Image(systemName: theme.menuIconName)
-                                        .foregroundStyle(theme == .cupertino ? Color.primary : Color.accentColor)
-                                }
-                                .accessibilityLabel("Theme")
-                            }
-
-                            ToolbarItem(placement: .trailingBar) {
-                                Button { isAddingItem = true } label: {
-                                    Image(systemName: "plus")
-                                }
-                                .accessibilityLabel("Add Item")
-                            }
-                        }
-                }
-            }
-
-            Tab("Nav Log", systemImage: "book.pages", value: AppTab.timeline) {
-                TimelineView(onSelectDate: { _ in }, onDismiss: {})
-            }
-
-            Tab("Cards", systemImage: "rectangle.stack", value: AppTab.cards) {
-                CardDeckView(viewModel: viewModel, isDeletingData: isDeletingData)
-            }
-
-            Tab("Flight Deck", systemImage: "airplane.departure", value: AppTab.flightDeck) {
-                FlightDeckView(
+            Tab("Day", systemImage: "airplane", value: AppTab.flightDeck) {
+                FlightPlanView(
                     viewModel: viewModel,
+                    calendarEvents: calendarEvents,
+                    reminderItems: reminderItems,
                     isDeletingData: isDeletingData,
                     onShowSettings: { isShowingSettings = true }
                 )
             }
 
-            Tab(value: AppTab.search, role: .search) {
-                Text("Search")
-                    .navigationTitle("Search")
+            Tab("Log", systemImage: "checklist", value: AppTab.timeline) {
+                TimelineView(onSelectDate: { _ in }, onDismiss: {})
+            }
+
+            Tab("Routine", systemImage: "infinity", value: AppTab.routines) {
+                ContentUnavailableView(
+                    "Routines",
+                    systemImage: "repeat",
+                    description: Text("Manage your recurring items here. Coming soon.")
+                )
+            }
+
+            Tab("Comm", systemImage: "apple.intelligence", value: AppTab.chat) {
+                ContentUnavailableView(
+                    "AI Chat",
+                    systemImage: "bubble.left.and.right",
+                    description: Text("Plan your day with AI assistance. Coming soon.")
+                )
             }
         }
+        .onAppear {
+            if activeTab == .focus { activeTab = .flightDeck }
+        }
+        #if os(macOS)
+        .overlay(alignment: .topLeading) {
+            // Hidden buttons so Cmd+1–4 switch tabs on macOS.
+            // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
+            VStack {
+                Button("") { activeTab = .flightDeck }.keyboardShortcut("1", modifiers: .command)
+                Button("") { activeTab = .timeline }.keyboardShortcut("2", modifiers: .command)
+                Button("") { activeTab = .routines }.keyboardShortcut("3", modifiers: .command)
+                Button("") { activeTab = .chat }.keyboardShortcut("4", modifiers: .command)
+            }
+            .opacity(0)
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+        }
+        #endif
         .environment(\.editItem) { item in itemToEdit = item }
         .environment(\.importReminderItem) { reminder in importReminder(reminder) }
         .task {
@@ -199,7 +108,6 @@ struct DayView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                // ModelContainer.deduplicateCategories(in: modelContext)
                 performSpilloverIfNeeded()
             }
         }
@@ -232,23 +140,6 @@ struct DayView: View {
                 onSeedData: { ModelContainer.seedSampleDataIfNeeded(in: modelContext) }
             )
         }
-        .sheet(isPresented: $isShowingCategoriesEdit) {
-            CategoriesEditView(allCategories: allCategories)
-                .environment(\.modelContext, modelContext)
-        }
-        .sheet(isPresented: $showCategorySelector, onDismiss: {
-            if pendingCategoriesEdit {
-                pendingCategoriesEdit = false
-                isShowingCategoriesEdit = true
-            }
-        }) {
-            categorySelectorSheet
-        }
-        .sheet(isPresented: $isAddingItem, onDismiss: {
-            if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
-        }) {
-            ItemForm(date: viewModel.selectedDate)
-        }
         .sheet(item: $itemToEdit, onDismiss: {
             if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
         }) { item in
@@ -269,300 +160,6 @@ struct DayView: View {
         .animation(.easeInOut(duration: 0.2), value: isDeletingData)
     }
 
-    private var dayTransition: AnyTransition {
-        viewModel.forwardNavigation
-            ? .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))
-            : .asymmetric(insertion: .move(edge: .leading),  removal: .move(edge: .trailing))
-    }
-
-    // MARK: Category selector sheet
-
-    private var categorySelectorSheet: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Filter by Category")
-                .font(.headline)
-                .padding(.horizontal)
-                .padding(.top)
-            if allCategories.isEmpty {
-                Text("No categories yet.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(allCategories) { category in
-                            CategoryCapsule(category: category)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-            Button("Manage Categories") {
-                pendingCategoriesEdit = true
-                showCategorySelector = false
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal)
-            .padding(.bottom)
-        }
-        .presentationDetents([.height(160)])
-        .presentationDragIndicator(.visible)
-    }
-
-    // MARK: Scrolling date header (scrolls with day content)
-
-    private var scrollingDateHeader: some View {
-        ZStack {
-            VStack(spacing: 2) {
-                Text(viewModel.selectedDate, format: .dateTime.weekday(.wide))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack(spacing: 6) {
-                    Text(viewModel.selectedDate, format: .dateTime.month(.abbreviated).day())
-                        .font(.title2.bold())
-                    if !viewModel.isToday {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
-                        } label: {
-                            Image(systemName: "scope")
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Go to Today")
-                    }
-                }
-            }
-
-            HStack {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToYesterday() }
-                } label: {
-                    Image(systemName: "chevron.left").frame(width: 20)
-                }
-                .buttonStyle(.glass)
-                .accessibilityLabel("Previous Day")
-
-                Spacer()
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToTomorrow() }
-                } label: {
-                    Image(systemName: "chevron.right").frame(width: 20)
-                }
-                .buttonStyle(.glass)
-                .accessibilityLabel("Next Day")
-            }
-        }
-        .padding(.vertical, 8)
-    }
-
-    // MARK: Progress summary row
-
-    private var progressSummaryRow: some View {
-        let items = selectedDateNonCanceledItems
-        let completed = items.filter { $0.status == .completed }.count
-        let total = items.count
-        let progress = total > 0 ? Double(completed) / Double(total) : 0
-        return HStack(spacing: 12) {
-            ProgressRingView(progress: progress, completed: completed, total: total)
-            if total == 0 {
-                Text("No items planned")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else if completed == total {
-                Text("All done!")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.green)
-            } else {
-                Text("\(completed) of \(total) complete")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .padding(.horizontal)
-    }
-
-    // MARK: Scrollable day content
-
-    private var dayScrollView: some View {
-        let selectedDateItems = itemsForSelectedDate
-        let projected = showRecurring ? viewModel.projectedRecurringItems(for: viewModel.selectedDate, from: recurringTemplates) : []
-        let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
-        let visibleEvents = (showCalendarEvents && !categoriesActive) ? calendarEvents : []
-        let rawReminders = (showReminderItems && !categoriesActive) ? reminderItems : []
-        let visibleReminders = showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
-        return ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    scrollingDateHeader
-
-                    ForEach(viewModel.activeSections) { section in
-                        let pills = viewModel.sectionPills(section, from: selectedDateItems)
-                        let deadlines = viewModel.deadlineRows(section, from: selectedDateItems)
-                        let events = viewModel.calendarEventsForSection(section, from: visibleEvents)
-                        let reminders = viewModel.reminderItemsForSection(section, from: visibleReminders)
-                        let sectionProjected = projected.filter { $0.daySection == section }
-                        DaySectionView(
-                            section: section,
-                            sectionPills: pills,
-                            deadlineRows: deadlines,
-                            calendarEvents: events,
-                            reminderItems: reminders,
-                            projectedPills: sectionProjected,
-                            summary: viewModel.sectionSummaries[section],
-                            isAllClear: isAllClear(for: section),
-                            isSummaryLoading: viewModel.loadingSummarySections.contains(section),
-                            showNowBar: viewModel.currentSection == section,
-                            isCollapsed: viewModel.isCollapsed(section),
-                            onToggle: {
-                                withAnimation(.spring(duration: 0.25)) {
-                                    viewModel.toggleCollapsed(section)
-                                }
-                                if viewModel.isCollapsed(section) {
-                                    viewModel.generateSummaryIfNeeded(
-                                        for: section,
-                                        items: pills + deadlines,
-                                        events: events,
-                                        reminders: reminders
-                                    )
-                                }
-                            },
-                            onDropItem: { uuidString in
-                                handlePillDrop(uuidString: uuidString, targetSection: section)
-                            },
-                            onReloadSummary: {
-                                viewModel.clearSummary(for: section)
-                                viewModel.generateSummaryIfNeeded(
-                                    for: section,
-                                    items: pills + deadlines,
-                                    events: events,
-                                    reminders: reminders
-                                )
-                            }
-                        )
-                        .id(section)
-                        .onAppear {
-                            if viewModel.isCollapsed(section) {
-                                viewModel.generateSummaryIfNeeded(
-                                    for: section,
-                                    items: pills + deadlines,
-                                    events: events,
-                                    reminders: reminders
-                                )
-                            }
-                        }
-                    }
-
-                    progressSummaryRow
-                    missedSection(items: selectedDateItems)
-                    anyTimeSection(items: selectedDateItems, visibleReminders: visibleReminders)
-                }
-                .padding(.horizontal)
-                .padding(.top, 12)
-            }
-            .onAppear {
-                if let current = viewModel.currentSection {
-                    proxy.scrollTo(current, anchor: .top)
-                }
-            }
-        }
-    }
-
-    // MARK: Any time section
-
-    @ViewBuilder
-    private func anyTimeSection(items: [PlanItem], visibleReminders: [ReminderItem]) -> some View {
-        let anyTimeItems = viewModel.anyTimeItems(from: items)
-        let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Open")
-                .font(.subheadline.bold())
-                .foregroundStyle(isAnyTimeDropTargeted ? Color.accentColor : Color.secondary)
-                .padding(.leading, 4)
-            if !anyTimeItems.isEmpty {
-                HFlow(itemSpacing: 8, rowSpacing: 8) {
-                    ForEach(anyTimeItems) { item in
-                        ItemPillView(item: item, isMissed: viewModel.isMissed(item))
-                            .draggable(item.uuid.uuidString)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            if !anyTimeReminders.isEmpty {
-                VStack(spacing: 0) {
-                    ForEach(anyTimeReminders) { item in
-                        ReminderItemRow(item: item)
-                    }
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
-        .padding(4)
-        .contentShape(Rectangle())
-        .overlay {
-            if isAnyTimeDropTargeted {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.accentColor, lineWidth: 2)
-            }
-        }
-        .dropDestination(for: String.self) { dropItems, _ in
-            guard let uuidString = dropItems.first else { return false }
-            handlePillDrop(uuidString: uuidString, targetSection: nil)
-            return true
-        } isTargeted: { targeted in
-            isAnyTimeDropTargeted = targeted
-        }
-        .animation(.easeInOut(duration: 0.15), value: isAnyTimeDropTargeted)
-    }
-
-    // MARK: Past section (calendar events only — reminders go to Missed)
-
-    @ViewBuilder
-    private func pastSectionCard(calendarEvents: [CalendarEvent]) -> some View {
-        let pastEvents = viewModel.pastCalendarEvents(from: calendarEvents)
-        if !pastEvents.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Past")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 4)
-                VStack(spacing: 0) {
-                    ForEach(pastEvents) { event in
-                        CalendarEventRow(event: event)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
-        }
-    }
-
-    // MARK: Missed section (deadline plan items + past timed reminders)
-
-    @ViewBuilder
-    private func missedSection(items: [PlanItem]) -> some View {
-        let missedItems = viewModel.missedDeadlineItems(from: items)
-        if !missedItems.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Missed")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 4)
-                VStack(spacing: 0) {
-                    ForEach(missedItems) { item in
-                        DeadlineItemRow(item: item)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
-        }
-    }
-
     // MARK: Import Reminder
 
     private func importReminder(_ reminder: ReminderItem) {
@@ -574,44 +171,6 @@ struct DayView: View {
         )
         item.reminderIdentifier = reminder.id
         modelContext.insert(item)
-        try? modelContext.save()
-    }
-
-    // MARK: All clear
-
-    /// True when a section has no pending plan items — either empty, or all done/canceled.
-    /// Never true on future dates (nothing has been done yet).
-    /// Uses unfiltered allItems so it works regardless of the showCompleted toggle.
-    private func isAllClear(for section: DaySection) -> Bool {
-        let cal = Calendar.current
-        guard cal.startOfDay(for: viewModel.selectedDate) <= cal.startOfDay(for: .now) else { return false }
-        let today = viewModel.selectedDate
-        let sectionItems = allItems.filter { item in
-            Calendar.current.isDate(item.date, inSameDayAs: today)
-            && item.daySection == section
-        }
-        let deadlineItemsInSection = allItems.filter { item in
-            guard Calendar.current.isDate(item.date, inSameDayAs: today),
-                  item.daySection == nil,
-                  let deadline = item.deadline else { return false }
-            return DaySection.containing(deadline) == section
-        }
-        return (sectionItems + deadlineItemsInSection).allSatisfy {
-            $0.status == .completed || $0.status == .canceled
-        }
-    }
-
-    // MARK: Drag to reassign section
-
-    /// Moves a dragged item to `targetSection` (or "Open" if nil), clearing any deadline.
-    private func handlePillDrop(uuidString: String, targetSection: DaySection?) {
-        guard let uuid = UUID(uuidString: uuidString),
-              let item = allItems.first(where: { $0.uuid == uuid }) else { return }
-        guard item.daySection != targetSection || item.deadline != nil else { return }
-        withAnimation(.spring(duration: 0.3)) {
-            item.daySection = targetSection
-            item.deadline = nil
-        }
         try? modelContext.save()
     }
 

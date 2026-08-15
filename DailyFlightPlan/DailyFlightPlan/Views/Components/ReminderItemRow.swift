@@ -10,37 +10,49 @@ struct ReminderItemRow: View {
     let item: ReminderItem
 
     @Environment(\.importReminderItem) private var importReminderItem
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(item.listColor)
-                .frame(width: 3)
+        Button {
+            if let url = URL(string: "x-apple-reminderkit://") {
+                openURL(url)
+            }
+        } label: {
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(item.listColor)
+                    .frame(width: 3)
 
-            HStack(spacing: 10) {
-                Image(systemName: "bell")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if let dueDate = item.dueDate {
-                    Text(dueDate, format: .dateTime.hour().minute())
+                HStack(spacing: 10) {
+                    Image(systemName: "bell")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .monospacedDigit()
+
+                    if let dueDate = item.dueDate {
+                        Text(dueDate, format: .dateTime.hour().minute())
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+
+                    Text(item.title)
+                        .font(.subheadline)
+                        .italic()
+                        .foregroundStyle(item.isCompleted ? .secondary : .primary)
+                        .strikethrough(item.isCompleted)
+                        .lineLimit(1)
+
+                    Spacer()
+
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
-
-                Text(item.title)
-                    .font(.subheadline)
-                    .italic()
-                    .foregroundStyle(item.isCompleted ? .secondary : .primary)
-                    .strikethrough(item.isCompleted)
-                    .lineLimit(1)
-
-                Spacer()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
         }
+        .buttonStyle(.plain)
         .contextMenu {
             if let importReminderItem {
                 Button {
@@ -48,6 +60,13 @@ struct ReminderItemRow: View {
                 } label: {
                     Label("Import as Task", systemImage: "square.and.arrow.down")
                 }
+            }
+            Button {
+                if let url = URL(string: "x-apple-reminderkit://") {
+                    openURL(url)
+                }
+            } label: {
+                Label("Open in Reminders", systemImage: "arrow.up.right.square")
             }
         }
     }

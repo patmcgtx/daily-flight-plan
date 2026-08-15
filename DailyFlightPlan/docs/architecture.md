@@ -18,8 +18,9 @@ DailyFlightPlan/
     ├── Components/   — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
     │                   ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/  — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
-    ├── DayView.swift          — Cockpit tab: main day view with section cards
-    ├── CardDeckView.swift     — Cards tab: collapsible stacked section cards with AI summaries
+    ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
+    ├── FlightDeckView.swift   — Flight Plan tab (struct FlightPlanView): primary day view, swipe pager
+    ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
     ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
     ├── ItemForm.swift
     └── CategoriesEditView.swift
@@ -97,48 +98,43 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 
 ## UI: "Structured Flight Plan"
 
-> **Phase 16 UX experiment in progress.** Three views are live for usability testing. The tab set may shrink before 1.0.
-
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
-- **Cockpit** (`airplane`) — the main day view (was "Focus")
-- **Cards** (`rectangle.stack`) — vertically stacked section cards; collapsible headers with AI summary in collapsed state, full item list when expanded; date navigation; per-section add button
-- **Nav Log** (`book.pages`) — chronological multi-day list of all plan items; fully interactive (was "Timeline")
-- **Search** (`magnifyingglass`, pinned trailing via `Tab(role: .search)`) — stub, not yet implemented
+- **Day** (`airplane`) — primary day view (Flight Plan); swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
+- **Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
+- **Routine** (`infinity`) — placeholder for future recurring-item management
+- **Comm** (`apple.intelligence`) — placeholder for future AI chat / quick entry
+- **Cockpit** (`airplane.departure`) and **Cards** (`rectangle.stack`) — commented out; available for re-evaluation
+- macOS keyboard shortcuts: `Cmd+1` Day, `Cmd+2` Log, `Cmd+3` Routine, `Cmd+4` Comm
 
-**Navigation bar toolbar (Cockpit tab, inside `NavigationStack`):**
-- Leading: `⚙` Settings button (stub — navigates to `SettingsView`, not yet implemented)
-- Trailing: `ToolbarItemGroup` — filter menu (`line.3.horizontal.decrease.circle`), category button (`tag`), theme menu (`paintbrush`) — system groups these into a single Liquid Glass capsule on iOS 26
-- Trailing: `+` Add Item button (separate from the group; Phase 23 (Search) will move this to the thumb zone)
+**Navigation bar toolbar (Flight Plan tab, inside `NavigationStack`):**
+- Leading: `⚙` Settings button
+- Trailing: `ToolbarItemGroup` — filter menu (`line.3.horizontal.decrease.circle`) with Flagged/Done/Routines/Calendar/Reminders toggles; category button (`tag`); theme menu — system groups into a single Liquid Glass capsule on iOS 26
+- Trailing: `+` Add Item button (separate from the group)
 
 All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`, `showRecurring`) is saved to `@AppStorage` and shared across all tabs. The filter icon fills/accents when any filter is active.
 
-**Scrolling date header (scrolls with content, not sticky):**
-- Centered: weekday + date, with a `scope` go-to-today button when not on today
-- Leading/trailing: `[<]` / `[>]` chevron buttons with `.buttonStyle(.glass)` for previous/next day
+**Flight Plan tab (`FlightDeckView.swift`):**
+- **Day pager**: `TabView(.page)` with 3 pages (yesterday / today / tomorrow) on iOS; infinite-reset pattern silently snaps back to center page after each swipe. `DragGesture` fallback on macOS.
+- **Date header**: "Today" label in accent color when on today; weekday label otherwise. `scope` go-to-today button at the leading edge when not on today.
+- **Section cards**: one `RoundedRectangle(cornerRadius: 18)` card per day section. Collapsed (header + count) / expanded (full content). Tap anywhere in the header to toggle. Current section highlighted with accent border.
+- **Collapsed header**: section name, time range, `completed/total` badge, and AI summary text (or loading dots).
+- **Expanded section body**:
+  1. `HFlow` pills for non-deadline items — each pill is `.draggable`
+  2. `DeadlineItemRow` entries for timed items
+  3. `CalendarEventRow` entries (from DayView's fetch; selected-date only)
+  4. `ReminderItemRow` entries (from DayView's fetch; selected-date only)
+  5. `+ Add item` link at top
+- **Progress ring**: per-section small donut showing raw `completed/total` plan-item counts (filter-independent); green when all done.
+- **Open card**: `HFlow` pills for untimed items + any-time `ReminderItemRow`s. Also a drop target.
+- **Drag-and-drop**: drop onto any section card or Open card reassigns `daySection` and clears deadline. Drop target highlights with accent border.
+- **Filter-driven expand/collapse**: when a filter is active, sections with matching items/events/reminders expand; empty sections collapse. User can manually override afterward.
+- **`+ Add item`** inside each section card header links to `ItemForm(date:section:)`.
 
-**Day sections:** All six sections are always visible (past sections remain as a day-at-a-glance reference). Rounded-rect bordered cards, collapsible via tap. When viewing today, inactive sections start collapsed; the current section is always expanded and auto-expands when the clock ticks into it. Collapsed sections display a one-line AI summary (Foundation Models, on-device) inline in the header. Items draggable between sections via long-press; drop target highlights with an accent-colored border.
+**Nav Log tab:** Embedded as a tab. Shows all plan items grouped by date with a filter bar and today indicator. Items are fully interactive in-place: checkbox completes, tap opens edit form, long-press shows Edit/Cancel context menu. Filters (flagged, done, category) are shared state via `@AppStorage`.
 
-Each expanded section body renders item sub-rows in order:
-1. **Regular pending pills** — `HFlow` row (no icon)
-2. **Done row** (✓ icon) — completed pills, `HFlow`; visible only when Done filter is on
-3. **Cancelled row** (✗ icon) — cancelled pills, `HFlow`; visible only when Done filter is on
-4. **Habits row** (∞ icon) — recurring pending pills + ghosted projected pills, `HFlow`
-5. **Deadline rows** — full-width `DeadlineItemRow` entries, sorted by time
-6. **Calendar event rows** — full-width `CalendarEventRow` entries
-7. **Reminder rows** — full-width `ReminderItemRow` entries
+**Cards tab (commented out):** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches Flight Plan. AI summaries generated on `.onAppear`. `+ Add item` inside expanded card content.
 
-**Special non-section areas (below section cards, scrolls with content):**
-- **Progress row**: `ProgressRingView` (small donut) + "X of Y complete" text inline
-- **Missed**: pending items whose specific clock-time deadline has passed. Uses `DeadlineItemRow`. No card background.
-- **Open**: untimed items (no section, no deadline). Drop target for drag-to-reassign. No card background.
-
-**External item rows** (CalendarEventRow, ReminderItemRow): differentiated by a 3pt colored left accent bar and italic title. No card background.
-
-**Now bar:** Red horizontal line + "NOW" label, rendered inside whichever section contains the current time.
-
-**Nav Log tab:** Embedded as a tab (not a sheet). Shows all plan items grouped by date with a filter bar and today indicator. Items are fully interactive in-place: checkbox completes, tap opens edit form, long-press shows Edit/Cancel context menu. Filters (flagged, done, category) are shared state via `@AppStorage`.
-
-**Cards tab:** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count + chevron) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches the Cockpit tab. AI summaries are generated on `.onAppear` for all cards. `+ Add item` lives inside the expanded card content, not in the header.
+**Cockpit tab (commented out):** Original main day view with scrolling date header, `NowBarView`, grouped item sub-rows (pending / done / cancelled / habits), AI section summaries, and the full DaySectionView component. Kept for reference; may be retired in Phase 24.
 
 **Item types in the day view:**
 | Type | Layout | Visual treatment |
