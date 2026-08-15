@@ -15,15 +15,24 @@ struct ItemForm: View {
     @State private var viewModel: ItemFormViewModel
     @State private var showDemoteAlert = false
     private let isCreate: Bool
+    private let isNewRoutine: Bool
 
     init(date: Date, section: DaySection? = nil) {
         isCreate = true
+        isNewRoutine = false
         _viewModel = State(initialValue: ItemFormViewModel(date: date, section: section))
     }
 
     init(item: PlanItem) {
         isCreate = false
+        isNewRoutine = false
         _viewModel = State(initialValue: ItemFormViewModel(item: item))
+    }
+
+    init(templateWeekdays: Set<Locale.Weekday>) {
+        isCreate = true
+        isNewRoutine = true
+        _viewModel = State(initialValue: ItemFormViewModel(templateWeekdays: templateWeekdays))
     }
 
     var body: some View {
@@ -39,7 +48,10 @@ struct ItemForm: View {
                     categoriesSection
                 }
             }
-            .navigationTitle(isCreate ? "New Item" : viewModel.isEditingTemplate ? "Edit Routine" : "Edit Item")
+            .navigationTitle(
+                !isCreate ? (viewModel.isEditingTemplate ? "Edit Routine" : "Edit Item") :
+                isNewRoutine ? "New Routine" : "New Item"
+            )
             .inlineNavigationTitle()
             .alert("Stop Repeating?", isPresented: $showDemoteAlert) {
                 Button("Stop Routine", role: .destructive) {

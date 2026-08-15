@@ -57,11 +57,7 @@ struct DayView: View {
             }
 
             Tab("Routine", systemImage: "infinity", value: AppTab.routines) {
-                ContentUnavailableView(
-                    "Routines",
-                    systemImage: "repeat",
-                    description: Text("Manage your recurring items here. Coming soon.")
-                )
+                RoutineView()
             }
 
             Tab("Comm", systemImage: "apple.intelligence", value: AppTab.chat) {

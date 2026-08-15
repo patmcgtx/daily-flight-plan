@@ -45,6 +45,19 @@ import SwiftData
         selectedCategories = []
     }
 
+    init(templateWeekdays: Set<Locale.Weekday>) {
+        editingItem = nil
+        title = ""
+        notes = ""
+        isFlagged = false
+        self.date = Calendar.current.startOfDay(for: .now)
+        daySection = nil
+        hasDeadline = false
+        deadline = .now
+        recurringWeekdays = Array(templateWeekdays)
+        selectedCategories = []
+    }
+
     init(item: PlanItem) {
         editingItem = item
         title = item.title
