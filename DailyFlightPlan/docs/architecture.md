@@ -102,9 +102,8 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
 - **Day** (`airplane`) — primary day view (Flight Plan); swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
 - **Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
-- **Routine** (`infinity`) — recurring habit template management: sections grouped by weekday pattern (Every Day / Weekdays / Weekends / custom), subdivided by day segment with `HFlow` pills for untimed items and full-width rows for timed deadline items; tap to edit, long-press context menu (Edit/Delete), drag between sections; add/delete custom weekday sections
+- **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all start expanded; collapsed shows name + item count); within each card, items subdivided by day segment with `HFlow` pills for untimed items and full-width rows for timed deadline items; tap to edit, long-press context menu (Edit/Delete), drag between cards to reassign weekday pattern; add/delete custom weekday sections
 - **Comm** (`apple.intelligence`) — placeholder for future AI chat / quick entry
-- **Cockpit** (`airplane.departure`) and **Cards** (`rectangle.stack`) — commented out; available for re-evaluation
 - macOS keyboard shortcuts: `Cmd+1` Day, `Cmd+2` Log, `Cmd+3` Routine, `Cmd+4` Comm
 
 **Navigation bar toolbar (Flight Plan tab, inside `NavigationStack`):**

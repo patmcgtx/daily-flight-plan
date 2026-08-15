@@ -228,14 +228,16 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - **Reminders deep link**: tapping a `ReminderItemRow` opens the Reminders app via `x-apple-reminderkit://` URL; an `arrow.up.right.square` icon at the trailing edge signals the deep link; "Open in Reminders" also in the context menu
 
 ### ✅ Phase 20 — Routine View
-- `RoutineView.swift` — list of all recurring habit templates
-- Items grouped by day section (Morning → Night → Open/unsectioned); within each group, sorted by title
-- Each row shows title, day-of-week badges (active weekdays highlighted), section label, and category dot(s)
-- Tap a row → opens `ItemForm(item:)` to edit the template (nav title already shows "Edit Routine")
-- Swipe-to-delete removes the template; does not retroactively delete completed past instances
-- `+` button in toolbar → `ItemForm` with recurring toggle pre-enabled and a sensible default section
-- Empty state: `ContentUnavailableView` with a friendly prompt and add button
+- `RoutineView.swift` — recurring habit template management
+- Items grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); each pattern is a card
+- Within each card, items are subdivided by day segment; timed items get a full-width deadline row, untimed items flow as `HFlow` pills
+- Tap any pill/row → opens `ItemForm(item:)` to edit the template; long-press → Edit / Delete context menu
+- Drag pills between cards to reassign their weekday pattern
+- `+` button in toolbar and per-card add button → `ItemForm` pre-wired for that weekday pattern
+- Custom weekday sections: `+` in toolbar opens a weekday-circle picker; delete with confirmation (severs templates from historical instances, which become standalone records)
+- Empty card state shows "No routines yet." inline
 - Wires into the existing `Routine` tab (`AppTab.routines`) in `DayView`
+- **Visual refinements (post-initial):** card backgrounds match FlightPlanView (`.background` fill, 0.5pt border, subtle shadow); headers use `.title2.bold()` font and `accentColor.opacity(0.04)` tint; tap header to expand/collapse each card (all start expanded; collapsed state shows name + item count in `.headline` + `.caption`)
 
 ### Phase 21 — Finish Nav Log
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts

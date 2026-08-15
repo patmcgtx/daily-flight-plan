@@ -66,10 +66,11 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
 - **Routine** — recurring habit template management
-  - Sections grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
-  - Each section subdivided by day segment (First Thing, Morning, …); timed items get their own row, untimed items flow as `HFlow` pills
+  - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
+  - Tap a card header to expand/collapse; collapsed state shows section name and item count
+  - Each card subdivided by day segment (First Thing, Morning, …); timed items get their own row, untimed items flow as `HFlow` pills
   - Tap any item to edit; long-press for Edit / Delete context menu
-  - Drag items between sections to reassign their weekday pattern
+  - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
 - **Comm** — placeholder for future AI chat / natural language quick entry
