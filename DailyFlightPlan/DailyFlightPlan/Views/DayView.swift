@@ -102,6 +102,11 @@ struct DayView: View {
             await fetchCalendarEvents()
             await fetchReminderItems()
         }
+        .onChange(of: recurringTemplates.count) { _, _ in
+            if viewModel.isToday {
+                materializeRecurringInstances(for: viewModel.selectedDate)
+            }
+        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 performSpilloverIfNeeded()
