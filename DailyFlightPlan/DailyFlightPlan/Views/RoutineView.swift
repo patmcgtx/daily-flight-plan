@@ -18,6 +18,7 @@ struct RoutineView: View {
     @State private var isPickingCustomSection = false
     @State private var pendingWeekdays: Set<Locale.Weekday>?
     @State private var sectionToDelete: (title: String, pattern: Set<Locale.Weekday>)?
+    @State private var collapsedCards: Set<String> = []
 
     private static let everyDay: Set<Locale.Weekday> = [
         .sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday
@@ -111,47 +112,80 @@ struct RoutineView: View {
     @ViewBuilder
     private func scheduleCard(_ name: String, pattern: Set<Locale.Weekday>, isDeletable: Bool) -> some View {
         let segments = sortedSegments(for: pattern)
+        let totalItems = items(for: pattern).count
+        let isExpanded = !collapsedCards.contains(name)
+
         VStack(alignment: .leading, spacing: 0) {
-            // Card header
-            HStack(spacing: 12) {
-                Text(name)
-                    .font(.title2.bold())
-                Spacer()
+            if isExpanded {
                 Button {
-                    addingWithWeekdays = pattern
+                    withAnimation(.spring(duration: 0.3)) { _ = collapsedCards.insert(name) }
                 } label: {
-                    Image(systemName: "plus")
-                        .fontWeight(.semibold)
-                }
-                .accessibilityLabel("Add Routine")
-                if isDeletable {
-                    Button {
-                        sectionToDelete = (name, pattern)
-                    } label: {
-                        Image(systemName: "trash")
+                    HStack(spacing: 12) {
+                        Text(name)
+                            .font(.title2.bold())
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Button {
+                            addingWithWeekdays = pattern
+                        } label: {
+                            Image(systemName: "plus")
+                                .fontWeight(.semibold)
+                        }
+                        .accessibilityLabel("Add Routine")
+                        if isDeletable {
+                            Button {
+                                sectionToDelete = (name, pattern)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .accessibilityLabel("Delete Section")
+                            .foregroundStyle(.secondary)
+                        }
                     }
-                    .accessibilityLabel("Delete Section")
-                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.accentColor.opacity(0.04))
                 }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color.accentColor.opacity(0.04))
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
 
-            Divider()
+                Divider()
 
-            if segments.isEmpty {
-                Text("No routines yet.")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+                if segments.isEmpty {
+                    Text("No routines yet.")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                        .padding(14)
+                } else {
+                    VStack(alignment: .leading, spacing: 14) {
+                        ForEach(segments) { entry in
+                            segmentGroupContent(for: entry)
+                        }
+                    }
                     .padding(14)
-            } else {
-                VStack(alignment: .leading, spacing: 14) {
-                    ForEach(segments) { entry in
-                        segmentGroupContent(for: entry)
-                    }
                 }
-                .padding(14)
+            } else {
+                Button {
+                    withAnimation(.spring(duration: 0.3)) { _ = collapsedCards.remove(name) }
+                } label: {
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(name)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Text(totalItems == 0 ? "No routines" : "\(totalItems) routine\(totalItems == 1 ? "" : "s")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Color.accentColor.opacity(0.04))
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
             }
         }
         .background { RoundedRectangle(cornerRadius: 18).fill(.background) }
