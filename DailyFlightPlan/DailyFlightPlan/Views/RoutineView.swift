@@ -117,22 +117,22 @@ struct RoutineView: View {
                 Text(name)
                     .font(.headline)
                 Spacer()
-Button {
-    addingWithWeekdays = pattern
-} label: {
-    Image(systemName: "plus")
-        .fontWeight(.semibold)
-}
-.accessibilityLabel("Add Routine")
-if isDeletable {
-    Button {
-        sectionToDelete = (name, pattern)
-    } label: {
-        Image(systemName: "trash")
-    }
-    .accessibilityLabel("Delete Section")
-    .foregroundStyle(.secondary)
-}
+                Button {
+                    addingWithWeekdays = pattern
+                } label: {
+                    Image(systemName: "plus")
+                        .fontWeight(.semibold)
+                }
+                .accessibilityLabel("Add Routine")
+                if isDeletable {
+                    Button {
+                        sectionToDelete = (name, pattern)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .accessibilityLabel("Delete Section")
+                    .foregroundStyle(.secondary)
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
