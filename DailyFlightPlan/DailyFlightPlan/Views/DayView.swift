@@ -90,6 +90,8 @@ struct DayView: View {
         .environment(\.importReminderItem) { reminder in importReminder(reminder) }
         .task {
             viewModel.startLiveClock()
+            ModelContainer.deduplicateItems(in: modelContext)
+            ModelContainer.deduplicateCategories(in: modelContext)
             await watchForMidnight()
         }
         .task(id: viewModel.selectedDate) {
@@ -103,6 +105,7 @@ struct DayView: View {
             await fetchReminderItems()
         }
         .onChange(of: recurringTemplates.count) { _, _ in
+            ModelContainer.deduplicateItems(in: modelContext)
             if viewModel.isToday {
                 materializeRecurringInstances(for: viewModel.selectedDate)
             }
@@ -201,7 +204,11 @@ struct DayView: View {
     // MARK: Recurring item management
 
     /// Converts any old-style recurring items (pre-template model) to templates.
+    /// Skipped when templates already exist — if templates are present the migration already ran
+    /// (or was never needed), and running it again would wrongly promote CloudKit-synced instances
+    /// whose template relationship hasn't resolved yet.
     private func migrateOldRecurringItems() {
+        guard recurringTemplates.isEmpty else { return }
         let oldStyle = allItems.filter { !$0.recurringWeekdays.isEmpty && $0.template == nil }
         guard !oldStyle.isEmpty else { return }
         for item in oldStyle {
