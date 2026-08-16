@@ -11,6 +11,7 @@ struct SettingsView: View {
     let onDeleteItems: () -> Void
     let onDeleteCategories: () -> Void
     let onSeedData: () -> Void
+    let onDeduplicate: () -> Void
 
     @State private var showDeleteItemsAlert = false
     @State private var showDeleteCategoriesAlert = false
@@ -21,6 +22,10 @@ struct SettingsView: View {
                 Section {
                     Button("Seed Sample Data") {
                         onSeedData()
+                        dismiss()
+                    }
+                    Button("De-duplicate Items") {
+                        onDeduplicate()
                         dismiss()
                     }
                     Button("Delete All Items", role: .destructive) {
@@ -68,5 +73,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(onDeleteItems: {}, onDeleteCategories: {}, onSeedData: {})
+    SettingsView(onDeleteItems: {}, onDeleteCategories: {}, onSeedData: {}, onDeduplicate: {})
 }

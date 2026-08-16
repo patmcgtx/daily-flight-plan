@@ -141,7 +141,11 @@ struct DayView: View {
             SettingsView(
                 onDeleteItems: { pendingDeleteItems = true },
                 onDeleteCategories: { pendingDeleteCategories = true },
-                onSeedData: { ModelContainer.seedSampleDataIfNeeded(in: modelContext) }
+                onSeedData: { ModelContainer.seedSampleDataIfNeeded(in: modelContext) },
+                onDeduplicate: {
+                    ModelContainer.deduplicateItems(in: modelContext)
+                    ModelContainer.deduplicateCategories(in: modelContext)
+                }
             )
         }
         .sheet(item: $itemToEdit, onDismiss: {
