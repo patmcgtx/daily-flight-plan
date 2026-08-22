@@ -135,10 +135,11 @@ final class MarkdownImportViewModel {
         proposedItems = text
             .components(separatedBy: .newlines)
             .compactMap { line -> ProposedItem? in
-                let stripped = line
-                    .replacingOccurrences(of: #"^-\s*\[[ x]?\]\s*"#, with: "", options: .regularExpression)
-                    .replacingOccurrences(of: #"^\d{2}/\d{2}/\d{4}\s*"#, with: "", options: .regularExpression)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
+let stripped = line
+    .replacingOccurrences(of: #"^-\s*\[[ x]?\]\s*"#, with: "", options: .regularExpression)
+    .replacingOccurrences(of: #"^[-*•]\s+"#, with: "", options: .regularExpression)
+    .replacingOccurrences(of: #"^\d{2}/\d{2}/\d{4}\s*"#, with: "", options: .regularExpression)
+    .trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !stripped.isEmpty else { return nil }
                 return ProposedItem(title: stripped, section: nil, isRecurring: false, weekdays: [])
             }
@@ -251,15 +252,16 @@ struct MarkdownImportView: View {
     private var reviewView: some View {
         List {
             Section {
-                ForEach(viewModel.proposedItems.indices, id: \.self) { i in
-                    ProposedItemRow(
-                        item: $viewModel.proposedItems[i],
-                        onDelete: { viewModel.proposedItems.remove(at: i) }
-                    )
-                }
-                .onDelete { offsets in
-                    viewModel.proposedItems.remove(atOffsets: offsets)
-                }
+ForEach($viewModel.proposedItems) { item in
+    let itemID = item.wrappedValue.id
+    ProposedItemRow(
+        item: item,
+        onDelete: { viewModel.proposedItems.removeAll { $0.id == itemID } }
+    )
+}
+.onDelete { offsets in
+    viewModel.proposedItems.remove(atOffsets: offsets)
+}
             } header: {
                 Text(
                     "\(viewModel.proposedItems.count) item\(viewModel.proposedItems.count == 1 ? "" : "s") — "
