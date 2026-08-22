@@ -83,6 +83,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - Recurring habit templates with weekday picker; per-day instances materialized lazily
 - Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
 - Filter menu: flagged, done, calendar, reminders, routines, and category filters
+- **Markdown / text import**: paste any text (e.g. a Things export) → Foundation Models parses titles, sections, and recurring schedules → review list with swipe-to-delete → commit or cancel
 - Category management (add, rename, delete)
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
 - Calendar events from EventKit shown inline, with calendar color indicator
@@ -110,6 +111,7 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
     ├── FlightPlanView.swift   — Flight Plan tab (primary day view, swipe pager)
     ├── RoutineView.swift      — Routine tab (recurring habit template management)
+    ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)
     ├── TimelineView.swift     — Nav Log tab
     ├── ItemForm.swift

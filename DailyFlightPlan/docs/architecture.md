@@ -21,6 +21,7 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
     ├── FlightPlanView.swift   — Flight Plan tab (struct FlightPlanView): primary day view, swipe pager
     ├── RoutineView.swift      — Routine tab: manage recurring habit templates; grouped by weekday pattern and day segment
+    ├── MarkdownImportView.swift — Paste-to-import sheet: TextEditor → Foundation Models parse → review list → commit
     ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
     ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
     ├── ItemForm.swift
@@ -36,6 +37,7 @@ Mock service implementations live alongside their protocols in `#if DEBUG` block
 - **`AppStorageKeys` enum** — single source of truth for all `@AppStorage` key strings
 - **`#if DEBUG` mock services** — used in SwiftUI previews; `injectMockServices()` view modifier wires them all at once
 - **Theme via single modifier** — `ThemeViewModifier` applied once at the root preserves view identity across theme changes
+- **Foundation Models structured generation** — `@Generable` structs (`ParsedTask`, `ParsedTaskList`) + `LanguageModelSession` used in `MarkdownImportView`; graceful fallback (regex strip) when `SystemLanguageModel.default.isAvailable` is false
 
 ## Data models
 
