@@ -170,6 +170,7 @@ struct MarkdownImportView: View {
     var selectedDate: Date
 
     @State private var viewModel = MarkdownImportViewModel()
+    @State private var isShowingHelp = false
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
@@ -188,6 +189,12 @@ struct MarkdownImportView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { isShowingHelp = true } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel("How it works")
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     if viewModel.isParsed {
                         Button("Add \(viewModel.proposedItems.count)") {
@@ -196,7 +203,7 @@ struct MarkdownImportView: View {
                         }
                         .disabled(viewModel.proposedItems.isEmpty)
                     } else {
-                        Button("Parse") {
+                        Button("Review") {
                             Task { await viewModel.parse() }
                         }
                         .disabled(
@@ -206,6 +213,7 @@ struct MarkdownImportView: View {
                     }
                 }
             }
+            .sheet(isPresented: $isShowingHelp) { ImportHelpView() }
             .overlay {
                 if viewModel.isParsing {
                     ZStack {
@@ -386,6 +394,66 @@ private struct ProposedItemRow: View {
         if days.count == 2 && days.contains(.saturday) && days.contains(.sunday) { return "Weekends" }
         if days.isEmpty { return "No days" }
         return "\(days.count)×/wk"
+    }
+}
+
+// MARK: - Help sheet
+
+private struct ImportHelpView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    helpRow(
+                        icon: "doc.text",
+                        title: "Paste any task list",
+                        detail: "Works with Things exports, plain text, or any markdown checklist (- [ ] format). Tap Review and the AI analyzes it."
+                    )
+                    helpRow(
+                        icon: "brain",
+                        title: "What the AI does",
+                        detail: "Strips checkboxes and date prefixes, picks the best day segment for each task, and flags recurring habits with a suggested schedule."
+                    )
+                    helpRow(
+                        icon: "pencil",
+                        title: "Review before saving",
+                        detail: "Edit titles, change segments, toggle the Routine days, or tap × to remove an item. Nothing is saved until you tap Add."
+                    )
+                    helpRow(
+                        icon: "exclamationmark.triangle",
+                        title: "No Apple Intelligence?",
+                        detail: "The app strips formatting and imports every line as an Open, one-off item so you can assign segments manually."
+                    )
+                }
+            }
+            .navigationTitle("How it works")
+            .inlineNavigationTitle()
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        #if os(macOS)
+        .frame(minWidth: 380, minHeight: 320)
+        #endif
+    }
+
+    private func helpRow(icon: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.headline)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 
