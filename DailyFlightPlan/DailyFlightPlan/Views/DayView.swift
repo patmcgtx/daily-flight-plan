@@ -90,6 +90,9 @@ struct DayView: View {
         .environment(\.importReminderItem) { reminder in importReminder(reminder) }
         .task {
             viewModel.startLiveClock()
+            ModelContainer.deduplicateItems(in: modelContext)
+            ModelContainer.deduplicateInstances(in: modelContext)
+            ModelContainer.deduplicateCategories(in: modelContext)
             await watchForMidnight()
         }
         .task(id: viewModel.selectedDate) {
@@ -103,12 +106,17 @@ struct DayView: View {
             await fetchReminderItems()
         }
         .onChange(of: recurringTemplates.count) { _, _ in
+            ModelContainer.deduplicateItems(in: modelContext)
+            ModelContainer.deduplicateInstances(in: modelContext)
             if viewModel.isToday {
                 materializeRecurringInstances(for: viewModel.selectedDate)
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
+                ModelContainer.deduplicateItems(in: modelContext)
+                ModelContainer.deduplicateInstances(in: modelContext)
+                ModelContainer.deduplicateCategories(in: modelContext)
                 performSpilloverIfNeeded()
             }
         }
@@ -138,7 +146,12 @@ struct DayView: View {
             SettingsView(
                 onDeleteItems: { pendingDeleteItems = true },
                 onDeleteCategories: { pendingDeleteCategories = true },
-                onSeedData: { ModelContainer.seedSampleDataIfNeeded(in: modelContext) }
+                onSeedData: { ModelContainer.seedSampleDataIfNeeded(in: modelContext) },
+                onDeduplicate: {
+                    ModelContainer.deduplicateItems(in: modelContext)
+                    ModelContainer.deduplicateInstances(in: modelContext)
+                    ModelContainer.deduplicateCategories(in: modelContext)
+                }
             )
         }
         .sheet(item: $itemToEdit, onDismiss: {
@@ -201,7 +214,11 @@ struct DayView: View {
     // MARK: Recurring item management
 
     /// Converts any old-style recurring items (pre-template model) to templates.
+    /// Skipped when templates already exist — if templates are present the migration already ran
+    /// (or was never needed), and running it again would wrongly promote CloudKit-synced instances
+    /// whose template relationship hasn't resolved yet.
     private func migrateOldRecurringItems() {
+        guard recurringTemplates.isEmpty else { return }
         let oldStyle = allItems.filter { !$0.recurringWeekdays.isEmpty && $0.template == nil }
         guard !oldStyle.isEmpty else { return }
         for item in oldStyle {
@@ -222,11 +239,23 @@ struct DayView: View {
         ]
         guard let weekday = weekdayMap[weekdayInt] else { return }
 
+        // Fresh fetch from the persistent store — bypasses stale @Query results and the
+        // lazy template.instances relationship, which may lag CloudKit delivery.
+        // Key by title+section rather than template UUID: CloudKit may deliver instances
+        // before their template relationship resolves, making template?.uuid unreliable.
+        let allFetched = (try? modelContext.fetch(FetchDescriptor<PlanItem>())) ?? []
+        let freshTemplates = allFetched.filter { $0.isTemplate }
+        var coveredKeys = Set(
+            allFetched
+                .filter { !$0.isTemplate && cal.isDate($0.date, inSameDayAs: date) }
+                .map { "\($0.title.lowercased())|\($0.daySection?.rawValue ?? "")" }
+        )
+
         var didInsert = false
-        for template in recurringTemplates {
+        for template in freshTemplates {
             guard template.recurringWeekdays.contains(weekday) else { continue }
-            let instances = template.instances ?? []
-            guard !instances.contains(where: { cal.isDate($0.date, inSameDayAs: date) }) else { continue }
+            let key = "\(template.title.lowercased())|\(template.daySection?.rawValue ?? "")"
+            guard !coveredKeys.contains(key) else { continue }
             let instanceDeadline: Date? = template.deadline.flatMap { dl in
                 cal.date(
                     bySettingHour: cal.component(.hour, from: dl),
@@ -247,6 +276,7 @@ struct DayView: View {
             instance.categories = template.categories
             instance.template = template
             modelContext.insert(instance)
+            coveredKeys.insert(key)
             didInsert = true
         }
         if didInsert {
