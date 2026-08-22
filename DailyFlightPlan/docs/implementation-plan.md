@@ -369,6 +369,7 @@ Paste markdown or plain text (e.g. a Things export) → Foundation Models parses
 - **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
 - **Bug: completed/canceled items still accept context menu actions**: pills in the done or cancelled rows still show the "Cancel Item" context menu action. Fix: gate the context menu destructive action in `ItemPillView` on `item.status == .pending`.
+- **✅ CloudKit dedup for user-created templates**: `deduplicateItems` now performs a second pass matching `title + daySection + recurringWeekdays`, merging instances onto the canonical copy before deleting duplicates.
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
@@ -404,11 +405,6 @@ Before you ship to the App Store, use Console's Deploy Schema Changes to Product
 ### Rich Item Content
 - **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
 - **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
-
-### Import / Export
-- Export a day or the timeline view
-- **Import from Things**: parse a Things export (markdown or JSON) and use Foundation Models to auto-assign each task to the appropriate day section, deadline, or recurring schedule
-- Import from other sources (markdown like DayOne, etc.)
 
 ### iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)

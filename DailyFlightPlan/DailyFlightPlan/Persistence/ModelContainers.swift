@@ -81,29 +81,105 @@ extension ModelContainer {
         try? context.save()
     }
 
-    /// Merges duplicate template PlanItem records that share the same sourceID.
+    /// Merges duplicate template PlanItem records.
+    /// Pass 1: match by sourceID (catches seed-data duplicates from CloudKit sync races).
+    /// Pass 2: match by title + daySection + weekday pattern (catches user-created duplicates).
+    /// In both passes, the copy with the most instances is kept as canonical.
+    /// Uses the same two-phase save pattern as deleteAllItems to satisfy SwiftData's
+    /// self-referential nullify rules before deletion.
     @MainActor
     static func deduplicateItems(in context: ModelContext) {
-        let all = (try? context.fetch(FetchDescriptor<PlanItem>())) ?? []
-        var seen = [String: PlanItem]()
-        var toDelete = [PlanItem]()
+        do {
+            let all = try context.fetch(FetchDescriptor<PlanItem>())
+            var toDelete = [PlanItem]()
+            var deletedIDs = Set<ObjectIdentifier>()
 
-        for item in all.filter({ $0.isTemplate }) {
-            if let canonical = seen[item.sourceID] {
-                for instance in (item.instances ?? []) {
-                    instance.template = canonical
+            func merge(templates: [PlanItem], keyedBy key: (PlanItem) -> String) {
+                // Sort so the copy with the most instances comes first — it becomes canonical.
+                let sorted = templates.sorted { ($0.instances?.count ?? 0) > ($1.instances?.count ?? 0) }
+                var seen = [String: PlanItem]()
+                for item in sorted {
+                    let k = key(item)
+                    if let canonical = seen[k] {
+                        for instance in (item.instances ?? []) { instance.template = canonical }
+                        item.template = nil
+                        item.instances = nil
+                        item.categories = nil
+                        toDelete.append(item)
+                        deletedIDs.insert(ObjectIdentifier(item))
+                    } else {
+                        seen[k] = item
+                    }
                 }
-                item.instances = nil
-                item.categories = nil
-                toDelete.append(item)
-            } else {
-                seen[item.sourceID] = item
             }
-        }
 
-        guard !toDelete.isEmpty else { return }
-        for item in toDelete { context.delete(item) }
-        try? context.save()
+            let templates = all.filter { $0.isTemplate }
+
+            // Pass 1: sourceID match
+            merge(templates: templates, keyedBy: { $0.sourceID })
+
+            // Pass 2: content match on templates that survived pass 1
+            let surviving = templates.filter { !deletedIDs.contains(ObjectIdentifier($0)) }
+            merge(templates: surviving, keyedBy: { templateContentKey($0) })
+
+            guard !toDelete.isEmpty else { return }
+            // Phase 1: commit relationship changes before deletion (required for self-referential nullify)
+            try context.save()
+            // Phase 2: delete and commit
+            for item in toDelete { context.delete(item) }
+            try context.save()
+            print("deduplicateItems: removed \(toDelete.count) duplicate template(s)")
+        } catch {
+            print("deduplicateItems error: \(error)")
+        }
+    }
+
+    /// Removes duplicate per-day instances (isTemplate == false) that share the same
+    /// title, daySection, and calendar date. Does not rely on the template relationship,
+    /// which may be nil while CloudKit is still delivering records.
+    /// Prefers completed/skipped instances over pending ones when choosing which to keep.
+    @MainActor
+    static func deduplicateInstances(in context: ModelContext) {
+        do {
+            let all = try context.fetch(FetchDescriptor<PlanItem>())
+            let cal = Calendar.current
+            var seen = [String: PlanItem]()
+            var toDelete = [PlanItem]()
+
+            for instance in all where !instance.isTemplate {
+                let dayKey = cal.startOfDay(for: instance.date).timeIntervalSinceReferenceDate
+                let key = "\(instance.title.lowercased())|\(instance.daySection?.rawValue ?? "")|\(dayKey)"
+                if let existing = seen[key] {
+                    if existing.status == .pending && instance.status != .pending {
+                        toDelete.append(existing)
+                        seen[key] = instance
+                    } else {
+                        toDelete.append(instance)
+                    }
+                } else {
+                    seen[key] = instance
+                }
+            }
+
+            guard !toDelete.isEmpty else { return }
+            for instance in toDelete { instance.template = nil }
+            try context.save()
+            for instance in toDelete { context.delete(instance) }
+            try context.save()
+            print("deduplicateInstances: removed \(toDelete.count) duplicate instance(s)")
+        } catch {
+            print("deduplicateInstances error: \(error)")
+        }
+    }
+
+    private static func templateContentKey(_ item: PlanItem) -> String {
+        let order: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
+        let days = item.recurringWeekdays
+            .compactMap { order.firstIndex(of: $0) }
+            .sorted()
+            .map(String.init)
+            .joined()
+        return "\(item.title.lowercased())|\(item.daySection?.rawValue ?? "")|\(days)"
     }
 
     /// Computes a stable, deterministic sourceID for seeded items.
@@ -127,7 +203,7 @@ extension ModelContainer {
         let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
 
         let laptop = PlanCategory(name: "Laptop")
-        let career = PlanCategory(name: "Career")
+        let work = PlanCategory(name: "Work")
         let deep = PlanCategory(name: "Deep")
         let shallow = PlanCategory(name: "Shallow")
         let home = PlanCategory(name: "Home")
@@ -291,7 +367,7 @@ extension ModelContainer {
                 daySection: .morning,
                 recurringWeekdays: weekdays,
                 isTemplate: true,
-                categories: [deep, laptop, career],
+                categories: [deep, laptop, work],
                 sourceID: sid("Leetcode", .morning)
             ),
             PlanItem(
