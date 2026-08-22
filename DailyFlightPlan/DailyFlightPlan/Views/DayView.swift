@@ -214,11 +214,7 @@ struct DayView: View {
     // MARK: Recurring item management
 
     /// Converts any old-style recurring items (pre-template model) to templates.
-    /// Skipped when templates already exist — if templates are present the migration already ran
-    /// (or was never needed), and running it again would wrongly promote CloudKit-synced instances
-    /// whose template relationship hasn't resolved yet.
     private func migrateOldRecurringItems() {
-        guard recurringTemplates.isEmpty else { return }
         let oldStyle = allItems.filter { !$0.recurringWeekdays.isEmpty && $0.template == nil }
         guard !oldStyle.isEmpty else { return }
         for item in oldStyle {
