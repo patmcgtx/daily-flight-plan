@@ -243,8 +243,8 @@ struct MarkdownImportView: View {
     private var reviewView: some View {
         List {
             Section {
-                ForEach(viewModel.proposedItems) { item in
-                    ProposedItemRow(item: item)
+                ForEach($viewModel.proposedItems) { $item in
+                    ProposedItemRow(item: $item)
                 }
                 .onDelete { offsets in
                     viewModel.proposedItems.remove(atOffsets: offsets)
@@ -265,28 +265,104 @@ struct MarkdownImportView: View {
 // MARK: - ProposedItemRow
 
 private struct ProposedItemRow: View {
-    let item: MarkdownImportViewModel.ProposedItem
+    @Binding var item: MarkdownImportViewModel.ProposedItem
+
+    private static let allWeekdays: [(Locale.Weekday, String)] = [
+        (.sunday, "Su"), (.monday, "M"), (.tuesday, "T"),
+        (.wednesday, "W"), (.thursday, "Th"), (.friday, "F"), (.saturday, "Sa")
+    ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(item.title).font(.body)
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("Title", text: $item.title)
+                .font(.body)
+
             HStack(spacing: 6) {
-                if let section = item.section {
-                    Text(section.displayName)
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.accentColor.opacity(0.15))
-                        .clipShape(Capsule())
+                // Section menu
+                Menu {
+                    Button { item.section = nil } label: {
+                        if item.section == nil {
+                            Label("Open", systemImage: "checkmark")
+                        } else {
+                            Text("Open")
+                        }
+                    }
+                    ForEach(DaySection.allCases) { section in
+                        Button { item.section = section } label: {
+                            if item.section == section {
+                                Label(section.displayName, systemImage: "checkmark")
+                            } else {
+                                Text(section.displayName)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Text(item.section?.displayName ?? "Open")
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8, weight: .medium))
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.accentColor.opacity(0.12))
+                    .clipShape(Capsule())
                 }
-                if item.isRecurring {
-                    Label(weekdayLabel, systemImage: "infinity")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+
+                // Routine toggle capsule
+                Button {
+                    item.isRecurring.toggle()
+                    if item.isRecurring && item.weekdays.isEmpty {
+                        item.weekdays = Self.allWeekdays.map(\.0)
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "infinity")
+                        Text(item.isRecurring ? weekdayLabel : "Routine")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(item.isRecurring ? Color.accentColor : Color.secondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(
+                        item.isRecurring ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.1),
+                        in: Capsule()
+                    )
                 }
+                .buttonStyle(.plain)
+            }
+
+            // Weekday circles (visible when recurring)
+            if item.isRecurring {
+                HStack(spacing: 6) {
+                    ForEach(0..<Self.allWeekdays.count, id: \.self) { i in
+                        let (weekday, label) = Self.allWeekdays[i]
+                        let isOn = item.weekdays.contains(weekday)
+                        Button {
+                            if isOn {
+                                item.weekdays.removeAll { $0 == weekday }
+                            } else {
+                                item.weekdays.append(weekday)
+                            }
+                        } label: {
+                            Text(label)
+                                .font(.caption.bold())
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    isOn ? Color.accentColor : Color.secondary.opacity(0.15),
+                                    in: Circle()
+                                )
+                                .foregroundStyle(isOn ? .white : .primary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 2)
             }
         }
         .padding(.vertical, 2)
+        .animation(.easeInOut(duration: 0.2), value: item.isRecurring)
     }
 
     private var weekdayLabel: String {
@@ -294,6 +370,7 @@ private struct ProposedItemRow: View {
         if days.count == 7 { return "Every day" }
         if days.count == 5 && !days.contains(.saturday) && !days.contains(.sunday) { return "Weekdays" }
         if days.count == 2 && days.contains(.saturday) && days.contains(.sunday) { return "Weekends" }
+        if days.isEmpty { return "No days" }
         return "\(days.count)×/wk"
     }
 }
