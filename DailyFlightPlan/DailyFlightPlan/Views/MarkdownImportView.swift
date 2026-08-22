@@ -189,7 +189,7 @@ struct MarkdownImportView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { isShowingHelp = true } label: {
                         Image(systemName: "info.circle")
                     }
