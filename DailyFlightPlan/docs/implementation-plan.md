@@ -239,31 +239,20 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - Wires into the existing `Routine` tab (`AppTab.routines`) in `DayView`
 - **Visual refinements (post-initial):** card backgrounds match FlightPlanView (`.background` fill, 0.5pt border, subtle shadow); headers use `.title2.bold()` font and `accentColor.opacity(0.04)` tint; tap header to expand/collapse each card (all start expanded; collapsed state shows name + item count in `.headline` + `.caption`)
 
-### Phase 21 — Finish Nav Log
-- The Nav Log should show *all* days, past, present, and future — a time machine of sorts
-- Past days show a history of what was completed (and canceled)
-- Future days show scheduled items and projected recurring items, which are non-interactive
-- Allow the usual editing on today and future planned items, with swipe gestures for cancel, defer, flag, and delete
-- A share icon for each day — can be a basic first pass or even a visual placeholder for now
-- **Search**: `.searchable` modifier on the Nav Log list; filters by title and notes across all dates; results appear inline replacing the normal date-grouped list; tap a result to navigate to that day
-- Implementation notes:
-  - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
-  - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
+### ✅ Phase 21 — Markdown Import
+Paste markdown or plain text (e.g. a Things export) → Foundation Models parses it → modal review list → save or cancel.
 
-### Phase 22 — Finish Day/Flight View
-> **Partially addressed by Phase 19 (Flight Plan view).** The swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.
-- Based on what we've learned so far, let's create a brand new, cleaner focus view
-- **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
-- **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
-- **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
-- Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
-- Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
-- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 26 (Smooth Day Swipe Navigation Pager)
-- Refactor services and view models as we go — we want this stuff pristine and unit-testable
-- Add unit tests once happy with the behavior
-- Can we reuse the existing view models?
+- **Entry point**: `arrow.down.doc` button in the Flight Plan toolbar (leading bar, next to the gear)
+- **Two-step sheet** (`MarkdownImportView`):
+  1. **Paste step**: `TextEditor` pre-populated from the clipboard; "Parse" button triggers the AI parse
+  2. **Review step**: list of proposed items with section chip and recurring badge; swipe-to-delete; "Add N" commits and dismisses; "← Back to text" returns to step 1
+- **Foundation Models structured generation**: `@Generable ParsedTask` (title, section, isRecurring, schedule) wrapped in `@Generable ParsedTaskList`; `LanguageModelSession` with task-extraction instructions; graceful fallback (regex strip) when `SystemLanguageModel.default.isAvailable` is false
+- **Date handling**: all imported items land on `viewModel.selectedDate` regardless of any date string in the input (e.g. "08/22/2026" is stripped, not parsed as the item's date)
+- **Recurring items**: items marked recurring by the model are saved as templates with `isTemplate: true`; non-recurring items saved as one-off `PlanItem`s; weekday schedule parsed from "everyday" / "weekdays" / "weekends" / comma-separated abbreviations (mon, tue…)
+- **Section mapping**: AI outputs one of firstThing / morning / midday / afternoon / evening / bedtime / open; "open" (or unknown) → `daySection = nil` (any time)
+- Wired into `DayView` via `onShowImport` callback on `FlightPlanView`; sheet dismissal triggers `materializeRecurringInstances` so any new templates immediately appear as today's instances
 
-### Phase 23 — Chat / Quick Entry (Natural Language)
+### Phase 22 — Chat / Quick Entry (Natural Language)
 - Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
   - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
   - Ask questions about your day
@@ -284,7 +273,50 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 24 — Settings
+### Phase 23 — Finish Nav Log
+- The Nav Log should show *all* days, past, present, and future — a time machine of sorts
+- Past days show a history of what was completed (and canceled)
+- Future days show scheduled items and projected recurring items, which are non-interactive
+- Allow the usual editing on today and future planned items, with swipe gestures for cancel, defer, flag, and delete
+- A share icon for each day — can be a basic first pass or even a visual placeholder for now
+- **Search**: `.searchable` modifier on the Nav Log list; filters by title and notes across all dates; results appear inline replacing the normal date-grouped list; tap a result to navigate to that day
+- Implementation notes:
+  - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
+  - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
+
+### Phase 24 — Finish Day/Flight View
+> **Partially addressed by Phase 19 (Flight Plan view).** The swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.
+- Based on what we've learned so far, let's create a brand new, cleaner focus view
+- **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
+- **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
+- **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
+- Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
+- Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
+- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 27 (Smooth Day Swipe Navigation Pager)
+- Refactor services and view models as we go — we want this stuff pristine and unit-testable
+- Add unit tests once happy with the behavior
+- Can we reuse the existing view models?
+- Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
+  - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
+  - Ask questions about your day
+- Replace (or augment) the "Add Item" button with a free-text entry field?
+- Possible paid upgrade eventually — make sure the quality is good first!
+- On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework, on-device) using a `@Generable` struct for structured output:
+  - `title: String`
+  - `notes: String?`
+  - `date: String?` (relative, e.g. "tomorrow", "next Monday" — resolved to `Date` post-generation)
+  - `deadlineTime: String?` (e.g. "2pm")
+  - `daySection: String?` (e.g. "morning", "evening")
+  - `isRecurring: Bool`
+  - `recurringWeekdays: [String]?`
+  - `isFlagged: Bool`
+- Resolve relative date strings to concrete `Date` values after generation
+- Create and save a `PlanItem` from the structured output, applying it to the current day (or the parsed date if explicit)
+- Show a brief inline confirmation row (the created item) after each submission, allowing the user to keep entering more items — repeat until dismissed
+- Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
+- Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
+
+### Phase 25 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
@@ -294,16 +326,16 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
 - Any other preferences surfaced here as phases are completed
 
-### Phase 25 — Local Notifications
+### Phase 26 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 24 (Settings)
+- Notification times respect custom day section boundaries from Phase 25 (Settings)
 
-### ✅ Phase 26 — Smooth Day Swipe Navigation (Pager)
+### ✅ Phase 27 — Smooth Day Swipe Navigation (Pager)
 - Implemented as part of Phase 19 (Flight Plan view): 3-page `TabView(.tabViewStyle(.page))` infinite-reset pattern on iOS, `DragGesture` fallback on macOS; left/right swipe navigates between yesterday, today, and tomorrow
 
-### Phase 27 — Fit and Finish
+### Phase 28 — Fit and Finish
 - Address findings from Phase 14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
@@ -312,7 +344,7 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - Are we hiding day segments that have passed?
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
 - **Missed item rule to consider**: when a day section has passed and items are left in it, move everything to "Open"
-- **Summary vs. full view** *(defer until Phase 23 Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
+- **Summary vs. full view** *(defer until Phase 22 Chat/Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
 - **Make Calendar and Reminders access read-only**: no need for read/write access anymore
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
@@ -328,7 +360,7 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
 - Add an app icon
 
-### Phase 28 — Tech Debt
+### Phase 29 — Tech Debt
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
@@ -340,7 +372,7 @@ Mac and iCloud sync usability testing, plus day-view UX experiments and aviation
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
-### Phase 29 — Beta Testing
+### Phase 30 — Beta Testing
 - Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
 - We'll want to get them to test In-App Purchase, etc. too.
 

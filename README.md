@@ -118,18 +118,18 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–20 are complete. Up next:
+Phases 1–21 are complete. Up next:
 
 | Phase | Description |
 |-------|-------------|
-| 21 | Finish Nav Log (lazy-load, full history + future, search) |
-| 22 | Finish Day / Flight view |
-| 23 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
-| 24 | Settings (calendar/reminders selection, section boundaries) |
-| 25 | Local notifications |
-| 27 | Fit and finish + aviation UI spike |
-| 28 | Tech debt (unit tests, UI tests, architecture review) |
-| 29 | Beta testing |
+| 22 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
+| 23 | Finish Nav Log (lazy-load, full history + future, search) |
+| 24 | Finish Day / Flight view |
+| 25 | Settings (calendar/reminders selection, section boundaries) |
+| 26 | Local notifications |
+| 28 | Fit and finish + aviation UI spike |
+| 29 | Tech debt (unit tests, UI tests, architecture review) |
+| 30 | Beta testing |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
 

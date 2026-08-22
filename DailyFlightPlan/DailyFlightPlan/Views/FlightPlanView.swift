@@ -15,6 +15,7 @@ struct FlightPlanView: View {
     var reminderItems: [ReminderItem] = []
     var isDeletingData: Bool = false
     let onShowSettings: () -> Void
+    let onShowImport: () -> Void
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
@@ -71,6 +72,13 @@ struct FlightPlanView: View {
                             Image(systemName: "gearshape")
                         }
                         .accessibilityLabel("Settings")
+                    }
+
+                    ToolbarItem(placement: .leadingBar) {
+                        Button { onShowImport() } label: {
+                            Image(systemName: "arrow.down.doc")
+                        }
+                        .accessibilityLabel("Import Items")
                     }
 
                     ToolbarItemGroup(placement: .trailingBar) {
@@ -887,7 +895,7 @@ struct FlightPlanView: View {
 }
 
 #Preview {
-    FlightPlanView(viewModel: DayViewModel(), onShowSettings: {})
+    FlightPlanView(viewModel: DayViewModel(), onShowSettings: {}, onShowImport: {})
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
