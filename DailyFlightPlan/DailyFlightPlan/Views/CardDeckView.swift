@@ -655,8 +655,12 @@ Button {
     }
 }
 
+#if DEBUG
+
 #Preview {
     CardDeckView(viewModel: DayViewModel())
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
+
+#endif

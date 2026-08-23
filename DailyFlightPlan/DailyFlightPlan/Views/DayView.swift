@@ -330,8 +330,12 @@ struct DayView: View {
 
 }
 
+#if DEBUG
+
 #Preview {
     DayView()
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
+
+#endif
