@@ -121,11 +121,10 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–21 are complete. Up next:
+Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is working but not yet polished for public release. Up next:
 
 | Phase | Description |
 |-------|-------------|
-| 22 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
 | 23 | Finish Nav Log (lazy-load, full history + future, search) |
 | 24 | Finish Day / Flight view |
 | 25 | Settings (calendar/reminders selection, section boundaries) |
