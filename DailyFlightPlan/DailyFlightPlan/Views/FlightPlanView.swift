@@ -894,8 +894,12 @@ struct FlightPlanView: View {
     }
 }
 
+#if DEBUG
+
 #Preview {
     FlightPlanView(viewModel: DayViewModel(), onShowSettings: {}, onShowImport: {})
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
+
+#endif

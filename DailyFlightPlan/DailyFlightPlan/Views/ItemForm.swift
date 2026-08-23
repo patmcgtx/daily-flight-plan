@@ -221,6 +221,8 @@ struct ItemForm: View {
     }
 }
 
+#if DEBUG
+
 #Preview("Create") {
     ItemForm(date: .now)
         .injectMockServices()
@@ -239,3 +241,5 @@ struct ItemForm: View {
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
+
+#endif

@@ -265,8 +265,12 @@ private struct TimelineItemRow: View {
     }
 }
 
+#if DEBUG
+
 #Preview {
     TimelineView(onSelectDate: { _ in })
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
+
+#endif 

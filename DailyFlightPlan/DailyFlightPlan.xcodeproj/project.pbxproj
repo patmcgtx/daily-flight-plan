@@ -318,6 +318,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DailyFlightPlan/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Flight Plan";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Daily Flight Plan displays your calendar events alongside your tasks to give you a complete picture of your day.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Daily Flight Plan displays your reminders alongside your tasks so nothing falls through the cracks.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -366,6 +367,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DailyFlightPlan/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Flight Plan";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Daily Flight Plan displays your calendar events alongside your tasks to give you a complete picture of your day.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Daily Flight Plan displays your reminders alongside your tasks so nothing falls through the cracks.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
