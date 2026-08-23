@@ -319,11 +319,13 @@ struct CommView: View {
                 let today = cal.startOfDay(for: .now)
                 let tomorrow = cal.date(byAdding: .day, value: 1, to: today) ?? today
                 for spec in specs {
-                    let date = spec.isForTomorrow ? tomorrow : today
                     if spec.isRecurring && !spec.weekdays.isEmpty {
+                        // Templates always anchor to today — their recurrence is driven by
+                        // weekdays, not date. Applying isTomorrow to a template date would
+                        // have no effect on materialization and creates confusing state.
                         modelContext.insert(PlanItem(
                             title: spec.title,
-                            date: date,
+                            date: today,
                             daySection: spec.section,
                             recurringWeekdays: spec.weekdays,
                             isTemplate: true
@@ -331,7 +333,7 @@ struct CommView: View {
                     } else {
                         modelContext.insert(PlanItem(
                             title: spec.title,
-                            date: date,
+                            date: spec.isForTomorrow ? tomorrow : today,
                             daySection: spec.section
                         ))
                     }
