@@ -21,7 +21,7 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
     ├── FlightPlanView.swift   — Flight Plan tab (struct FlightPlanView): primary day view, swipe pager
     ├── RoutineView.swift      — Routine tab: manage recurring habit templates; grouped by weekday pattern and day segment
-    ├── CommView.swift         — Comm tab: AI chat that answers questions about today/tomorrow's plan
+    ├── CommView.swift         — Comm tab: AI chat with -7/+7 day context, streaming responses, and CreateItemTool for adding plan items
     ├── MarkdownImportView.swift — Paste-to-import sheet: TextEditor → Foundation Models parse → review list → commit
     ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
     ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
@@ -39,6 +39,7 @@ Mock service implementations live alongside their protocols in `#if DEBUG` block
 - **`#if DEBUG` mock services** — used in SwiftUI previews; `injectMockServices()` view modifier wires them all at once
 - **Theme via single modifier** — `ThemeViewModifier` applied once at the root preserves view identity across theme changes
 - **Foundation Models structured generation** — `@Generable` structs (`ParsedTask`, `ParsedTaskList`) + `LanguageModelSession` used in `MarkdownImportView`; graceful fallback (regex strip) when `SystemLanguageModel.default.isAvailable` is false
+- **Foundation Models tool calling** — `CommView` uses a `CreateItemTool` (`Tool` protocol, `@Generable Arguments`) to let the AI chat create `PlanItem` records; tool calls are buffered via `ItemCreationQueue` actor and committed to SwiftData after each streaming response
 
 ## Data models
 
@@ -106,7 +107,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 - **Day** (`airplane`) — primary day view (Flight Plan); swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
 - **Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
 - **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all start expanded; collapsed shows name + item count); within each card, items subdivided by day segment with `HFlow` pills for untimed items and full-width rows for timed deadline items; tap to edit, long-press context menu (Edit/Delete), drag between cards to reassign weekday pattern; add/delete custom weekday sections
-- **Comm** (`apple.intelligence`) — placeholder for future AI chat / quick entry
+- **Comm** (`apple.intelligence`) — on-device AI chat (Foundation Models); context covers the last 7 days and next 7 days; streaming responses rendered as markdown; `CreateItemTool` lets the model add items to the plan
 - macOS keyboard shortcuts: `Cmd+1` Day, `Cmd+2` Log, `Cmd+3` Routine, `Cmd+4` Comm
 
 **Navigation bar toolbar (Flight Plan tab, inside `NavigationStack`):**
@@ -137,7 +138,7 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
 
 **Cards tab (commented out):** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches Flight Plan. AI summaries generated on `.onAppear`. `+ Add item` inside expanded card content.
 
-**Cockpit tab (commented out):** Original main day view with scrolling date header, `NowBarView`, grouped item sub-rows (pending / done / cancelled / habits), AI section summaries, and the full DaySectionView component. Kept for reference; may be retired in Phase 29 (Tech Debt).
+**Cockpit tab (commented out):** Original main day view with scrolling date header, `NowBarView`, grouped item sub-rows (pending / done / cancelled / habits), AI section summaries, and the full DaySectionView component. Kept for reference; may be retired in Phase release.2 (Tech Debt).
 
 **Item types in the day view:**
 | Type | Layout | Visual treatment |

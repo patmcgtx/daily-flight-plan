@@ -22,7 +22,7 @@ Daily Flight Plan is about execution, not planning. It's a lightweight layer on 
 - **Context on your terms.** Calendar events and Reminders appear inline for full context, but can be toggled off instantly when you need to narrow your focus to just your own plan.
 - **Finishing feels good.** Progress is always visible; completing your plan feels like landing the plane.
 
-**Version 1.0 target:** A personal daily-use tool that integrates cleanly with Calendar and Reminders, works great on iPhone and Mac (via iCloud sync), and is good enough to ship. iPad, Watch, and Siri come later.
+**Version 1.0 target:** A polished, public-release app with full fit/finish, accessibility, and beta testing complete. The 0.x series builds toward it: core functionality (0.1), UX polish (0.2), settings + device expansion (0.3), and in-app purchases (0.4). Watch and Siri come later (Version 3.0).
 
 ## The original idea
 
@@ -73,7 +73,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
-- **Comm** — AI chat powered by on-device Foundation Models; answers questions about today's and tomorrow's plan (streaming responses)
+- **Comm** — AI chat powered by on-device Foundation Models; knows the last 7 days and next 7 days of your plan; streaming responses rendered as markdown; can create new plan items via tool calling
 
 **macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Log · `Cmd+3` Routine · `Cmd+4` Comm
 
@@ -156,7 +156,7 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | release.2 | Tech debt (unit tests, UI tests, architecture review) |
 | release.3 | Beta testing |
 
-See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 3.0 plans.
+See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 3.0 plans (Siri, Widgets, Apple Watch).
 
 ## Building
 
