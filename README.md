@@ -131,6 +131,7 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | 2.2 | Nav Log — full history + future, lazy-load, search |
 | 2.3 | Day/Flight view refinements |
 | 2.4 | Comm tab refinements (context freshness, copyable responses, reset, error recovery) |
+| 2.5 | Smooth day swipe navigation — fix laggy/unresponsive pager |
 
 **Version 0.3** targets fit, finish, and release:
 

@@ -307,7 +307,7 @@ Improves existing features based on real use. No new capabilities — better UX 
   - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
 
 ### Phase 2.3 — Day/Flight View Refinements
-> **Partially addressed by Phase 1.19 (Flight Plan view).** The swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.
+*Partially addressed by Phase 1.19 (Flight Plan view): the swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.*
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
@@ -325,6 +325,14 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
 - **Suggested follow-ups**: after each assistant response, optionally surface 2–3 short tappable follow-up questions relevant to the reply
 - **UX audit**: review empty state, bubble sizing, input bar behavior, and keyboard handling on both iPhone and Mac
+
+### Phase 2.5 — Smooth Day Swipe Navigation (Pager)
+*Partially implemented in Phase 1.19 (Flight Plan view): the infinite-reset `TabView(.page)` pattern is in place but swipe responsiveness is poor — gestures feel laggy or unresponsive in practice.*
+
+- Diagnose and fix the swipe gesture responsiveness — the 3-page TabView infinite-reset approach may need to be replaced or tuned
+- Ensure a fast, fluid swipe between yesterday / today / tomorrow with no perceptible lag or snap-back artifacts
+- macOS: `DragGesture` fallback should feel equally responsive
+- Consider whether the infinite-reset pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with paging, custom gesture recognizer) would be more reliable
 
 ---
 
@@ -345,9 +353,6 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
 - Notification times respect custom day section boundaries from Phase 25 (Settings)
-
-### ✅ Phase 27 — Smooth Day Swipe Navigation (Pager)
-- Implemented as part of Phase 19 (Flight Plan view): 3-page `TabView(.tabViewStyle(.page))` infinite-reset pattern on iOS, `DragGesture` fallback on macOS; left/right swipe navigates between yesterday, today, and tomorrow
 
 ### Phase 28 — Fit and Finish
 - Address findings from Phase 14 usability testing
