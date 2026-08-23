@@ -252,7 +252,17 @@ Paste markdown or plain text (e.g. a Things export) → Foundation Models parses
 - **Section mapping**: AI outputs one of firstThing / morning / midday / afternoon / evening / bedtime / open; "open" (or unknown) → `daySection = nil` (any time)
 - Wired into `DayView` via `onShowImport` callback on `FlightPlanView`; sheet dismissal triggers `materializeRecurringInstances` so any new templates immediately appear as today's instances
 
-### Phase 22 — Chat / Quick Entry (Natural Language)
+### ✅ Phase 22 — Chat / Quick Entry (Natural Language)
+Implemented as a focused Q&A chat on the Comm tab (quick item entry deferred — see Phase 22b below).
+
+- **`CommView`** (`CommViewModel`) replaces the placeholder on the Comm tab
+- **Context injection**: today's and tomorrow's plan items (with section, status, deadline) are serialized into the `LanguageModelSession` system prompt on tab appear; "ghost" recurring habits from templates are included in tomorrow's context
+- **Streaming responses**: `streamResponse(to:)` → `for try await snapshot in stream` — response text streams live into the bubble as it generates
+- **Typing indicator**: three animated dots while awaiting the first token
+- **New conversation** button (`plus.bubble`) rebuilds the session with fresh context and clears history
+- **Unavailability**: `ContentUnavailableView` shown when `SystemLanguageModel.default.isAvailable` is false
+- **Deferred**: quick item creation via natural language (originally part of Phase 22) — see Phase 22b
+
 - Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
   - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
   - Ask questions about your day

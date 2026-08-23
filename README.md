@@ -73,7 +73,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
-- **Comm** — placeholder for future AI chat / natural language quick entry
+- **Comm** — AI chat powered by on-device Foundation Models; answers questions about today's and tomorrow's plan (streaming responses)
 
 **macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Log · `Cmd+3` Routine · `Cmd+4` Comm
 
@@ -111,6 +111,7 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
     ├── FlightPlanView.swift   — Flight Plan tab (primary day view, swipe pager)
     ├── RoutineView.swift      — Routine tab (recurring habit template management)
+    ├── CommView.swift         — Comm tab; AI chat with streaming Foundation Models responses
     ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)
     ├── TimelineView.swift     — Nav Log tab
