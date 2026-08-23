@@ -126,8 +126,8 @@ final class CommViewModel {
             && !isGenerating && sessionReady
     }
 
-    func buildSession(todayItems: [PlanItem], tomorrowItems: [PlanItem], templates: [PlanItem]) {
-        let context = buildContext(todayItems: todayItems, tomorrowItems: tomorrowItems, templates: templates)
+    func buildSession(allItems: [PlanItem], templates: [PlanItem]) {
+        let context = buildContext(allItems: allItems, templates: templates)
         let tool = CreateItemTool(queue: itemQueue)
         session = LanguageModelSession(
             tools: [tool],
@@ -169,23 +169,48 @@ final class CommViewModel {
         isGenerating = false
     }
 
-    func reset(todayItems: [PlanItem], tomorrowItems: [PlanItem], templates: [PlanItem]) {
+    func reset(allItems: [PlanItem], templates: [PlanItem]) {
         messages = []
         errorMessage = nil
-        buildSession(todayItems: todayItems, tomorrowItems: tomorrowItems, templates: templates)
+        buildSession(allItems: allItems, templates: templates)
     }
 
     // MARK: - Context building
 
-    private func buildContext(todayItems: [PlanItem], tomorrowItems: [PlanItem], templates: [PlanItem]) -> String {
+    private func buildContext(allItems: [PlanItem], templates: [PlanItem]) -> String {
         let now = Date.now
         let cal = Calendar.current
-        var lines: [String] = [
-            "Date/time: \(now.formatted(date: .complete, time: .shortened))",
-            "",
-            "TODAY:"
+        let todayStart = cal.startOfDay(for: now)
+        let weekdayMap: [Int: Locale.Weekday] = [
+            1: .sunday, 2: .monday, 3: .tuesday, 4: .wednesday,
+            5: .thursday, 6: .friday, 7: .saturday
         ]
 
+        var lines: [String] = [
+            "Date/time: \(now.formatted(date: .complete, time: .shortened))",
+            ""
+        ]
+
+        // MARK: Recent history (7 days back, oldest first, compact summaries)
+        let pastDays = (1...7).compactMap { cal.date(byAdding: .day, value: -$0, to: todayStart) }.reversed()
+        lines.append("RECENT HISTORY (last 7 days):")
+        var hadHistory = false
+        for dayStart in pastDays {
+            let dayItems = allItems.filter { cal.isDate($0.date, inSameDayAs: dayStart) }
+            guard !dayItems.isEmpty else { continue }
+            hadHistory = true
+            let completed = dayItems.filter { $0.status == .completed }.count
+            let canceled = dayItems.filter { $0.status == .canceled }.count
+            let pending = dayItems.filter { $0.status == .pending }.count
+            let label = dayStart.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+            lines.append("  \(label): \(completed) completed, \(canceled) canceled, \(pending) pending (\(dayItems.count) total)")
+        }
+        if !hadHistory { lines.append("  (no history)") }
+
+        // MARK: Today (full detail)
+        let todayItems = allItems.filter { cal.isDateInToday($0.date) }
+        lines.append("")
+        lines.append("TODAY:")
         if todayItems.isEmpty {
             lines.append("  (nothing planned)")
         } else {
@@ -223,32 +248,31 @@ final class CommViewModel {
             }
         }
 
-        guard let tomorrowStart = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: now)) else {
-            return lines.joined(separator: "\n")
-        }
-
-        let weekdayMap: [Int: Locale.Weekday] = [
-            1: .sunday, 2: .monday, 3: .tuesday, 4: .wednesday,
-            5: .thursday, 6: .friday, 7: .saturday
-        ]
-        let wd = weekdayMap[cal.component(.weekday, from: tomorrowStart)]
-        var tomorrowAll = tomorrowItems
-        if let wd {
-            let ghosted = templates
-                .filter { $0.recurringWeekdays.contains(wd) }
-                .filter { t in !tomorrowItems.contains { $0.template?.uuid == t.uuid } }
-            tomorrowAll += ghosted
-        }
-
-        lines.append("")
-        lines.append("TOMORROW (\(tomorrowStart.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))):")
-        if tomorrowAll.isEmpty {
-            lines.append("  (nothing planned)")
-        } else {
-            for item in tomorrowAll.sorted(by: { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }) {
-                var row = "  ○ \(item.title)"
-                if let s = item.daySection { row += " [\(s.displayName)]" }
-                lines.append(row)
+        // MARK: Upcoming (tomorrow through +7, ghost projections from templates)
+        for offset in 1...7 {
+            guard let dayStart = cal.date(byAdding: .day, value: offset, to: todayStart) else { continue }
+            let dayItems = allItems.filter { cal.isDate($0.date, inSameDayAs: dayStart) }
+            let wd = weekdayMap[cal.component(.weekday, from: dayStart)]
+            var ghosted: [PlanItem] = []
+            if let wd {
+                ghosted = templates
+                    .filter { $0.recurringWeekdays.contains(wd) }
+                    .filter { t in !dayItems.contains { $0.template?.uuid == t.uuid } }
+            }
+            let allForDay = (dayItems + ghosted).sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
+            let header = offset == 1
+                ? "TOMORROW (\(dayStart.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))):"
+                : "\(dayStart.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()).uppercased()):"
+            lines.append("")
+            lines.append(header)
+            if allForDay.isEmpty {
+                lines.append("  (nothing planned)")
+            } else {
+                for item in allForDay {
+                    var row = "  ○ \(item.title)"
+                    if let s = item.daySection { row += " [\(s.displayName)]" }
+                    lines.append(row)
+                }
             }
         }
 
@@ -270,15 +294,6 @@ struct CommView: View {
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == true })
     private var templates: [PlanItem]
 
-    private var todayItems: [PlanItem] {
-        allItems.filter { Calendar.current.isDateInToday($0.date) }
-    }
-
-    private var tomorrowItems: [PlanItem] {
-        let cal = Calendar.current
-        guard let tomorrow = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: .now)) else { return [] }
-        return allItems.filter { cal.isDate($0.date, inSameDayAs: tomorrow) }
-    }
 
     var body: some View {
         NavigationStack {
@@ -324,7 +339,7 @@ struct CommView: View {
                 try? modelContext.save()
             }
             if !viewModel.sessionReady {
-                viewModel.buildSession(todayItems: todayItems, tomorrowItems: tomorrowItems, templates: templates)
+                viewModel.buildSession(allItems: allItems, templates: templates)
             }
         }
     }
@@ -370,15 +385,22 @@ struct CommView: View {
             Image(systemName: "bubble.left.and.text.bubble.right")
                 .font(.system(size: 44))
                 .foregroundStyle(.secondary)
-            Text("Ask about your day")
+            Text("Ask about your plan")
                 .font(.headline)
             VStack(spacing: 4) {
-                Text("\"What's left for this afternoon?\"")
-                Text("\"What did I accomplish today?\"")
-                Text("\"What's on deck for tomorrow?\"")
+                Text("\"What did I get done this week?\"")
+                Text("\"What's left for today?\"")
+                Text("\"What do I have on Thursday?\"")
+                Text("\"Add a yoga class Friday morning\"")
             }
             .font(.callout)
             .foregroundStyle(.secondary)
+            Text("Knows your last 7 days and next 7 days. Runs on-device — your data stays private.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                .padding(.top, 4)
         }
     }
 
