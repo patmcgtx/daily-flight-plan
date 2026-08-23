@@ -338,6 +338,8 @@ Improves existing features based on real use. No new capabilities — better UX 
 
 ## Version 0.3 — Settings & Device Expansion
 
+Adds the features needed before wider release: user-configurable settings (Calendar/Reminders selection, section time boundaries), local notifications for deadline items, rich item content (web links and photos), and a full iPad layout with adaptive split view.
+
 ### Phase 3.1 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
@@ -368,22 +370,30 @@ Improves existing features based on real use. No new capabilities — better UX 
 ---
 
 ## Version 0.4 — In-App Purchases
+
+Introduces monetization via StoreKit 2 — Pro Themes, Unlimited Categories, Markdown Import, and Comm AI Chat as individual unlocks, bundled as Daily Flight Plan Pro. An `EntitlementManager` service gates premium features across the app.
+
 - **Monetization model TBD** — likely a free tier with limits + optional unlock
-- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $1.99
-- **Individual unlocks (TBD — need a 3rd):**
+- **Pricing model:** four individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $2.99
+- **Individual unlocks:**
   - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
   - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
-  - **[Third unlock TBD]** ($0.99) — candidates: Quick Entry (natural language), Timeline history beyond 30 days, advanced recurring rules, custom section names/times
-- **Daily Flight Plan Pro bundle** ($1.99) — all three unlocks; $0.98 savings vs. buying separately
+  - **Markdown Import** ($0.99) — Foundation Models text-to-plan import (paste any text → AI parses titles, sections, and schedules → review and commit); gate the Parse button behind this entitlement
+  - **Comm AI Chat** ($0.99) — on-device AI chat with full ±7-day plan context and `createPlanItem` tool calling; free tier could offer a limited number of messages per day or a simpler context window
+- **Daily Flight Plan Pro bundle** ($2.99) — all four unlocks; $0.97 savings vs. buying separately
 - **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
 - Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
 - Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
+- Gate Markdown Import Parse button: show upsell sheet when tapped without entitlement
+- Gate Comm chat send: show upsell sheet or daily-limit banner without entitlement
 - `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
 - Restore purchases flow (required for App Store)
 
 ---
 
 ## Version 1.0 — Fit, Finish & Release
+
+The App Store release milestone. Addresses usability findings from real-world use, pays down tech debt, adds aviation-themed polish, completes the user's guide and app icon, and closes out with TestFlight beta testing before submission.
 
 ### Phase release.1 — Fit and Finish
 - Address findings from Phase 14 usability testing
@@ -438,6 +448,8 @@ Before you ship to the App Store, use Console's Deploy Schema Changes to Product
 ---
 
 ## Version 3.0
+
+Platform expansion beyond iPhone and Mac — Siri integration for voice entry and on-device AI awareness, home screen and lock screen widgets, Live Activity for the Dynamic Island, and an Apple Watch companion app for wrist-based progress and completion.
 
 ### Siri & AI
 - Support Siri for adding items and asking specific questions
