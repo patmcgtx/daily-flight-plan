@@ -157,6 +157,7 @@ final class CommViewModel {
 struct CommView: View {
 
     @State private var viewModel = CommViewModel()
+    @FocusState private var inputFocused: Bool
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
@@ -186,14 +187,9 @@ struct CommView: View {
             .navigationTitle("Comm")
             .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        viewModel.reset(todayItems: todayItems, tomorrowItems: tomorrowItems, templates: templates)
-                    } label: {
-                        Image(systemName: "plus.bubble")
-                    }
-                    .accessibilityLabel("New conversation")
-                    .disabled(!SystemLanguageModel.default.isAvailable)
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button("Done") { inputFocused = false }
+                    Spacer()
                 }
             }
         }
@@ -225,6 +221,7 @@ struct CommView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 4)
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .onChange(of: viewModel.messages.count) { _, _ in
                     if let last = viewModel.messages.last {
                         withAnimation(.easeOut(duration: 0.25)) {
@@ -261,6 +258,7 @@ struct CommView: View {
             TextField("Ask about your plan…", text: $viewModel.inputText, axis: .vertical)
                 .lineLimit(1...4)
                 .textFieldStyle(.plain)
+                .focused($inputFocused)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))

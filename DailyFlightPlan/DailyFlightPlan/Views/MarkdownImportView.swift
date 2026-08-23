@@ -251,7 +251,7 @@ struct MarkdownImportView: View {
 
     private var reviewView: some View {
         List {
-            Section {
+            Section {   
                 ForEach($viewModel.proposedItems) { item in
                     let itemID = item.wrappedValue.id
                     ProposedItemRow(
