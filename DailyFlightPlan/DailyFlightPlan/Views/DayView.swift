@@ -63,11 +63,7 @@ struct DayView: View {
             }
 
             Tab("Comm", systemImage: "apple.intelligence", value: AppTab.chat) {
-                ContentUnavailableView(
-                    "AI Chat",
-                    systemImage: "bubble.left.and.right",
-                    description: Text("Plan your day with AI assistance. Coming soon.")
-                )
+                CommView()
             }
         }
         .onAppear {

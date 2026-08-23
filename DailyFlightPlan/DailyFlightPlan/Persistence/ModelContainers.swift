@@ -202,372 +202,124 @@ extension ModelContainer {
         let everyday: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
         let weekdays: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday]
 
-        let laptop = PlanCategory(name: "Laptop")
-        let work = PlanCategory(name: "Work")
-        let deep = PlanCategory(name: "Deep")
-        let shallow = PlanCategory(name: "Shallow")
-        let home = PlanCategory(name: "Home")
         let health = PlanCategory(name: "Health")
-        let outAndAbout = PlanCategory(name: "Out and About")
-        let social = PlanCategory(name: "Social")
-        let relaxing = PlanCategory(name: "Relaxing")
-        let fun = PlanCategory(name: "Fun")
+        let work = PlanCategory(name: "Work")
+        let home = PlanCategory(name: "Home")
+        let personal = PlanCategory(name: "Personal")
+
+        let weekends: [Locale.Weekday] = [.saturday, .sunday]
 
         let items: [PlanItem] = [
-            // Any time habits
-            PlanItem(
-                title: "Talk to ppl",
-                date: today,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [social, outAndAbout],
-                sourceID: sid("Talk to ppl")
-            ),
-            PlanItem(
-                title: "Things zero inbox",
-                date: today,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [shallow, laptop],
-                sourceID: sid("Things zero inbox")
-            ),
+            // Open — any time
             PlanItem(
                 title: "Exercise",
                 date: today,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [home, health],
+                categories: [health],
                 sourceID: sid("Exercise")
             ),
 
-            // First Thing habits
+            // First Thing — everyday
             PlanItem(
-                title: "Slow breathing",
-                date: today,
-                daySection: .firstThing,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [relaxing],
-                sourceID: sid("Slow breathing", .firstThing)
-            ),
-            PlanItem(
-                title: "Visualize success",
-                date: today,
-                daySection: .firstThing,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [relaxing],
-                sourceID: sid("Visualize success", .firstThing)
-            ),
-            PlanItem(
-                title: "Check my weight",
-                date: today,
-                daySection: .firstThing,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [home],
-                sourceID: sid("Check my weight", .firstThing)
-            ),
-            PlanItem(
-                title: "Brush my teeth 🪥",
-                date: today,
-                daySection: .firstThing,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [home],
-                sourceID: sid("Brush my teeth", .firstThing)
-            ),
-            PlanItem(
-                title: "Basic stretch",
+                title: "Morning stretch",
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
                 categories: [health],
-                sourceID: sid("Basic stretch", .firstThing)
+                sourceID: sid("Morning stretch", .firstThing)
             ),
             PlanItem(
-                title: "Jump up and down 50 times",
-                date: today,
-                daySection: .firstThing,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health],
-                sourceID: sid("Jump up and down 50 times", .firstThing)
-            ),
-            PlanItem(
-                title: "Chant or sing",
-                date: today,
-                daySection: .firstThing,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [home, health],
-                sourceID: sid("Chant or sing", .firstThing)
-            ),
-            PlanItem(
-                title: "Dress like the GQ guy",
+                title: "Brush teeth",
                 date: today,
                 daySection: .firstThing,
                 recurringWeekdays: everyday,
                 isTemplate: true,
                 categories: [home],
-                sourceID: sid("Dress like the GQ guy", .firstThing)
-            ),
-            PlanItem(
-                title: "Take orange oil 1",
-                date: today,
-                daySection: .firstThing,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [home, health],
-                sourceID: sid("Take orange oil 1", .firstThing)
+                sourceID: sid("Brush teeth", .firstThing)
             ),
 
-            // Morning habits
-            PlanItem(
-                title: "Use reusable cup",
-                date: today,
-                daySection: .morning,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [outAndAbout],
-                sourceID: sid("Use reusable cup", .morning)
-            ),
-            PlanItem(
-                title: "Have something fermented",
-                date: today,
-                daySection: .morning,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health],
-                sourceID: sid("Have something fermented", .morning)
-            ),
-            PlanItem(
-                title: "Update my Calendar",
-                date: today,
-                daySection: .morning,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [shallow, laptop],
-                sourceID: sid("Update my Calendar", .morning)
-            ),
+            // Morning
             PlanItem(
                 title: "Plan the day",
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [shallow, laptop],
+                categories: [personal],
                 sourceID: sid("Plan the day", .morning)
             ),
             PlanItem(
-                title: "Leetcode",
-                notes: " 150 challenge",
+                title: "Check email",
                 date: today,
                 daySection: .morning,
                 recurringWeekdays: weekdays,
                 isTemplate: true,
-                categories: [deep, laptop, work],
-                sourceID: sid("Leetcode", .morning)
-            ),
-            PlanItem(
-                title: "Sing along with songs 🎤",
-                date: today,
-                daySection: .morning,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [fun, health, relaxing],
-                sourceID: sid("Sing along with songs", .morning)
-            ),
-            PlanItem(
-                title: "Listen to news, book, or podcast 📰",
-                date: today,
-                daySection: .morning,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [outAndAbout, relaxing],
-                sourceID: sid("Listen to news book or podcast", .morning)
-            ),
-            PlanItem(
-                title: "YNAB done",
-                date: today,
-                daySection: .morning,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [shallow, laptop],
-                sourceID: sid("YNAB done", .morning)
+                categories: [work],
+                sourceID: sid("Check email", .morning)
             ),
 
-            // Midday habits
+            // Midday — everyday
             PlanItem(
-                title: "Take my pills 💊",
+                title: "Take vitamins",
                 date: today,
                 daySection: .midday,
                 recurringWeekdays: everyday,
                 isTemplate: true,
                 categories: [health],
-                sourceID: sid("Take my pills", .midday)
-            ),
-            PlanItem(
-                title: "Eat some fruit 🍎🍊🍌",
-                date: today,
-                daySection: .midday,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health],
-                sourceID: sid("Eat some fruit", .midday)
-            ),
-            PlanItem(
-                title: "Eat some nuts 🥜",
-                date: today,
-                daySection: .midday,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health],
-                sourceID: sid("Eat some nuts", .midday)
-            ),
-            PlanItem(
-                title: "Use reusable cup",
-                date: today,
-                daySection: .midday,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [outAndAbout],
-                sourceID: sid("Use reusable cup", .midday)
+                sourceID: sid("Take vitamins", .midday)
             ),
 
-            // Afternoon habits
+            // Afternoon
             PlanItem(
-                title: "Macha + rooibos 🍵",
+                title: "Wrap up work",
                 date: today,
                 daySection: .afternoon,
-                recurringWeekdays: everyday,
+                recurringWeekdays: weekdays,
                 isTemplate: true,
-                categories: [health],
-                sourceID: sid("Macha rooibos", .afternoon)
+                categories: [work],
+                sourceID: sid("Wrap up work", .afternoon)
             ),
             PlanItem(
-                title: "Hydrate",
-                notes: "Good for hypertension etc.",
+                title: "Catch up on chores",
                 date: today,
                 daySection: .afternoon,
-                recurringWeekdays: everyday,
+                recurringWeekdays: weekends,
                 isTemplate: true,
-                categories: [health],
-                sourceID: sid("Hydrate", .afternoon)
-            ),
-            PlanItem(
-                title: "Easy calf stretches 🏃🏻‍♂️🎾",
-                date: today,
-                daySection: .afternoon,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health],
-                sourceID: sid("Easy calf stretches", .afternoon)
+                categories: [home],
+                sourceID: sid("Catch up on chores", .afternoon)
             ),
 
-            // Evening habits
+            // Evening — everyday
             PlanItem(
-                title: "Email zero inbox",
+                title: "Tidy up",
                 date: today,
                 daySection: .evening,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [laptop, shallow],
-                sourceID: sid("Email zero inbox", .evening)
-            ),
-            PlanItem(
-                title: "Snail mail done",
-                date: today,
-                daySection: .evening,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [home, shallow],
-                sourceID: sid("Snail mail done", .evening)
-            ),
-            PlanItem(
-                title: "Take orange oil 2",
-                date: today,
-                daySection: .evening,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health],
-                sourceID: sid("Take orange oil 2", .evening)
+                categories: [home],
+                sourceID: sid("Tidy up", .evening)
             ),
 
-            // Bedtime habits
-            PlanItem(
-                title: "Photos cleaned up",
-                date: today,
-                daySection: .bedtime,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [laptop, shallow],
-                sourceID: sid("Photos cleaned up", .bedtime)
-            ),
-            PlanItem(
-                title: "Balance",
-                date: today,
-                daySection: .bedtime,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health],
-                sourceID: sid("Balance", .bedtime)
-            ),
+            // Bedtime — everyday
             PlanItem(
                 title: "Plan tomorrow",
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [laptop, health],
+                categories: [personal],
                 sourceID: sid("Plan tomorrow", .bedtime)
             ),
             PlanItem(
-                title: "Work on my repertoire 🎶",
+                title: "Read",
                 date: today,
                 daySection: .bedtime,
                 recurringWeekdays: everyday,
                 isTemplate: true,
-                categories: [relaxing, home, fun],
-                sourceID: sid("Work on my repertoire", .bedtime)
-            ),
-            PlanItem(
-                title: "Physical therapy",
-                date: today,
-                daySection: .bedtime,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health, home],
-                sourceID: sid("Physical therapy", .bedtime)
-            ),
-            PlanItem(
-                title: "Full teeth cleaning",
-                date: today,
-                daySection: .bedtime,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health, home],
-                sourceID: sid("Full teeth cleaning", .bedtime)
-            ),
-            PlanItem(
-                title: "Catch up on Wins journal",
-                date: today,
-                daySection: .bedtime,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [laptop, fun],
-                sourceID: sid("Catch up on Wins journal", .bedtime)
-            ),
-            PlanItem(
-                title: "Meditate",
-                notes: "Body scan",
-                date: today,
-                daySection: .bedtime,
-                recurringWeekdays: everyday,
-                isTemplate: true,
-                categories: [health, relaxing],
-                sourceID: sid("Meditate", .bedtime)
+                categories: [personal],
+                sourceID: sid("Read", .bedtime)
             ),
         ]
 

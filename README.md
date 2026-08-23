@@ -22,7 +22,7 @@ Daily Flight Plan is about execution, not planning. It's a lightweight layer on 
 - **Context on your terms.** Calendar events and Reminders appear inline for full context, but can be toggled off instantly when you need to narrow your focus to just your own plan.
 - **Finishing feels good.** Progress is always visible; completing your plan feels like landing the plane.
 
-**Version 1.0 target:** A personal daily-use tool that integrates cleanly with Calendar and Reminders, works great on iPhone and Mac (via iCloud sync), and is good enough to ship. iPad, Watch, and Siri come later.
+**Version 1.0 target:** A polished, public-release app with full fit/finish, accessibility, and beta testing complete. The 0.x series builds toward it: core functionality (0.1), UX polish (0.2), settings + device expansion (0.3), and in-app purchases (0.4). Watch and Siri come later (Version 3.0).
 
 ## The original idea
 
@@ -73,7 +73,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
-- **Comm** — placeholder for future AI chat / natural language quick entry
+- **Comm** — AI chat powered by on-device Foundation Models; knows the last 7 days and next 7 days of your plan; streaming responses rendered as markdown; can create new plan items via tool calling
 
 **macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Log · `Cmd+3` Routine · `Cmd+4` Comm
 
@@ -111,6 +111,7 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
     ├── FlightPlanView.swift   — Flight Plan tab (primary day view, swipe pager)
     ├── RoutineView.swift      — Routine tab (recurring habit template management)
+    ├── CommView.swift         — Comm tab; AI chat with streaming Foundation Models responses
     ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)
     ├── TimelineView.swift     — Nav Log tab
@@ -120,20 +121,42 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–21 are complete. Up next:
+Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is working but not yet polished for public release.
+
+**Version 0.2** improves existing views:
 
 | Phase | Description |
 |-------|-------------|
-| 22 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
-| 23 | Finish Nav Log (lazy-load, full history + future, search) |
-| 24 | Finish Day / Flight view |
-| 25 | Settings (calendar/reminders selection, section boundaries) |
-| 26 | Local notifications |
-| 28 | Fit and finish + aviation UI spike |
-| 29 | Tech debt (unit tests, UI tests, architecture review) |
-| 30 | Beta testing |
+| 2.1 | Routine view refinements |
+| 2.2 | Nav Log — full history + future, lazy-load, search |
+| 2.3 | Day/Flight view refinements |
+| 2.4 | Comm tab refinements (context freshness, copyable responses, reset, error recovery) |
+| 2.5 | Smooth day swipe navigation — fix laggy/unresponsive pager |
 
-See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
+**Version 0.3** expands device support and adds missing features:
+
+| Phase | Description |
+|-------|-------------|
+| 3.1 | Settings (calendar/reminders selection, section boundaries) |
+| 3.2 | Local notifications |
+| 3.3 | Rich item content (web links, photo attachments) |
+| 3.4 | iPad support (adaptive layout, Stage Manager, keyboard nav) |
+
+**Version 0.4** adds monetization:
+
+| Phase | Description |
+|-------|-------------|
+| — | In-app purchases (StoreKit 2, Pro Themes, Unlimited Categories) |
+
+**Version 1.0** is the public release target:
+
+| Phase | Description |
+|-------|-------------|
+| release.1 | Fit and finish + aviation UI spike |
+| release.2 | Tech debt (unit tests, UI tests, architecture review) |
+| release.3 | Beta testing |
+
+See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 3.0 plans (Siri, Widgets, Apple Watch).
 
 ## Building
 
