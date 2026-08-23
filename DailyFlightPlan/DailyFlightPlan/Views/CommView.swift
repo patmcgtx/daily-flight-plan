@@ -89,6 +89,10 @@ final class CommViewModel {
         if todayItems.isEmpty {
             lines.append("  (nothing planned)")
         } else {
+            let completed = todayItems.filter { $0.status == .completed }.count
+            let canceled = todayItems.filter { $0.status == .canceled }.count
+            let pending = todayItems.filter { $0.status == .pending }.count
+            lines.append("  Summary: \(completed) completed, \(canceled) canceled, \(pending) pending (\(todayItems.count) total)")
             for section in DaySection.allCases {
                 let inSection = todayItems.filter { $0.daySection == section }
                 let atTime = todayItems.filter {
