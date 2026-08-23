@@ -186,6 +186,9 @@ final class CommViewModel {
             5: .thursday, 6: .friday, 7: .saturday
         ]
 
+        // Pre-group by day once so every lookup below is O(1) instead of O(N).
+        let itemsByDay = Dictionary(grouping: allItems) { cal.startOfDay(for: $0.date) }
+
         var lines: [String] = [
             "Date/time: \(now.formatted(date: .complete, time: .shortened))",
             ""
@@ -196,7 +199,7 @@ final class CommViewModel {
         lines.append("RECENT HISTORY (last 7 days):")
         var hadHistory = false
         for dayStart in pastDays {
-            let dayItems = allItems.filter { cal.isDate($0.date, inSameDayAs: dayStart) }
+            let dayItems = itemsByDay[dayStart, default: []]
             guard !dayItems.isEmpty else { continue }
             hadHistory = true
             let completed = dayItems.filter { $0.status == .completed }.count
@@ -208,7 +211,7 @@ final class CommViewModel {
         if !hadHistory { lines.append("  (no history)") }
 
         // MARK: Today (full detail)
-        let todayItems = allItems.filter { cal.isDateInToday($0.date) }
+        let todayItems = itemsByDay[todayStart, default: []]
         lines.append("")
         lines.append("TODAY:")
         if todayItems.isEmpty {
@@ -251,7 +254,7 @@ final class CommViewModel {
         // MARK: Upcoming (tomorrow through +7, ghost projections from templates)
         for offset in 1...7 {
             guard let dayStart = cal.date(byAdding: .day, value: offset, to: todayStart) else { continue }
-            let dayItems = allItems.filter { cal.isDate($0.date, inSameDayAs: dayStart) }
+            let dayItems = itemsByDay[dayStart, default: []]
             let wd = weekdayMap[cal.component(.weekday, from: dayStart)]
             var ghosted: [PlanItem] = []
             if let wd {
