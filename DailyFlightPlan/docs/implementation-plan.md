@@ -319,9 +319,8 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Can we reuse the existing view models?
 
 ### Phase 2.4 — Comm Tab Refinements
-- **Context freshness**: rebuild the session context when the user returns to the Comm tab (today's data may have changed since the session was built)
+- **Context freshness / Conversation reset**: the session is intentionally built once and reused across tab switches to preserve conversation history. Add an explicit reset button (toolbar or inline) that clears messages and rebuilds the session with current plan data — giving the user control over freshness without auto-wiping the conversation on every tab entry.
 - **Copyable responses**: allow long-press on assistant bubbles to copy the message text
-- **Conversation reset**: a button to start a fresh conversation with updated context (clears history, rebuilds session)
 - **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
 - **Suggested follow-ups**: after each assistant response, optionally surface 2–3 short tappable follow-up questions relevant to the reply
 - **UX audit**: review empty state, bubble sizing, input bar behavior, and keyboard handling on both iPhone and Mac

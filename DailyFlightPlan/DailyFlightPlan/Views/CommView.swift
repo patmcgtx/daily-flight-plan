@@ -340,6 +340,10 @@ struct CommView: View {
                 }
                 try? modelContext.save()
             }
+            // Session is built once and reused for the full conversation so message
+        // history is preserved across tab switches. Context can go stale after
+        // plan changes — Phase 2.4 will add an explicit reset/refresh button
+        // rather than auto-rebuilding (which would clear the conversation).
             if !viewModel.sessionReady {
                 viewModel.buildSession(allItems: allItems, templates: templates)
             }
