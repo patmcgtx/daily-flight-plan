@@ -87,11 +87,16 @@ final class MarkdownImportViewModel {
                 let clean = parsed.title.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !clean.isEmpty else { return nil }
                 let recurring = parsed.isRecurring
-                let days = recurring ? weekdays(from: parsed.schedule) : []
+                let parsedDays = recurring ? weekdays(from: parsed.schedule) : []
+                // Fall back to "everyday" when the model says recurring but gives no recognized schedule,
+                // so the item stays recurring and the user can adjust days in the review UI.
+                let days = recurring && parsedDays.isEmpty
+                    ? [Locale.Weekday.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
+                    : parsedDays
                 return ProposedItem(
                     title: clean,
                     section: DaySection(importing: parsed.section),
-                    isRecurring: recurring && !days.isEmpty,
+                    isRecurring: recurring,
                     weekdays: days
                 )
             }
