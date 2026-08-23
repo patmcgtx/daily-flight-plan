@@ -296,25 +296,6 @@ Paste markdown or plain text (e.g. a Things export) → Foundation Models parses
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 - Add unit tests once happy with the behavior
 - Can we reuse the existing view models?
-- Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
-  - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
-  - Ask questions about your day
-- Replace (or augment) the "Add Item" button with a free-text entry field?
-- Possible paid upgrade eventually — make sure the quality is good first!
-- On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework, on-device) using a `@Generable` struct for structured output:
-  - `title: String`
-  - `notes: String?`
-  - `date: String?` (relative, e.g. "tomorrow", "next Monday" — resolved to `Date` post-generation)
-  - `deadlineTime: String?` (e.g. "2pm")
-  - `daySection: String?` (e.g. "morning", "evening")
-  - `isRecurring: Bool`
-  - `recurringWeekdays: [String]?`
-  - `isFlagged: Bool`
-- Resolve relative date strings to concrete `Date` values after generation
-- Create and save a `PlanItem` from the structured output, applying it to the current day (or the parsed date if explicit)
-- Show a brief inline confirmation row (the created item) after each submission, allowing the user to keep entering more items — repeat until dismissed
-- Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
-- Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
 ### Phase 25 — Settings
 - `SettingsView` navigated to from ⚙ button
