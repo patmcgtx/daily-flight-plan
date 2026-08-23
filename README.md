@@ -83,6 +83,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - Recurring habit templates with weekday picker; per-day instances materialized lazily
 - Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
 - Filter menu: flagged, done, calendar, reminders, routines, and category filters
+- **Markdown / text import**: paste any text (e.g. a Things export) → Foundation Models parses titles, sections, and recurring schedules → review list with swipe-to-delete → commit or cancel
 - Category management (add, rename, delete)
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
 - Calendar events from EventKit shown inline, with calendar color indicator
@@ -110,6 +111,7 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
     ├── FlightPlanView.swift   — Flight Plan tab (primary day view, swipe pager)
     ├── RoutineView.swift      — Routine tab (recurring habit template management)
+    ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)
     ├── TimelineView.swift     — Nav Log tab
     ├── ItemForm.swift
@@ -118,12 +120,11 @@ DailyFlightPlan/
 
 ## Build plan
 
-Phases 1–20 are complete. Up next:
+Phases 1–21 are complete. Up next:
 
 | Phase | Description |
 |-------|-------------|
-| 21 | Markdown import — paste text → Foundation Models parses → review proposed items → commit |
-| 22 | Chat / quick entry — natural language → PlanItem via Foundation Models |
+| 22 | Chat / quick entry (natural language → PlanItem via Foundation Models) |
 | 23 | Finish Nav Log (lazy-load, full history + future, search) |
 | 24 | Finish Day / Flight view |
 | 25 | Settings (calendar/reminders selection, section boundaries) |

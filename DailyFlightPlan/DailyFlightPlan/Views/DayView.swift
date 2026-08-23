@@ -32,6 +32,7 @@ struct DayView: View {
 
     @State private var activeTab: AppTab = .focus
     @State private var isShowingSettings = false
+    @State private var isShowingImport = false
     @State private var pendingDeleteItems = false
     @State private var pendingDeleteCategories = false
     @State private var isDeletingData = false
@@ -48,7 +49,8 @@ struct DayView: View {
                     calendarEvents: calendarEvents,
                     reminderItems: reminderItems,
                     isDeletingData: isDeletingData,
-                    onShowSettings: { isShowingSettings = true }
+                    onShowSettings: { isShowingSettings = true },
+                    onShowImport: { isShowingImport = true }
                 )
             }
 
@@ -153,6 +155,11 @@ struct DayView: View {
                     ModelContainer.deduplicateCategories(in: modelContext)
                 }
             )
+        }
+        .sheet(isPresented: $isShowingImport, onDismiss: {
+            if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
+        }) {
+            MarkdownImportView(selectedDate: viewModel.selectedDate)
         }
         .sheet(item: $itemToEdit, onDismiss: {
             if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
