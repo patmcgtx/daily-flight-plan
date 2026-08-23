@@ -433,7 +433,7 @@ private struct MessageBubble: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                 } else {
-                    Text(message.content)
+                    assistantText(message)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .foregroundStyle(message.role == .user ? Color.white : Color.primary)
@@ -446,6 +446,19 @@ private struct MessageBubble: View {
             if message.role == .assistant { Spacer(minLength: 48) }
         }
         .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
+    }
+
+    @ViewBuilder
+    private func assistantText(_ message: CommViewModel.ChatMessage) -> some View {
+        if message.role == .assistant,
+           let attributed = try? AttributedString(
+               markdown: message.content,
+               options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+           ) {
+            Text(attributed)
+        } else {
+            Text(message.content)
+        }
     }
 }
 

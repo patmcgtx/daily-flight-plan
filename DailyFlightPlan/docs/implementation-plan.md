@@ -253,15 +253,14 @@ Paste markdown or plain text (e.g. a Things export) → Foundation Models parses
 - Wired into `DayView` via `onShowImport` callback on `FlightPlanView`; sheet dismissal triggers `materializeRecurringInstances` so any new templates immediately appear as today's instances
 
 ### ✅ Phase 22 — Chat / Quick Entry (Natural Language)
-Implemented as a focused Q&A chat on the Comm tab (quick item entry deferred — see Phase 22b below).
+Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation Models tool calling added in a follow-up pass.
 
 - **`CommView`** (`CommViewModel`) replaces the placeholder on the Comm tab
-- **Context injection**: today's and tomorrow's plan items (with section, status, deadline) are serialized into the `LanguageModelSession` system prompt on tab appear; "ghost" recurring habits from templates are included in tomorrow's context
+- **Context injection**: today's and tomorrow's plan items (with section, status, deadline) are serialized into the `LanguageModelSession` system prompt on tab appear; pre-computed aggregate counts (completed/canceled/pending) prevent model from miscounting; "ghost" recurring habits from templates included in tomorrow's context
 - **Streaming responses**: `streamResponse(to:)` → `for try await snapshot in stream` — response text streams live into the bubble as it generates
 - **Typing indicator**: three animated dots while awaiting the first token
-- **New conversation** button (`plus.bubble`) rebuilds the session with fresh context and clears history
 - **Unavailability**: `ContentUnavailableView` shown when `SystemLanguageModel.default.isAvailable` is false
-- **Deferred**: quick item creation via natural language (originally part of Phase 22) — see Phase 22b
+- **Tool calling — item creation**: `CreateItemTool` (`Tool` protocol) with `@Generable Arguments` (title, section, isRecurring, schedule, isTomorrow); results queued via `ItemCreationQueue` actor and committed to SwiftData after each streaming response; supports both one-off and recurring (template) items for today or tomorrow
 
 - Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
   - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
