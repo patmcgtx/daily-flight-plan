@@ -282,7 +282,12 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 23 — Finish Nav Log
+### Phase 24.5 — Routine View Refinements
+- Drag and drop between segments on the routine view
+- Better contrast on sections - like Day View
+- UX audit and fix
+
+### Phase 23 — Nav Log Refinements
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts
 - Past days show a history of what was completed (and canceled)
 - Future days show scheduled items and projected recurring items, which are non-interactive
@@ -293,7 +298,7 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
   - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
   - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
 
-### Phase 24 — Finish Day/Flight View
+### Phase 24 — Day/Flight View Refinements
 > **Partially addressed by Phase 19 (Flight Plan view).** The swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
