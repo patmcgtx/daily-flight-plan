@@ -225,7 +225,7 @@ final class CommViewModel {
                         && DaySection.containing($0.deadline!) == section
                 }
                 let all = (inSection + atTime).sorted {
-                    ($0.deadline ?? .distantPast) < ($1.deadline ?? .distantPast)
+                    ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture)
                 }
                 guard !all.isEmpty else { continue }
                 lines.append("  \(section.displayName):")
