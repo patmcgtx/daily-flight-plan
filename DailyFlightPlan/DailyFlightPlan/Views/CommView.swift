@@ -437,6 +437,7 @@ private struct MessageBubble: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .foregroundStyle(message.role == .user ? Color.white : Color.primary)
+                        .textSelection(.enabled)
                 }
             }
             .background(
