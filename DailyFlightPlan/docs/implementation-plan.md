@@ -338,7 +338,7 @@ Improves existing features based on real use. No new capabilities — better UX 
 
 ## Version 0.3 — Settings & Device Expansion
 
-### Phase 25 — Settings
+### Phase 3.1 — Settings
 - `SettingsView` navigated to from ⚙ button
 - **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
 - **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
@@ -348,17 +348,17 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
 - Any other preferences surfaced here as phases are completed
 
-### Phase 26 — Local Notifications
+### Phase 3.2 — Local Notifications
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 25 (Settings)
+- Notification times respect custom day section boundaries from Phase 3.1 (Settings)
 
-### Rich Item Content
+### Phase 3.3 — Rich Item Content
 - **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
 - **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
 
-### iPad Support
+### Phase 3.4 — iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
 - Verify `HFlow` pill layouts scale well on wider screens
 - Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
@@ -385,7 +385,7 @@ Improves existing features based on real use. No new capabilities — better UX 
 
 ## Version 1.0 — Fit, Finish & Release
 
-### Phase 28 — Fit and Finish
+### Phase release.1 — Fit and Finish
 - Address findings from Phase 14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
@@ -409,8 +409,9 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Per-section add button**: consider a small `+` button on each section header (or in the section content area) so the user can add an item directly into that section without going through the main Add form and re-selecting the section
 - **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
 - Add an app icon
+- **User's guide**: write a short guide covering the core concepts (flight plan metaphor, sections, recurring habits, AI chat) and the key gestures/actions; ship it as an in-app help sheet or a public web page linked from Settings
 
-### Phase 29 — Tech Debt
+### Phase release.2 — Tech Debt
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
@@ -423,7 +424,7 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
-### Phase 30 — Beta Testing
+### Phase release.3 — Beta Testing
 - Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
 - We'll want to get them to test In-App Purchase, etc. too.
 

@@ -137,10 +137,10 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 
 | Phase | Description |
 |-------|-------------|
-| 25 | Settings (calendar/reminders selection, section boundaries) |
-| 26 | Local notifications |
-| — | Rich item content (web links, photo attachments) |
-| — | iPad support (adaptive layout, Stage Manager, keyboard nav) |
+| 3.1 | Settings (calendar/reminders selection, section boundaries) |
+| 3.2 | Local notifications |
+| 3.3 | Rich item content (web links, photo attachments) |
+| 3.4 | iPad support (adaptive layout, Stage Manager, keyboard nav) |
 
 **Version 0.4** adds monetization:
 
@@ -152,9 +152,9 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 
 | Phase | Description |
 |-------|-------------|
-| 28 | Fit and finish + aviation UI spike |
-| 29 | Tech debt (unit tests, UI tests, architecture review) |
-| 30 | Beta testing |
+| release.1 | Fit and finish + aviation UI spike |
+| release.2 | Tech debt (unit tests, UI tests, architecture review) |
+| release.3 | Beta testing |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 3.0 plans.
 
