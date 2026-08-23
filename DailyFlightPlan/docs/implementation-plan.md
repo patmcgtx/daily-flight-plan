@@ -336,7 +336,7 @@ Improves existing features based on real use. No new capabilities — better UX 
 
 ---
 
-## Version 0.3 — Fit, Finish & Release
+## Version 0.3 — Settings & Device Expansion
 
 ### Phase 25 — Settings
 - `SettingsView` navigated to from ⚙ button
@@ -353,6 +353,37 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
 - Notification times respect custom day section boundaries from Phase 25 (Settings)
+
+### Rich Item Content
+- **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
+- **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
+
+### iPad Support
+- Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
+- Verify `HFlow` pill layouts scale well on wider screens
+- Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
+- Test with Stage Manager and multitasking split views
+- Pointer/cursor hover states for trackpad users
+
+---
+
+## Version 0.4 — In-App Purchases
+- **Monetization model TBD** — likely a free tier with limits + optional unlock
+- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $1.99
+- **Individual unlocks (TBD — need a 3rd):**
+  - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
+  - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
+  - **[Third unlock TBD]** ($0.99) — candidates: Quick Entry (natural language), Timeline history beyond 30 days, advanced recurring rules, custom section names/times
+- **Daily Flight Plan Pro bundle** ($1.99) — all three unlocks; $0.98 savings vs. buying separately
+- **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
+- Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
+- Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
+- `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
+- Restore purchases flow (required for App Store)
+
+---
+
+## Version 1.0 — Fit, Finish & Release
 
 ### Phase 28 — Fit and Finish
 - Address findings from Phase 14 usability testing
@@ -402,35 +433,6 @@ CloudKit needs its schema initialized once. Steps:
 Run a DEBUG build (once the entitlement above is fixed) on a device signed into a real iCloud account — this creates the record types/fields in the Development environment of the CloudKit dashboard automatically, inferred from your SwiftData models.
 Check CloudKit Console → your container → Schema, confirm CD_PlanItem/CD_PlanCategory (or similar) record types appear under Development.
 Before you ship to the App Store, use Console's Deploy Schema Changes to Production — Production schema doesn't auto-update from a release build, so skipping this step means TestFlight/App Store users get failures.
-
----
-
-## Version 2.0
-
-### In-App Purchases
-- **Monetization model TBD** — likely a free tier with limits + optional unlock
-- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $1.99
-- **Individual unlocks (TBD — need a 3rd):**
-  - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
-  - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
-  - **[Third unlock TBD]** ($0.99) — candidates: Quick Entry (natural language), Timeline history beyond 30 days, advanced recurring rules, custom section names/times
-- **Daily Flight Plan Pro bundle** ($1.99) — all three unlocks; $0.98 savings vs. buying separately
-- **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
-- Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
-- Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
-- `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
-- Restore purchases flow (required for App Store)
-
-### Rich Item Content
-- **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
-- **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
-
-### iPad Support
-- Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
-- Verify `HFlow` pill layouts scale well on wider screens
-- Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
-- Test with Stage Manager and multitasking split views
-- Pointer/cursor hover states for trackpad users
 
 ---
 

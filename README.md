@@ -133,17 +133,30 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | 2.4 | Comm tab refinements (context freshness, copyable responses, reset, error recovery) |
 | 2.5 | Smooth day swipe navigation — fix laggy/unresponsive pager |
 
-**Version 0.3** targets fit, finish, and release:
+**Version 0.3** expands device support and adds missing features:
 
 | Phase | Description |
 |-------|-------------|
 | 25 | Settings (calendar/reminders selection, section boundaries) |
 | 26 | Local notifications |
+| — | Rich item content (web links, photo attachments) |
+| — | iPad support (adaptive layout, Stage Manager, keyboard nav) |
+
+**Version 0.4** adds monetization:
+
+| Phase | Description |
+|-------|-------------|
+| — | In-app purchases (StoreKit 2, Pro Themes, Unlimited Categories) |
+
+**Version 1.0** is the public release target:
+
+| Phase | Description |
+|-------|-------------|
 | 28 | Fit and finish + aviation UI spike |
 | 29 | Tech debt (unit tests, UI tests, architecture review) |
 | 30 | Beta testing |
 
-See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 2.0 and 3.0 plans.
+See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 3.0 plans.
 
 ## Building
 
