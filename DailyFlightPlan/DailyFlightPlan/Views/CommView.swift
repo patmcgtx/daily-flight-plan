@@ -6,6 +6,98 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 
+// MARK: - Item creation types
+
+struct ItemSpec: Sendable {
+    var title: String
+    var section: DaySection?
+    var isRecurring: Bool
+    var weekdays: [Locale.Weekday]
+    var isForTomorrow: Bool
+}
+
+actor ItemCreationQueue {
+    private(set) var items: [ItemSpec] = []
+    func enqueue(_ item: ItemSpec) { items.append(item) }
+    func drain() -> [ItemSpec] {
+        let result = items
+        items = []
+        return result
+    }
+}
+
+struct CreateItemTool: Tool {
+    let name = "createPlanItem"
+    let description = "Create a new item in the user's daily plan. Call this when the user asks to add a task, habit, or reminder."
+
+    @Generable
+    struct Arguments {
+        @Guide(description: "Clear title for the new plan item")
+        var title: String
+
+        @Guide(description: "Time segment: firstThing, morning, midday, afternoon, evening, bedtime, or open")
+        var section: String
+
+        @Guide(description: "True if this is a recurring daily habit or routine")
+        var isRecurring: Bool
+
+        @Guide(description: "Schedule for recurring items: everyday, weekdays, weekends, or comma-separated abbreviations (mon, tue, wed, thu, fri, sat, sun). Empty string for non-recurring items.")
+        var schedule: String
+
+        @Guide(description: "True to add the item to tomorrow's plan instead of today's")
+        var isTomorrow: Bool
+    }
+
+    let queue: ItemCreationQueue
+
+    func call(arguments: Arguments) async throws -> String {
+        let section = commDaySection(from: arguments.section)
+        let recurring = arguments.isRecurring
+        let weekdays = recurring ? commWeekdays(from: arguments.schedule) : []
+        let spec = ItemSpec(
+            title: arguments.title.trimmingCharacters(in: .whitespacesAndNewlines),
+            section: section,
+            isRecurring: recurring && !weekdays.isEmpty,
+            weekdays: weekdays,
+            isForTomorrow: arguments.isTomorrow
+        )
+        await queue.enqueue(spec)
+        let day = arguments.isTomorrow ? "tomorrow" : "today"
+        let sectionDesc = section.map { " in \($0.displayName)" } ?? ""
+        return "Added '\(spec.title)'\(sectionDesc) for \(day)."
+    }
+}
+
+private func commDaySection(from string: String) -> DaySection? {
+    switch string.lowercased().trimmingCharacters(in: .whitespaces) {
+    case "firstthing", "first_thing", "first thing": return .firstThing
+    case "morning": return .morning
+    case "midday", "noon", "lunch": return .midday
+    case "afternoon": return .afternoon
+    case "evening": return .evening
+    case "bedtime", "night": return .bedtime
+    default: return nil
+    }
+}
+
+private func commWeekdays(from schedule: String) -> [Locale.Weekday] {
+    let s = schedule.lowercased().trimmingCharacters(in: .whitespaces)
+    switch s {
+    case "everyday", "daily", "every day":
+        return [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
+    case "weekdays":
+        return [.monday, .tuesday, .wednesday, .thursday, .friday]
+    case "weekends":
+        return [.saturday, .sunday]
+    default:
+        let map: [String: Locale.Weekday] = [
+            "mon": .monday, "tue": .tuesday, "wed": .wednesday,
+            "thu": .thursday, "fri": .friday, "sat": .saturday, "sun": .sunday
+        ]
+        return s.components(separatedBy: ",").compactMap { map[$0.trimmingCharacters(in: .whitespaces)] }
+    }
+}
+
 // MARK: - ViewModel
 
 @Observable @MainActor
@@ -24,8 +116,10 @@ final class CommViewModel {
     var isGenerating: Bool = false
     var errorMessage: String? = nil
     private(set) var sessionReady = false
+    var onItemsCreated: (([ItemSpec]) -> Void)?
 
     private var session: LanguageModelSession?
+    private let itemQueue = ItemCreationQueue()
 
     var canSend: Bool {
         !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -34,13 +128,17 @@ final class CommViewModel {
 
     func buildSession(todayItems: [PlanItem], tomorrowItems: [PlanItem], templates: [PlanItem]) {
         let context = buildContext(todayItems: todayItems, tomorrowItems: tomorrowItems, templates: templates)
-        session = LanguageModelSession(instructions: """
-            You are a concise daily planning assistant for the Daily Flight Plan app. \
-            The user will ask questions about their plan for today and tomorrow. \
-            Answer briefly and conversationally — one to three sentences. \
-            Do not repeat the full plan back unless directly asked. \
-            Current plan:\n\(context)
-            """)
+        let tool = CreateItemTool(queue: itemQueue)
+        session = LanguageModelSession(
+            tools: [tool],
+            instructions: """
+                You are a concise daily planning assistant for the Daily Flight Plan app. \
+                Answer questions about the user's plan briefly and conversationally — one to three sentences. \
+                Do not repeat the full plan back unless directly asked. \
+                When the user asks to add, create, or schedule an item, call the createPlanItem tool. \
+                Current plan:\n\(context)
+                """
+        )
         sessionReady = true
     }
 
@@ -61,6 +159,8 @@ final class CommViewModel {
                 messages[assistantIdx].content = snapshot.content
             }
             messages[assistantIdx].isStreaming = false
+            let created = await itemQueue.drain()
+            if !created.isEmpty { onItemsCreated?(created) }
         } catch {
             messages[assistantIdx].content = "Sorry, something went wrong. Please try again."
             messages[assistantIdx].isStreaming = false
@@ -162,6 +262,7 @@ struct CommView: View {
 
     @State private var viewModel = CommViewModel()
     @FocusState private var inputFocused: Bool
+    @Environment(\.modelContext) private var modelContext
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
@@ -198,6 +299,30 @@ struct CommView: View {
             }
         }
         .onAppear {
+            viewModel.onItemsCreated = { specs in
+                let cal = Calendar.current
+                let today = cal.startOfDay(for: .now)
+                let tomorrow = cal.date(byAdding: .day, value: 1, to: today) ?? today
+                for spec in specs {
+                    let date = spec.isForTomorrow ? tomorrow : today
+                    if spec.isRecurring && !spec.weekdays.isEmpty {
+                        modelContext.insert(PlanItem(
+                            title: spec.title,
+                            date: date,
+                            daySection: spec.section,
+                            recurringWeekdays: spec.weekdays,
+                            isTemplate: true
+                        ))
+                    } else {
+                        modelContext.insert(PlanItem(
+                            title: spec.title,
+                            date: date,
+                            daySection: spec.section
+                        ))
+                    }
+                }
+                try? modelContext.save()
+            }
             if !viewModel.sessionReady {
                 viewModel.buildSession(todayItems: todayItems, tomorrowItems: tomorrowItems, templates: templates)
             }
