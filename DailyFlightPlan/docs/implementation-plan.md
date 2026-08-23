@@ -284,12 +284,18 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
 - Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
-### Phase 24.5 — Routine View Refinements
+---
+
+## Version 0.2 — UX Refinements (not release-ready)
+
+Improves existing features based on real use. No new capabilities — better UX on the four main views that need the most work.
+
+### Phase 2.1 — Routine View Refinements
 - Drag and drop between segments on the routine view
 - Better contrast on sections - like Day View
 - UX audit and fix
 
-### Phase 23 — Nav Log Refinements
+### Phase 2.2 — Nav Log Refinements
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts
 - Past days show a history of what was completed (and canceled)
 - Future days show scheduled items and projected recurring items, which are non-interactive
@@ -300,18 +306,29 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
   - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
   - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
 
-### Phase 24 — Day/Flight View Refinements
-> **Partially addressed by Phase 19 (Flight Plan view).** The swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.
+### Phase 2.3 — Day/Flight View Refinements
+> **Partially addressed by Phase 1.19 (Flight Plan view).** The swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
 - Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
-- **Start** with a view that can be cleanly swiped left and right for yesterday/tomorrow — see Phase 27 (Smooth Day Swipe Navigation Pager)
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 - Add unit tests once happy with the behavior
 - Can we reuse the existing view models?
+
+### Phase 2.4 — Comm Tab Refinements
+- **Context freshness**: rebuild the session context when the user returns to the Comm tab (today's data may have changed since the session was built)
+- **Copyable responses**: allow long-press on assistant bubbles to copy the message text
+- **Conversation reset**: a button to start a fresh conversation with updated context (clears history, rebuilds session)
+- **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
+- **Suggested follow-ups**: after each assistant response, optionally surface 2–3 short tappable follow-up questions relevant to the reply
+- **UX audit**: review empty state, bubble sizing, input bar behavior, and keyboard handling on both iPhone and Mac
+
+---
+
+## Version 0.3 — Fit, Finish & Release
 
 ### Phase 25 — Settings
 - `SettingsView` navigated to from ⚙ button

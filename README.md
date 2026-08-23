@@ -121,12 +121,21 @@ DailyFlightPlan/
 
 ## Build plan
 
-Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is working but not yet polished for public release. Up next:
+Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is working but not yet polished for public release.
+
+**Version 0.2** improves existing views:
 
 | Phase | Description |
 |-------|-------------|
-| 23 | Finish Nav Log (lazy-load, full history + future, search) |
-| 24 | Finish Day / Flight view |
+| 2.1 | Routine view refinements |
+| 2.2 | Nav Log — full history + future, lazy-load, search |
+| 2.3 | Day/Flight view refinements |
+| 2.4 | Comm tab refinements (context freshness, copyable responses, reset, error recovery) |
+
+**Version 0.3** targets fit, finish, and release:
+
+| Phase | Description |
+|-------|-------------|
 | 25 | Settings (calendar/reminders selection, section boundaries) |
 | 26 | Local notifications |
 | 28 | Fit and finish + aviation UI spike |
