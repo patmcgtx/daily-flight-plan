@@ -290,10 +290,13 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
 
 Improves existing features based on real use. No new capabilities — better UX on the four main views that need the most work.
 
-### Phase 2.1 — Routine View Refinements
-- Drag and drop between segments on the routine view
-- Better contrast on sections - like Day View
-- UX audit and fix
+### Phase 2.1 — Routine View Refinements (in progress)
+- **✅ Segment cards match Day view visual language**: within each schedule card, day-segment groups (Morning, Midday, etc.) are now their own collapsible `RoundedRectangle(cornerRadius: 14)` cards with `.background(.background)` fill, matching `FlightPlanView`'s section cards; header shows segment name + time range + item-count badge; title enlarges (`.headline` vs. `.subheadline.bold()`) when expanded
+- **✅ Per-segment "Add item" button**: each expanded segment has an `+ Add item` button that opens `ItemForm` pre-filled with both the schedule's weekday pattern and that segment's `DaySection` — required a new combined `ItemForm(templateWeekdays:section:)` / `ItemFormViewModel` initializer (previously only one or the other could be set at once)
+- **✅ AI summary on collapsed segments**: collapsed segment headers show a one-line summary of routine content, generated via Foundation Models (`LanguageModelSession`) — same pattern as the Day view's section summaries; cache is keyed by schedule name + day-segment and invalidated whenever any template's title, section, deadline, or weekday pattern changes; empty segments show "No routines"
+- **✅ `quickSummary(for:)` deterministic fallback**: `SystemLanguageModel` (Apple Intelligence) is unavailable in the iOS Simulator, so a local fallback joins item titles/times (e.g. "Coffee · Stretch · Journal 7:00 AM +1 more") and is shown whenever no AI summary is cached yet — also covers AI failures/guardrail rejections on real devices, not just the Simulator
+- Drag and drop between segments — not yet done (drag-and-drop still only reassigns items between schedule cards, not between day-segments within a card)
+- UX audit and fix — not yet done
 
 ### Phase 2.2 — Nav Log Refinements
 - The Nav Log should show *all* days, past, present, and future — a time machine of sorts

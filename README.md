@@ -68,7 +68,9 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - **Routine** — recurring habit template management
   - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
   - Tap a card header to expand/collapse; collapsed state shows section name and item count
-  - Each card subdivided by day segment (First Thing, Morning, …); timed items get their own row, untimed items flow as `HFlow` pills
+  - Each card subdivided by day segment (First Thing, Morning, …); each segment is its own collapsible card matching the Day view's look — tap to expand/collapse, title enlarges when expanded, `+ Add item` button pre-filled with that weekday pattern and segment
+  - Timed items get their own row, untimed items flow as `HFlow` pills
+  - Collapsed segments show a one-line AI-generated summary of their routines (falls back to a plain title/time preview when Apple Intelligence is unavailable, e.g. in Simulator)
   - Tap any item to edit; long-press for Edit / Delete context menu
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
