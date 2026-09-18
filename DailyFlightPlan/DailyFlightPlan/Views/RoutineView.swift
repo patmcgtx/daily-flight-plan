@@ -14,11 +14,12 @@ struct RoutineView: View {
     @Environment(\.modelContext) private var modelContext
     
     @State private var itemToEdit: PlanItem?
-    @State private var addingWithWeekdays: Set<Locale.Weekday>?
+    @State private var addingRoutine: RoutineAddRequest?
     @State private var isPickingCustomSection = false
     @State private var pendingWeekdays: Set<Locale.Weekday>?
     @State private var sectionToDelete: (title: String, pattern: Set<Locale.Weekday>)?
     @State private var collapsedCards: Set<String> = []
+    @State private var collapsedSegments: Set<String> = []
     
     private static let everyDay: Set<Locale.Weekday> = [
         .sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday
@@ -64,11 +65,11 @@ struct RoutineView: View {
             ItemForm(item: item)
         }
         .sheet(isPresented: Binding(
-            get: { addingWithWeekdays != nil },
-            set: { if !$0 { addingWithWeekdays = nil } }
+            get: { addingRoutine != nil },
+            set: { if !$0 { addingRoutine = nil } }
         )) {
-            if let weekdays = addingWithWeekdays {
-                ItemForm(templateWeekdays: weekdays)
+            if let request = addingRoutine {
+                ItemForm(templateWeekdays: request.weekdays, section: request.section)
             }
         }
         .sheet(isPresented: $isPickingCustomSection, onDismiss: {
@@ -77,7 +78,7 @@ struct RoutineView: View {
                 Task { @MainActor in
                     // Brief pause lets the first sheet fully dismiss before the next appears
                     try? await Task.sleep(for: .milliseconds(50))
-                    addingWithWeekdays = days
+                    addingRoutine = RoutineAddRequest(weekdays: days, section: nil)
                 }
             }
         }) {
@@ -126,7 +127,7 @@ struct RoutineView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         Button {
-                            addingWithWeekdays = pattern
+                            addingRoutine = RoutineAddRequest(weekdays: pattern, section: nil)
                         } label: {
                             Image(systemName: "plus")
                                 .fontWeight(.semibold)
@@ -157,12 +158,12 @@ struct RoutineView: View {
                         .foregroundStyle(.tertiary)
                         .padding(14)
                 } else {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 10) {
                         ForEach(segments) { entry in
-                            segmentGroupContent(for: entry)
+                            segmentCard(for: entry, cardName: name, pattern: pattern)
                         }
                     }
-                    .padding(14)
+                    .padding(12)
                 }
             } else {
                 Button {
@@ -240,43 +241,133 @@ struct RoutineView: View {
         .draggable(template.uuid.uuidString)
     }
     
-    // MARK: Segment group content
-    
+    // MARK: Segment card
+
+    /// A collapsible card for one day-section's routines within a schedule card,
+    /// styled to match the per-section cards on the Day view so "segment" reads
+    /// the same across both screens.
+    private struct RoutineAddRequest {
+        let weekdays: Set<Locale.Weekday>
+        let section: DaySection?
+    }
+
+    private func segmentKey(cardName: String, entry: SegmentGroup) -> String {
+        "\(cardName)|\(entry.id)"
+    }
+
     @ViewBuilder
-    private func segmentGroupContent(for entry: SegmentGroup) -> some View {
+    private func segmentCard(for entry: SegmentGroup, cardName: String, pattern: Set<Locale.Weekday>) -> some View {
         let deadlineItems = entry.items.filter { $0.deadline != nil }
         let pillItems = entry.items.filter { $0.deadline == nil }
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 5) {
-                Text(entry.segment?.displayName ?? "Open")
-                    .font(.subheadline.bold())
-                if let segment = entry.segment {
-                    Text("·")
+        let total = entry.items.count
+        let key = segmentKey(cardName: cardName, entry: entry)
+        let isExpanded = !collapsedSegments.contains(key)
+
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.spring(duration: 0.3)) {
+                    if isExpanded {
+                        collapsedSegments.insert(key)
+                    } else {
+                        collapsedSegments.remove(key)
+                    }
+                }
+            } label: {
+                segmentHeader(entry: entry, total: total, isExpanded: isExpanded)
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+
+            if isExpanded {
+                Divider()
+
+                Button {
+                    addingRoutine = RoutineAddRequest(weekdays: pattern, section: entry.segment)
+                } label: {
+                    Label("Add item", systemImage: "plus")
+                        .font(.caption)
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 10)
+                        .padding(.bottom, 2)
+                }
+                .buttonStyle(.plain)
+
+                if total == 0 {
+                    Text("No routines yet.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
-                    Text(segment.timeRangeLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            if !deadlineItems.isEmpty {
-                VStack(spacing: 0) {
-                    ForEach(deadlineItems) { template in
-                        routineDeadlineRow(template)
-                        if template.id != deadlineItems.last?.id {
-                            Divider().padding(.leading, 58)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if !deadlineItems.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(deadlineItems) { template in
+                                    routineDeadlineRow(template)
+                                    if template.id != deadlineItems.last?.id {
+                                        Divider().padding(.leading, 58)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                        }
+                        if !pillItems.isEmpty {
+                            HFlow(itemSpacing: 6, rowSpacing: 6) {
+                                ForEach(pillItems) { template in
+                                    routinePill(template)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.top, deadlineItems.isEmpty ? 10 : 6)
+                            .padding(.bottom, 10)
+                        } else {
+                            Spacer(minLength: 6)
                         }
                     }
                 }
             }
-            if !pillItems.isEmpty {
-                HFlow(itemSpacing: 6, rowSpacing: 6) {
-                    ForEach(pillItems) { template in
-                        routinePill(template)
+        }
+        .background { RoundedRectangle(cornerRadius: 14).fill(.background) }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(.separator, lineWidth: 0.5)
+        }
+    }
+
+    private func segmentHeader(entry: SegmentGroup, total: Int, isExpanded: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 5) {
+                    Text(entry.segment?.displayName ?? "Open")
+                        .font(isExpanded ? .headline : .subheadline.bold())
+                    if let segment = entry.segment {
+                        Text("·")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                        Text(segment.timeRangeLabel)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                 }
+                if !isExpanded {
+                    Text(total == 0 ? "No routines" : "\(total) routine\(total == 1 ? "" : "s")")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            if total > 0 {
+                Text("\(total)")
+                    .font(.caption2.monospacedDigit().bold())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.secondary.opacity(0.15), in: Capsule())
             }
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
     
     @ViewBuilder
