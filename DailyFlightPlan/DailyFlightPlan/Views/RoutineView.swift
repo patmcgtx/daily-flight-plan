@@ -5,14 +5,15 @@
 import SwiftUI
 import SwiftData
 import Flow
+import FoundationModels
 
 struct RoutineView: View {
-    
+
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == true }, sort: \PlanItem.title)
     private var templates: [PlanItem]
-    
+
     @Environment(\.modelContext) private var modelContext
-    
+
     @State private var itemToEdit: PlanItem?
     @State private var addingRoutine: RoutineAddRequest?
     @State private var isPickingCustomSection = false
@@ -20,6 +21,9 @@ struct RoutineView: View {
     @State private var sectionToDelete: (title: String, pattern: Set<Locale.Weekday>)?
     @State private var collapsedCards: Set<String> = []
     @State private var collapsedSegments: Set<String> = []
+    @State private var segmentSummaries: [String: String] = [:]
+    @State private var loadingSummarySegments: Set<String> = []
+    @State private var summaryTasks: [String: Task<Void, Never>] = [:]
     
     private static let everyDay: Set<Locale.Weekday> = [
         .sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday
@@ -87,6 +91,9 @@ struct RoutineView: View {
                 pendingWeekdays = days
                 isPickingCustomSection = false
             }
+        }
+        .onChange(of: templatesSignature) { _, _ in
+            clearAllSegmentSummaries()
         }
         .confirmationDialog(
             "Delete \"\(sectionToDelete?.title ?? "")\"?",
@@ -273,10 +280,15 @@ struct RoutineView: View {
                     }
                 }
             } label: {
-                segmentHeader(entry: entry, total: total, isExpanded: isExpanded)
+                segmentHeader(entry: entry, total: total, isExpanded: isExpanded, key: key)
             }
             .buttonStyle(.plain)
             .contentShape(Rectangle())
+            .onAppear {
+                if total > 0 {
+                    generateSegmentSummaryIfNeeded(key: key, items: entry.items)
+                }
+            }
 
             if isExpanded {
                 Divider()
@@ -335,7 +347,7 @@ struct RoutineView: View {
         }
     }
 
-    private func segmentHeader(entry: SegmentGroup, total: Int, isExpanded: Bool) -> some View {
+    private func segmentHeader(entry: SegmentGroup, total: Int, isExpanded: Bool, key: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
@@ -351,9 +363,23 @@ struct RoutineView: View {
                     }
                 }
                 if !isExpanded {
-                    Text(total == 0 ? "No routines" : "\(total) routine\(total == 1 ? "" : "s")")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    if total == 0 {
+                        Text("No routines")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    } else if let summary = segmentSummaries[key] {
+                        Text(summary)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    } else if loadingSummarySegments.contains(key) {
+                        loadingDotsView
+                    } else {
+                        Text(quickSummary(for: entry))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
             Spacer()
@@ -368,6 +394,99 @@ struct RoutineView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    private var loadingDotsView: some View {
+        Text("···")
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+            .phaseAnimator([1.0, 0.3]) { view, opacity in
+                view.opacity(opacity)
+            } animation: { _ in
+                .easeInOut(duration: 0.7)
+            }
+    }
+
+    /// A deterministic, always-available preview of a segment's routines — shown until (or instead
+    /// of, when the on-device model is unavailable e.g. in Simulator) the AI summary arrives.
+    private func quickSummary(for entry: SegmentGroup) -> String {
+        let deadlineItems = entry.items
+            .filter { $0.deadline != nil }
+            .sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
+        let pillItems = entry.items.filter { $0.deadline == nil }
+
+        var parts: [String] = []
+        for item in deadlineItems where parts.count < 3 {
+            if let dl = item.deadline {
+                parts.append("\(item.title) \(dl.formatted(.dateTime.hour().minute()))")
+            }
+        }
+        for item in pillItems where parts.count < 3 {
+            parts.append(item.title)
+        }
+
+        var summary = parts.joined(separator: " · ")
+        let remaining = entry.items.count - parts.count
+        if remaining > 0 {
+            summary += " +\(remaining) more"
+        }
+        return summary
+    }
+
+    // MARK: AI segment summaries
+
+    /// A signature over all templates that changes whenever titles, sections, deadlines,
+    /// or weekday patterns change — used to invalidate cached summaries reactively.
+    private var templatesSignature: String {
+        templates.map { item in
+            "\(item.uuid)|\(item.title)|\(item.daySection?.rawValue ?? "")|\(item.deadline?.timeIntervalSinceReferenceDate ?? -1)|\(item.recurringWeekdays.map(\.rawValue).sorted())"
+        }.joined(separator: ",")
+    }
+
+    private func clearAllSegmentSummaries() {
+        summaryTasks.values.forEach { $0.cancel() }
+        summaryTasks = [:]
+        segmentSummaries = [:]
+        loadingSummarySegments = []
+    }
+
+    /// Generate a one-line AI summary for a collapsed segment. Skips if already cached or in-flight.
+    private func generateSegmentSummaryIfNeeded(key: String, items: [PlanItem]) {
+        guard segmentSummaries[key] == nil, summaryTasks[key] == nil else { return }
+        guard !items.isEmpty else { return }
+        guard SystemLanguageModel.default.availability == .available else { return }
+
+        loadingSummarySegments.insert(key)
+        summaryTasks[key] = Task { @MainActor in
+            defer {
+                summaryTasks[key] = nil
+                loadingSummarySegments.remove(key)
+            }
+
+            let session = LanguageModelSession(
+                instructions: "Summarize listed routine items in under 10 words. Use very short phrases joined by · (middle dot). Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
+            )
+
+            let deadlineItems = items
+                .filter { $0.deadline != nil }
+                .sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
+            var parts = deadlineItems.prefix(6).map { item in
+                "\(item.title) at \(item.deadline!.formatted(.dateTime.hour().minute()))"
+            }
+
+            let pillItems = items.filter { $0.deadline == nil }
+            for item in pillItems.prefix(6) {
+                parts.append(item.title)
+            }
+
+            let prompt = parts.joined(separator: "; ")
+            if let response = try? await session.respond(to: prompt) {
+                segmentSummaries[key] = response.content
+                    .components(separatedBy: .newlines)
+                    .joined(separator: " · ")
+                    .trimmingCharacters(in: .whitespaces)
+            }
+        }
     }
     
     @ViewBuilder
