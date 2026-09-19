@@ -23,7 +23,7 @@ Design reference for the Daily Flight Plan app icon — useful for future themin
 
 - Asset catalog: [`Assets.xcassets/AppIcon.appiconset`](../DailyFlightPlan/Assets.xcassets/AppIcon.appiconset)
 - Source artwork is a flat 1024×1024 PNG used for the light slot (`icon-light-1024.png`) and, as-is, for the dark slot (`icon-dark-1024.png`) — there's no dedicated dark variant yet.
-- **Tinted variant** (`icon-tinted-1024.png`) is a separate grayscale template, since iOS treats the tinted slot as a monochrome image and applies the user's tint by luminance. It's derived from the master: the airplane body is pure white with a near-black outline, and the sunburst/sun background is compressed into darker mid-grays so the airplane keeps its separation once tinted. Regenerate it (rather than reusing the light master) whenever the artwork changes.
+- **Tinted variant** (`icon-tinted-1024.png`) is a separate transparent monochrome template, since iOS treats the tinted slot as a template image and applies the user's tint color. Keep only the airplane/flight-path glyphs in this asset and preserve transparency around them; do not reuse the full-color light master for the tinted slot.
 - The same 1024 master is downsampled (via `sips`) to populate the mac idiom sizes (16–512pt at 1x/2x) in the same asset catalog.
 - When supplying a new design, crop out any mat/border/shadow around the artwork first — the source should be full-bleed with sharp corners before scaling to 1024×1024, since the OS applies its own corner mask on top.
 
