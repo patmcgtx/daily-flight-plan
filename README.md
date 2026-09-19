@@ -77,7 +77,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 
 - **Comm** — AI chat powered by on-device Foundation Models; knows the last 7 days and next 7 days of your plan; streaming responses rendered as markdown; can create new plan items via tool calling
 
-**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Log · `Cmd+3` Routine · `Cmd+4` Comm
+**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Routine · `Cmd+3` Log · `Cmd+4` Comm
 
 **Shared across tabs:**
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
