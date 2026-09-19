@@ -45,13 +45,13 @@ import SwiftData
         selectedCategories = []
     }
 
-    init(templateWeekdays: Set<Locale.Weekday>) {
+    init(templateWeekdays: Set<Locale.Weekday>, section: DaySection? = nil) {
         editingItem = nil
         title = ""
         notes = ""
         isFlagged = false
         self.date = Calendar.current.startOfDay(for: .now)
-        daySection = nil
+        daySection = section
         hasDeadline = false
         deadline = .now
         recurringWeekdays = Array(templateWeekdays)

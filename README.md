@@ -61,21 +61,23 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Drag-and-drop items between section cards; drop on Open card to clear section assignment
   - Filter-driven expand/collapse: active filters auto-expand sections with matches
 
-- **Log** — chronological multi-day list
-  - Shows all plan items across all dates with a filter bar
-  - Fully interactive: checkbox completes, tap to edit, long-press for cancel
-
 - **Routine** — recurring habit template management
   - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
   - Tap a card header to expand/collapse; collapsed state shows section name and item count
-  - Each card subdivided by day segment (First Thing, Morning, …); timed items get their own row, untimed items flow as `HFlow` pills
+  - Each card subdivided by day segment (First Thing, Morning, …); each segment is its own collapsible card matching the Day view's look — tap to expand/collapse, title enlarges when expanded, `+ Add item` button pre-filled with that weekday pattern and segment
+  - Timed items get their own row, untimed items flow as `HFlow` pills
+  - Collapsed segments show a one-line AI-generated summary of their routines (falls back to a plain title/time preview when Apple Intelligence is unavailable, e.g. in Simulator)
   - Tap any item to edit; long-press for Edit / Delete context menu
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
+- **Log** — chronological multi-day list
+  - Shows all plan items across all dates with a filter bar
+  - Fully interactive: checkbox completes, tap to edit, long-press for cancel
+
 - **Comm** — AI chat powered by on-device Foundation Models; knows the last 7 days and next 7 days of your plan; streaming responses rendered as markdown; can create new plan items via tool calling
 
-**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Log · `Cmd+3` Routine · `Cmd+4` Comm
+**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Routine · `Cmd+3` Log · `Cmd+4` Comm
 
 **Shared across tabs:**
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)

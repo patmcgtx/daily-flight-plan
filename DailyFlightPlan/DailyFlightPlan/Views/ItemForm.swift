@@ -29,10 +29,10 @@ struct ItemForm: View {
         _viewModel = State(initialValue: ItemFormViewModel(item: item))
     }
 
-    init(templateWeekdays: Set<Locale.Weekday>) {
+    init(templateWeekdays: Set<Locale.Weekday>, section: DaySection? = nil) {
         isCreate = true
         isNewRoutine = true
-        _viewModel = State(initialValue: ItemFormViewModel(templateWeekdays: templateWeekdays))
+        _viewModel = State(initialValue: ItemFormViewModel(templateWeekdays: templateWeekdays, section: section))
     }
 
     var body: some View {
