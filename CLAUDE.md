@@ -7,6 +7,7 @@ A daily planner iOS app inspired by a flight plan checklist. Today is a "trip"; 
 - **Specs**: `DailyFlightPlan/docs/project-spec-prompt.md` — original feature and UX specs
 - **Architecture**: `DailyFlightPlan/docs/architecture.md` — folder structure, data models, services, UI direction
 - **Build plan**: `DailyFlightPlan/docs/implementation-plan.md` — phased implementation order
+- **App icon**: `DailyFlightPlan/docs/app-icon.md` — design description and asset catalog notes
 
 ## Reference architecture
 Mirror the MapsPlus app: https://github.com/patmcgtx/mapplus
