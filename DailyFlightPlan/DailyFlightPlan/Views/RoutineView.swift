@@ -159,7 +159,7 @@ struct RoutineView: View {
                 
                 Divider()
                 
-                if segments.isEmpty {
+                if totalItems == 0 {
                     Text("No routines yet.")
                         .font(.subheadline)
                         .foregroundStyle(.tertiary)
@@ -554,10 +554,10 @@ struct RoutineView: View {
                 }
             }
         }
-        // Emit in DaySection order, Open group at end
-        var result = DaySection.allCases.compactMap { section -> SegmentGroup? in
-            guard let items = grouped[DaySection?.some(section)], !items.isEmpty else { return nil }
-            return SegmentGroup(segment: section, items: items)
+        // Emit every DaySection in order (even empty ones, so each still gets its own
+        // card with an "Add item" button); Open group only appears when it has items.
+        var result = DaySection.allCases.map { section in
+            SegmentGroup(segment: section, items: grouped[DaySection?.some(section)] ?? [])
         }
         if let openItems = grouped[nil], !openItems.isEmpty {
             result.append(SegmentGroup(segment: nil, items: openItems))

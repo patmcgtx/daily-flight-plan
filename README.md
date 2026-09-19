@@ -61,10 +61,6 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Drag-and-drop items between section cards; drop on Open card to clear section assignment
   - Filter-driven expand/collapse: active filters auto-expand sections with matches
 
-- **Log** — chronological multi-day list
-  - Shows all plan items across all dates with a filter bar
-  - Fully interactive: checkbox completes, tap to edit, long-press for cancel
-
 - **Routine** — recurring habit template management
   - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
   - Tap a card header to expand/collapse; collapsed state shows section name and item count
@@ -74,6 +70,10 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Tap any item to edit; long-press for Edit / Delete context menu
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
+
+- **Log** — chronological multi-day list
+  - Shows all plan items across all dates with a filter bar
+  - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
 - **Comm** — AI chat powered by on-device Foundation Models; knows the last 7 days and next 7 days of your plan; streaming responses rendered as markdown; can create new plan items via tool calling
 
