@@ -75,8 +75,8 @@ struct DayView: View {
             // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
             VStack {
                 Button("") { activeTab = .flightDeck }.keyboardShortcut("1", modifiers: .command)
-                Button("") { activeTab = .timeline }.keyboardShortcut("2", modifiers: .command)
-                Button("") { activeTab = .routines }.keyboardShortcut("3", modifiers: .command)
+                Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
+                Button("") { activeTab = .timeline }.keyboardShortcut("3", modifiers: .command)
                 Button("") { activeTab = .chat }.keyboardShortcut("4", modifiers: .command)
             }
             .opacity(0)
