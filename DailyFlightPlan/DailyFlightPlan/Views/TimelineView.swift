@@ -20,6 +20,7 @@ struct TimelineView: View {
 
     @State private var itemToEdit: PlanItem? = nil
     @State private var addItemRequest: AddItemRequest? = nil
+    @State private var searchText: String = ""
 
     private struct AddItemRequest: Identifiable {
         let date: Date
@@ -75,6 +76,22 @@ struct TimelineView: View {
         return dict.keys.sorted().map { date in (date: date, items: dict[date]!) }
     }
 
+    /// Searches by title and notes across *every* loaded-or-not date — unlike the grouped list,
+    /// this deliberately ignores `minLoadedDate`/`maxLoadedDate` since search is meant to reach
+    /// the whole history/future, not just the currently pre-cached window.
+    private var searchResults: [PlanItem] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return [] }
+        let matched = allItems.filter { item in
+            item.title.lowercased().contains(query) || item.notes.lowercased().contains(query)
+        }
+        let filtered = matched.filter { item in
+            (!showFlaggedOnly || item.isFlagged) && (!showMissedOnly || isMissed(item))
+        }
+        let visible = categorySelectionService?.filterItems(filtered) ?? filtered
+        return visible.sorted { $0.date < $1.date }
+    }
+
     /// Pending item whose deadline, day-section window, or entire day has already passed.
     private func isMissed(_ item: PlanItem) -> Bool {
         guard item.status == .pending else { return false }
@@ -93,39 +110,49 @@ struct TimelineView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
-                    ForEach(groupedByDate, id: \.date) { group in
-                        Section {
-                            let canAddItems = group.date >= today
-                            if group.items.isEmpty && !canAddItems {
-                                Text("Nothing planned")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.tertiary)
-                            } else {
-                                ForEach(segmentedGroups(for: group.items, includeEmpty: canAddItems)) { segment in
-                                    segmentHeader(
-                                        for: segment.section,
-                                        onAdd: canAddItems ? { addItemRequest = AddItemRequest(date: group.date, section: segment.section) } : nil
-                                    )
-                                    ForEach(segment.items) { item in
-                                        TimelineItemRow(item: item) {
-                                            itemToEdit = item
+                    if searchText.isEmpty {
+                        ForEach(groupedByDate, id: \.date) { group in
+                            Section {
+                                let canAddItems = group.date >= today
+                                if group.items.isEmpty && !canAddItems {
+                                    Text("Nothing planned")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.tertiary)
+                                } else {
+                                    ForEach(segmentedGroups(for: group.items, includeEmpty: canAddItems)) { segment in
+                                        segmentHeader(
+                                            for: segment.section,
+                                            onAdd: canAddItems ? { addItemRequest = AddItemRequest(date: group.date, section: segment.section) } : nil
+                                        )
+                                        ForEach(segment.items) { item in
+                                            TimelineItemRow(item: item) {
+                                                itemToEdit = item
+                                            }
                                         }
                                     }
                                 }
+                            } header: {
+                                dateHeader(for: group.date)
                             }
-                        } header: {
-                            dateHeader(for: group.date)
+                            .id(group.date)
+                            .onAppear {
+                                // Guard against a single visible group matching both first and last —
+                                // that's an initial-render artifact, not a real scroll-to-edge event.
+                                guard groupedByDate.count > 1 else { return }
+                                if group.date == groupedByDate.first?.date {
+                                    pastDaysWindow += 7
+                                }
+                                if group.date == groupedByDate.last?.date {
+                                    futureDaysWindow += 7
+                                }
+                            }
                         }
-                        .id(group.date)
-                        .onAppear {
-                            // Guard against a single visible group matching both first and last —
-                            // that's an initial-render artifact, not a real scroll-to-edge event.
-                            guard groupedByDate.count > 1 else { return }
-                            if group.date == groupedByDate.first?.date {
-                                pastDaysWindow += 7
-                            }
-                            if group.date == groupedByDate.last?.date {
-                                futureDaysWindow += 7
+                    } else if searchResults.isEmpty {
+                        ContentUnavailableView.search(text: searchText)
+                    } else {
+                        ForEach(searchResults) { item in
+                            TimelineItemRow(item: item, showDate: true) {
+                                itemToEdit = item
                             }
                         }
                     }
@@ -156,6 +183,17 @@ struct TimelineView: View {
                 }
             }
         }
+        // Attached to the NavigationStack itself, not nested inside the ScrollViewReader/List
+        // chain — keeps the system search field independent of the List's own top safeAreaInset
+        // (used by filterBar), which otherwise contend for the same "top of list" slot.
+        // Placement is forced to `.navigationBarDrawer(.always)` rather than left `.automatic` —
+        // the automatic resolution (always-visible bar vs. a minimized tap-to-expand button) was
+        // observed to differ between OS builds, leaving the field effectively invisible on some.
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search items"
+        )
     }
 
     // MARK: Date header
@@ -296,6 +334,7 @@ struct TimelineView: View {
 private struct TimelineItemRow: View {
 
     let item: PlanItem
+    var showDate: Bool = false
     let onEdit: () -> Void
 
     @Environment(\.modelContext) private var modelContext
@@ -362,10 +401,19 @@ private struct TimelineItemRow: View {
 
     @ViewBuilder
     private var subtitle: some View {
-        if let deadline = item.deadline {
-            Text(deadline, format: .dateTime.hour().minute())
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        if showDate || item.deadline != nil {
+            HStack(spacing: 4) {
+                if showDate {
+                    Text(item.date, format: .dateTime.month(.abbreviated).day())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let deadline = item.deadline {
+                    Text(deadline, format: .dateTime.hour().minute())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 }
