@@ -63,9 +63,15 @@ struct TimelineView: View {
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
+    /// Today and every loaded future day always get a section — even empty ones — so each has its
+    /// "Add item" affordance. Past days stay sparse: a section only appears if it actually has
+    /// items, so an empty history window doesn't turn into a wall of "Nothing planned" rows.
     private var groupedByDate: [(date: Date, items: [PlanItem])] {
         var dict = Dictionary(grouping: filteredItems) { calendar.startOfDay(for: $0.date) }
-        if dict[today] == nil { dict[today] = [] }
+        for offset in 0...futureDaysWindow {
+            guard let date = calendar.date(byAdding: .day, value: offset, to: today) else { continue }
+            if dict[date] == nil { dict[date] = [] }
+        }
         return dict.keys.sorted().map { date in (date: date, items: dict[date]!) }
     }
 
@@ -112,6 +118,9 @@ struct TimelineView: View {
                         }
                         .id(group.date)
                         .onAppear {
+                            // Guard against a single visible group matching both first and last —
+                            // that's an initial-render artifact, not a real scroll-to-edge event.
+                            guard groupedByDate.count > 1 else { return }
                             if group.date == groupedByDate.first?.date {
                                 pastDaysWindow += 7
                             }
