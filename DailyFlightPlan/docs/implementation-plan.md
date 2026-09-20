@@ -326,9 +326,9 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
-- **Auto-drop missed items?** When a day segemnt passes, should be automatically promote those missed items to the next segment? Or a special "missed" area?
+- **Auto-drop missed items?** When a day segment passes, items should automatically promote to "Open."
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
-- **Progress guages?** Add an item progress vs time of day guage, plus basic items complete vs. tital items, and maybe a third?
+- **Progress gauges?** Add an item progress vs time of day gauge, plus basic items complete vs. total items, and maybe a third?
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
 - Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
@@ -390,7 +390,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
 - Standard `ShareLink` throughout rather than bespoke share-sheet plumbing per view
 - See also the "Web links" item in Phase 3.3 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
 
-### Phase 3.5 — Projects support 
+### Phase 3.6 — Projects support
 - Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.
 - Does this work with or replace categories? In theory, you could use a category as a project.
 - So maybe categories instead of projects, but fuller/dedicated category management?
@@ -435,7 +435,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 ### Phase release.2 — Fit and Finish
 - Address findings from Phase 1.14 usability testing
 - Bug fixes, UX tweaks, visual polish
-- **Categories rework?** Make the catgories selector work just like MapsPlus? It's really nice in MapsPlus.
+- **Categories rework?** Make the categories selector work just like MapsPlus? It's really nice in MapsPlus.
 - **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
 - **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
 - Get a nice AI summary of the day once it's complete, in the day view, as a sort of reward
