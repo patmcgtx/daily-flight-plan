@@ -408,6 +408,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - **Routine tab**: general UX audit and fix *(originally tracked in Phase 2.1)*
 - **Timeline tab** (Nav Log): general UX audit and fix
 - **Comm tab**: review empty state, bubble sizing, input bar behavior, and keyboard handling on both iPhone and Mac *(originally tracked in Phase 2.4)*
+- **Toolbars** General UX audit and fix toolabrs across the app. Are they consistent? Are they intuitive? Useful? Ready to ship? fgor one thing, there may still be a "developer" button for cleaning and syncing data - we need to hidew that for prod builds.
 
 ### Phase release.1 — Fit and Finish
 - Address findings from Phase 1.14 usability testing
