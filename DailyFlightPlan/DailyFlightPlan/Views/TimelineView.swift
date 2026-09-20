@@ -34,7 +34,7 @@ struct TimelineView: View {
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
     @AppStorage(AppStorageKeys.showMissedOnly.rawValue) private var showMissedOnly: Bool = false
-    @AppStorage(AppStorageKeys.showCompleted.rawValue) private var showCompleted: Bool = false
+    @AppStorage(AppStorageKeys.showCompletedOnly.rawValue) private var showCompletedOnly: Bool = false
 
     /// How many days of history/future are currently loaded, in each direction from today.
     /// Grows in weekly increments as the user scrolls toward either edge.
@@ -58,7 +58,8 @@ struct TimelineView: View {
             guard day >= minLoadedDate && day <= maxLoadedDate else { return false }
             // Future dates never show routine instances — routines could still change before then.
             guard day <= today || item.template == nil else { return false }
-            guard showCompleted || (item.status != .completed && item.status != .canceled) else { return false }
+            // Isolates rather than reveals: pending-only when off, completed/canceled-only when on.
+            guard (item.status == .completed || item.status == .canceled) == showCompletedOnly else { return false }
             guard !showFlaggedOnly || item.isFlagged else { return false }
             guard !showMissedOnly || isMissed(item) else { return false }
             return true
@@ -96,7 +97,7 @@ struct TimelineView: View {
         let descriptor = FetchDescriptor<PlanItem>(predicate: predicate, sortBy: [SortDescriptor(\.date)])
         let matched = (try? modelContext.fetch(descriptor)) ?? []
         let filtered = matched.filter { item in
-            (showCompleted || (item.status != .completed && item.status != .canceled))
+            ((item.status == .completed || item.status == .canceled) == showCompletedOnly)
             && (!showFlaggedOnly || item.isFlagged)
             && (!showMissedOnly || isMissed(item))
         }
@@ -238,16 +239,14 @@ struct TimelineView: View {
                 filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
                     showFlaggedOnly.toggle()
                 }
-                filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
-                    // Mutually exclusive with Missed: "reveal completed/canceled" and "isolate to
-                    // overdue pending items" describe opposite categories, so both active at once
-                    // is a contradiction that reads as a bug (Missed silently wins since it's the
-                    // only one of the two that actually excludes items).
-                    if !showCompleted { showMissedOnly = false }
-                    showCompleted.toggle()
+                filterToggle("Done", icon: "checkmark", isActive: showCompletedOnly) {
+                    // Mutually exclusive with Missed: both isolate to opposite categories (done
+                    // vs. overdue-pending), so both active at once would always show nothing.
+                    if !showCompletedOnly { showMissedOnly = false }
+                    showCompletedOnly.toggle()
                 }
                 filterToggle("Missed", icon: "clock.badge.exclamationmark", isActive: showMissedOnly) {
-                    if !showMissedOnly { showCompleted = false }
+                    if !showMissedOnly { showCompletedOnly = false }
                     showMissedOnly.toggle()
                 }
                 if !allCategories.isEmpty {

@@ -18,6 +18,12 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// Filter: show only missed (overdue, pending) items in the Log view
     case showMissedOnly
 
+    /// Filter: show only completed/canceled items in the Log view (isolates, unlike the Day
+    /// view's `showCompleted` which reveals them alongside everything else — kept as a separate
+    /// key rather than sharing `showCompleted` so the same stored value can't mean two different
+    /// things depending on which screen reads it)
+    case showCompletedOnly
+
     /// Comma-separated EKCalendar identifiers to display (empty = show all calendars)
     case selectedCalendarIDs
 
