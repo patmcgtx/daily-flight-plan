@@ -7,7 +7,6 @@ import SwiftData
 
 struct TimelineView: View {
 
-    let onSelectDate: (Date) -> Void
     /// Set when embedded inline as a tab; nil means sheet mode (uses environment dismiss).
     var onDismiss: (() -> Void)? = nil
 
@@ -88,9 +87,12 @@ struct TimelineView: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.tertiary)
                             } else {
-                                ForEach(sortedItems(group.items)) { item in
-                                    TimelineItemRow(item: item) {
-                                        itemToEdit = item
+                                ForEach(segmentedGroups(for: group.items)) { segment in
+                                    segmentHeader(for: segment.section)
+                                    ForEach(segment.items) { item in
+                                        TimelineItemRow(item: item) {
+                                            itemToEdit = item
+                                        }
                                     }
                                 }
                             }
@@ -139,30 +141,21 @@ struct TimelineView: View {
     private func dateHeader(for date: Date) -> some View {
         let isToday = calendar.isDateInToday(date)
         let isPast = date < today
-        Button {
-            onSelectDate(date)
-            handleDismiss()
-        } label: {
-            HStack {
-                if isToday {
-                    Text("Today")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(Color.accentColor)
-                    Text(date, format: .dateTime.month(.abbreviated).day())
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(date, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
-                        .font(.subheadline)
-                        .foregroundStyle(isPast ? .secondary : .primary)
-                }
-                Spacer()
-                Image(systemName: "arrow.up.right")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+        HStack {
+            if isToday {
+                Text("Today")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(Color.accentColor)
+                Text(date, format: .dateTime.month(.abbreviated).day())
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(date, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
+                    .font(.subheadline)
+                    .foregroundStyle(isPast ? .secondary : .primary)
             }
+            Spacer()
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: Filter bar
@@ -209,29 +202,55 @@ struct TimelineView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: Item sorting within a day
+    // MARK: Segment grouping within a day
 
-    private func sortedItems(_ items: [PlanItem]) -> [PlanItem] {
-        items.sorted { a, b in
-            let aRank = sortRank(a)
-            let bRank = sortRank(b)
-            if aRank != bRank { return aRank < bRank }
-            // Within deadline group, sort by time
-            if let da = a.deadline, let db = b.deadline { return da < db }
-            // Within section group, sort by section order
-            if let sa = a.daySection, let sb = b.daySection {
-                let ai = DaySection.allCases.firstIndex(of: sa) ?? 0
-                let bi = DaySection.allCases.firstIndex(of: sb) ?? 0
-                return ai < bi
-            }
-            return a.title < b.title
-        }
+    private struct SegmentGroup: Identifiable {
+        let section: DaySection?
+        let items: [PlanItem]
+        var id: String { section?.rawValue ?? "open" }
     }
 
-    private func sortRank(_ item: PlanItem) -> Int {
-        if item.deadline != nil { return 0 }
-        if item.daySection != nil { return 1 }
-        return 2
+    /// Groups a day's items into time-of-day segments for readability — deadline items fall into
+    /// the segment containing their clock time; segment-assigned items use their explicit segment;
+    /// everything else lands in a trailing "Open" group. Empty segments are omitted (unlike the Day
+    /// view's persistent cards, this is a historical/scheduled log, not something to plan against).
+    private func segmentedGroups(for items: [PlanItem]) -> [SegmentGroup] {
+        var grouped: [DaySection?: [PlanItem]] = [:]
+        for item in items {
+            if let section = item.daySection {
+                grouped[section, default: []].append(item)
+            } else if let deadline = item.deadline, let section = DaySection.containing(deadline) {
+                grouped[section, default: []].append(item)
+            } else {
+                grouped[nil, default: []].append(item)
+            }
+        }
+        for key in grouped.keys {
+            grouped[key]?.sort { a, b in
+                switch (a.deadline, b.deadline) {
+                case let (.some(da), .some(db)): return da < db
+                case (.some, .none): return true
+                case (.none, .some): return false
+                case (.none, .none): return a.title < b.title
+                }
+            }
+        }
+        var result = DaySection.allCases.compactMap { section -> SegmentGroup? in
+            guard let items = grouped[section], !items.isEmpty else { return nil }
+            return SegmentGroup(section: section, items: items)
+        }
+        if let openItems = grouped[nil], !openItems.isEmpty {
+            result.append(SegmentGroup(section: nil, items: openItems))
+        }
+        return result
+    }
+
+    private func segmentHeader(for section: DaySection?) -> some View {
+        Text(section?.displayName ?? "Open")
+            .font(.caption.bold())
+            .foregroundStyle(.secondary)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 2, trailing: 16))
+            .listRowSeparator(.hidden)
     }
 }
 
@@ -309,7 +328,7 @@ private struct TimelineItemRow: View {
 #if DEBUG
 
 #Preview {
-    TimelineView(onSelectDate: { _ in })
+    TimelineView()
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
