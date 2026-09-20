@@ -380,6 +380,14 @@ Adds the features needed before wider release: user-configurable settings (Calen
 - Test with Stage Manager and multitasking split views
 - Pointer/cursor hover states for trackpad users
 
+### Phase 3.5 — Sharing & Export
+A general look at sharing across the app, rather than one-off share buttons per view.
+- **Per-day share icon in the Timeline view** *(originally tracked in Phase 2.2, moved here)*: share a day's plan as text (or richer format — TBD) via the standard `ShareLink`/share sheet
+- What else is worth sharing? A single item, a date range, search results, a whole routine/schedule from the Routine view — figure out the right scope(s) rather than just the one Timeline case
+- Decide on output format(s): plain text summary, Markdown, something richer (PDF? image?) — consider round-tripping with Markdown Import (Phase 1.21) for a plain-text/Markdown format, since that's already a supported input format
+- Standard `ShareLink` throughout rather than bespoke share-sheet plumbing per view
+- See also the "Web links" item in Phase 3.3 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
+
 ---
 
 ## Version 0.4 — In-App Purchases
