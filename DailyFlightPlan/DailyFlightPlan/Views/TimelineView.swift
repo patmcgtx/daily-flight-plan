@@ -34,6 +34,7 @@ struct TimelineView: View {
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
     @AppStorage(AppStorageKeys.showMissedOnly.rawValue) private var showMissedOnly: Bool = false
+    @AppStorage(AppStorageKeys.showCompleted.rawValue) private var showCompleted: Bool = false
 
     /// How many days of history/future are currently loaded, in each direction from today.
     /// Grows in weekly increments as the user scrolls toward either edge.
@@ -57,6 +58,7 @@ struct TimelineView: View {
             guard day >= minLoadedDate && day <= maxLoadedDate else { return false }
             // Future dates never show routine instances — routines could still change before then.
             guard day <= today || item.template == nil else { return false }
+            guard showCompleted || (item.status != .completed && item.status != .canceled) else { return false }
             guard !showFlaggedOnly || item.isFlagged else { return false }
             guard !showMissedOnly || isMissed(item) else { return false }
             return true
@@ -86,7 +88,9 @@ struct TimelineView: View {
             item.title.lowercased().contains(query) || item.notes.lowercased().contains(query)
         }
         let filtered = matched.filter { item in
-            (!showFlaggedOnly || item.isFlagged) && (!showMissedOnly || isMissed(item))
+            (showCompleted || (item.status != .completed && item.status != .canceled))
+            && (!showFlaggedOnly || item.isFlagged)
+            && (!showMissedOnly || isMissed(item))
         }
         let visible = categorySelectionService?.filterItems(filtered) ?? filtered
         return visible.sorted { $0.date < $1.date }
@@ -226,6 +230,9 @@ struct TimelineView: View {
             HStack(spacing: 8) {
                 filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
                     showFlaggedOnly.toggle()
+                }
+                filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
+                    showCompleted.toggle()
                 }
                 filterToggle("Missed", icon: "clock.badge.exclamationmark", isActive: showMissedOnly) {
                     showMissedOnly.toggle()
