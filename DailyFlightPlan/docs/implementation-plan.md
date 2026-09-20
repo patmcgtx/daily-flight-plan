@@ -326,17 +326,19 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
+- **Auto-drop missed items?** When a day segemnt passes, should be automatically promote those missed items to the next segment? Or a special "missed" area?
+- **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
+- **Progress guages?** Add an item progress vs time of day guage, plus basic items complete vs. tital items, and maybe a third?
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
 - Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
-- Add unit tests once happy with the behavior
-- Can we reuse the existing view models?
 
 ### Phase 2.4 — Comm Tab Refinements
 - **Context freshness / Conversation reset**: the session is intentionally built once and reused across tab switches to preserve conversation history. Add an explicit reset button (toolbar or inline) that clears messages and rebuilds the session with current plan data — giving the user control over freshness without auto-wiping the conversation on every tab entry.
 - **Copyable responses**: allow long-press on assistant bubbles to copy the message text
 - **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
 - **Suggested follow-ups**: after each assistant response, optionally surface 2–3 short tappable follow-up questions relevant to the reply
+- **AI disclaimer**: And a hard text limit. The local AI can be crazy sometimes! Apple some crazy stuff in there sometimes if you mention a pill or anything that can be potentially misused. I had to rename my "take my pills" routine for prescriptions to "take my supplements", for example. Apple spit out a very long and shocking warning about drug abuse or something. 🤦🏻‍♂️
 - **Note**: the "UX audit" item originally tracked here was folded into a holistic full-app UX pass — see Phase release.1 under Version 1.0
 
 ### Phase 2.5 — Smooth Day Swipe Navigation (Pager)
@@ -388,6 +390,11 @@ A general look at sharing across the app, rather than one-off share buttons per 
 - Standard `ShareLink` throughout rather than bespoke share-sheet plumbing per view
 - See also the "Web links" item in Phase 3.3 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
 
+### Phase 3.5 — Projects support 
+- Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.
+- Does this work with or replace categories? In theory, you could use a category as a project.
+- So maybe categories instead of projects, but fuller/dedicated category management?
+
 ---
 
 ## Version 0.4 — In-App Purchases
@@ -428,6 +435,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 ### Phase release.2 — Fit and Finish
 - Address findings from Phase 1.14 usability testing
 - Bug fixes, UX tweaks, visual polish
+- **Categories rework?** Make the catgories selector work just like MapsPlus? It's really nice in MapsPlus.
 - **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
 - **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
 - Get a nice AI summary of the day once it's complete, in the day view, as a sort of reward
@@ -452,8 +460,11 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - **User's guide**: write a short guide covering the core concepts (flight plan metaphor, sections, recurring habits, AI chat) and the key gestures/actions; ship it as an in-app help sheet or a public web page linked from Settings
 
 ### Phase release.3 — Performance & Stability Audit
-- Performance audit — run through Instruments to find hangs, glitches, memory issues, Core Data issues, etc.
+- Performance audit — run through Instruments to find hangs, glitches, memory issues, energy efficiency, Core Data issues, etc.
 - Make sure it runs well on older phones
+- Make sure it runs okay on iPhone SE, which is as slow and small as we're going to support.
+- Fix all compile-time warnings 
+- Fix all runtime warnings.
 - Confirm cross-device syncing is working as expected and bug-free
 - **Timeline browsing view still loads everything in memory** *(moved here from Phase 2.2)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
 
@@ -462,6 +473,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
 - Architecture review & refactor
+- Fix crash on delete-all-items
 - **Rename code to match final view names**: Rename day "section" to "segment" in the code. Also check backing code for Timeline view, Day view, Comm view, etc.
 - **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
