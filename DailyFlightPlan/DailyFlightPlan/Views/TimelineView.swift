@@ -232,9 +232,15 @@ struct TimelineView: View {
                     showFlaggedOnly.toggle()
                 }
                 filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
+                    // Mutually exclusive with Missed: "reveal completed/canceled" and "isolate to
+                    // overdue pending items" describe opposite categories, so both active at once
+                    // is a contradiction that reads as a bug (Missed silently wins since it's the
+                    // only one of the two that actually excludes items).
+                    if !showCompleted { showMissedOnly = false }
                     showCompleted.toggle()
                 }
                 filterToggle("Missed", icon: "clock.badge.exclamationmark", isActive: showMissedOnly) {
+                    if !showMissedOnly { showCompleted = false }
                     showMissedOnly.toggle()
                 }
                 if !allCategories.isEmpty {
