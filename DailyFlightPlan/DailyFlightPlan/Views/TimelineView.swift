@@ -350,10 +350,24 @@ private struct TimelineItemRow: View {
 
     @ViewBuilder
     private var subtitle: some View {
-        if let deadline = item.deadline {
-            Text(deadline, format: .dateTime.hour().minute())
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        if item.deadline != nil || item.isFlagged || !item.notes.isEmpty {
+            HStack(spacing: 4) {
+                if let deadline = item.deadline {
+                    Text(deadline, format: .dateTime.hour().minute())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if item.isFlagged {
+                    Image(systemName: "flag.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                }
+                if !item.notes.isEmpty {
+                    Image(systemName: "note.text")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+            }
         }
     }
 }
