@@ -300,15 +300,14 @@ Improves existing features based on real use. No new capabilities — better UX 
 - UX audit and fix — not yet done
 
 ### Phase 2.2 — Nav Log Refinements
-- The Nav Log should show *all* days, past, present, and future — a time machine of sorts
-- Past days show a history of what was completed (and canceled)
-- Future days show scheduled items and projected recurring items, which are non-interactive
-- Allow the usual editing on today and future planned items, with swipe gestures for cancel, defer, flag, and delete
-- A share icon for each day — can be a basic first pass or even a visual placeholder for now
-- **Search**: `.searchable` modifier on the Nav Log list; filters by title and notes across all dates; results appear inline replacing the normal date-grouped list; tap a result to navigate to that day
-- Implementation notes:
-  - **Lazy-load past days**: start with today and load past days on demand as the user scrolls, rather than fetching all history at once
-  - **Lazy-load future days**: start with today and load future days on demand as the user scrolls; future days show recurring items and items scheduled for that day
+- **✅ The Nav Log should show *all* days, past, present, and future** — a time machine of sorts; starts on today (`ScrollViewReader` scrolls to today's section on appear)
+- **✅ Past days show a history of what was completed (and canceled)** — all non-template items, including materialized routine instances, for any past day within the loaded window
+- **Deviation**: future days show only one-off scheduled items, **not** projected recurring items — routines could still change before the date arrives, so a "ghost" preview would be misleading; revisit if we want a non-interactive preview later
+- **✅ Lazy-load past days**: starts with a 7-day pre-cached window behind today; `pastDaysWindow` grows by 7 more each time the oldest loaded section scrolls into view
+- **✅ Lazy-load future days**: starts with a 7-day pre-cached window ahead of today; `futureDaysWindow` grows the same way as the newest loaded section scrolls into view
+- **✅ Dropped the "Done" filter** — completed/canceled items are shown by default now (no toggle needed)
+- **✅ Added a "Missed" filter** — pending items whose deadline, day-section window, or entire day has already passed (up to the current time); reuses the same missed-item logic as the Day view (`clock.badge.exclamationmark`)
+- Not yet done: editing on today/future items with swipe gestures (cancel, defer, flag, delete); per-day share icon; `.searchable` search across all dates
 
 ### Phase 2.3 — Day/Flight View Refinements
 *Partially addressed by Phase 1.19 (Flight Plan view): the swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.*

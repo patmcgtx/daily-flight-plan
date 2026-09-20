@@ -11,7 +11,8 @@ struct TimelineView: View {
     /// Set when embedded inline as a tab; nil means sheet mode (uses environment dismiss).
     var onDismiss: (() -> Void)? = nil
 
-    @Query(sort: \PlanItem.date) private var allItems: [PlanItem]
+    @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false }, sort: \PlanItem.date)
+    private var allItems: [PlanItem]
     @Query(sort: \PlanCategory.name) private var allCategories: [PlanCategory]
 
     @Environment(\.dismiss) private var envDismiss
@@ -25,15 +26,33 @@ struct TimelineView: View {
     }
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
-    @AppStorage(AppStorageKeys.showCompleted.rawValue) private var showCompleted: Bool = false
+    @AppStorage(AppStorageKeys.showMissedOnly.rawValue) private var showMissedOnly: Bool = false
+
+    /// How many days of history/future are currently loaded, in each direction from today.
+    /// Grows in weekly increments as the user scrolls toward either edge.
+    @State private var pastDaysWindow: Int = 7
+    @State private var futureDaysWindow: Int = 7
 
     private let calendar = Calendar.current
     private var today: Date { calendar.startOfDay(for: .now) }
 
+    private var minLoadedDate: Date {
+        calendar.date(byAdding: .day, value: -pastDaysWindow, to: today) ?? today
+    }
+
+    private var maxLoadedDate: Date {
+        calendar.date(byAdding: .day, value: futureDaysWindow, to: today) ?? today
+    }
+
     private var filteredItems: [PlanItem] {
-        let filtered = allItems.filter {
-            (showCompleted || ($0.status != .completed && $0.status != .canceled))
-            && (!showFlaggedOnly || $0.isFlagged)
+        let filtered = allItems.filter { item in
+            let day = calendar.startOfDay(for: item.date)
+            guard day >= minLoadedDate && day <= maxLoadedDate else { return false }
+            // Future dates never show routine instances — routines could still change before then.
+            guard day <= today || item.template == nil else { return false }
+            guard !showFlaggedOnly || item.isFlagged else { return false }
+            guard !showMissedOnly || isMissed(item) else { return false }
+            return true
         }
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
@@ -42,6 +61,20 @@ struct TimelineView: View {
         var dict = Dictionary(grouping: filteredItems) { calendar.startOfDay(for: $0.date) }
         if dict[today] == nil { dict[today] = [] }
         return dict.keys.sorted().map { date in (date: date, items: dict[date]!) }
+    }
+
+    /// Pending item whose deadline, day-section window, or entire day has already passed.
+    private func isMissed(_ item: PlanItem) -> Bool {
+        guard item.status == .pending else { return false }
+        let day = calendar.startOfDay(for: item.date)
+        guard day <= today else { return false }
+        if let deadline = item.deadline { return deadline < Date.now }
+        if day < today { return true }
+        guard let section = item.daySection,
+              let sectionEnd = calendar.date(
+                  bySettingHour: section.endHour, minute: 59, second: 59, of: Date.now
+              ) else { return false }
+        return sectionEnd < Date.now
     }
 
     var body: some View {
@@ -65,6 +98,14 @@ struct TimelineView: View {
                             dateHeader(for: group.date)
                         }
                         .id(group.date)
+                        .onAppear {
+                            if group.date == groupedByDate.first?.date {
+                                pastDaysWindow += 7
+                            }
+                            if group.date == groupedByDate.last?.date {
+                                futureDaysWindow += 7
+                            }
+                        }
                     }
                 }
                 #if os(macOS)
@@ -132,8 +173,8 @@ struct TimelineView: View {
                 filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
                     showFlaggedOnly.toggle()
                 }
-                filterToggle("Done", icon: "checkmark", isActive: showCompleted) {
-                    showCompleted.toggle()
+                filterToggle("Missed", icon: "clock.badge.exclamationmark", isActive: showMissedOnly) {
+                    showMissedOnly.toggle()
                 }
                 if !allCategories.isEmpty {
                     Divider().frame(height: 20)
