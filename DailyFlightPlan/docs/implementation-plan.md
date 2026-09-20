@@ -71,7 +71,7 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - `selectedCalendarIDs` added to `AppStorageKeys` (comma-separated; empty = all calendars)
 - `CalendarEventRow` — read-only row with colored calendar dot; tap opens Calendar app via `calshow:` URL
 - Calendar events rendered in each `DaySectionView` (below deadline rows) via `calendarEventsForSection(_:from:)` on `DayViewModel`
-- Calendar selection UI deferred to Phase 21 (Settings); all calendars shown by default
+- Calendar selection UI deferred to Phase 3.1 (Settings); all calendars shown by default
 
 ### ✅ Phase 1.8 — Reminders Integration
 - `RemindersService` protocol + `EventKitRemindersService` live implementation (separate `EKEventStore` from calendar service)
@@ -85,7 +85,7 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - Undated reminders appear in the "Any Time" area as a grouped card of `ReminderItemRow`s
 - `EKEventStoreChanged` notification re-fetches both calendar events and reminders on any store change
 - **Deferred**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decide in a later phase
-- **Deferred**: reminder list selection UI — moved to Phase 21 (Settings)
+- **Deferred**: reminder list selection UI — moved to Phase 3.1 (Settings)
 
 ### ✅ Phase 1.9 — Workflow Refinements
 - **Spillover**: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
@@ -354,7 +354,7 @@ Adds the features needed before wider release: user-configurable settings (Calen
 - **Permission prompt on first filter tap**: when the user taps the Calendar or Reminders filter pill for the first time, prompt for permission then and there (rather than waiting for the day to load); on grant, show the calendar/list selector immediately
 - **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours; also update `DaySection.timeRangeLabel` to compute dynamically from stored boundaries instead of hardcoded strings
 - **"Rise & Shine" pre-morning section**: consider adding an early-morning section (e.g. 5–6 AM) for first-thing-out-of-bed habits; or expose Morning's start time as a user-adjustable boundary so the section stretches to cover it
-- **Rename "Night" → "Bedtime"**: or make section names user-editable alongside their time boundaries
+- **✅ Rename "Night" → "Bedtime"**: `DaySection` already has no `.night` case — the six cases are firstThing/morning/midday/afternoon/evening/bedtime; making section names fully user-editable alongside their time boundaries remains open
 - Any other preferences surfaced here as phases are completed
 
 ### Phase 3.2 — Local Notifications
@@ -403,7 +403,7 @@ Introduces monetization via StoreKit 2 — Pro Themes, Unlimited Categories, Mar
 The App Store release milestone. Addresses usability findings from real-world use, pays down tech debt, adds aviation-themed polish, completes the user's guide and app icon, and closes out with TestFlight beta testing before submission.
 
 ### Phase release.1 — Fit and Finish
-- Address findings from Phase 14 usability testing
+- Address findings from Phase 1.14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
 - **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
@@ -411,7 +411,7 @@ The App Store release milestone. Addresses usability findings from real-world us
 - Are we hiding day segments that have passed?
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
 - **Missed item rule to consider**: when a day section has passed and items are left in it, move everything to "Open"
-- **Summary vs. full view** *(defer until Phase 22 Chat/Quick Entry is done — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
+- **Summary vs. full view** *(Phase 1.22 Chat/Quick Entry is now done, so this is unblocked — both touch the collapsed section UI and Foundation Models)*: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
 - **Make Calendar and Reminders access read-only**: no need for read/write access anymore
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
