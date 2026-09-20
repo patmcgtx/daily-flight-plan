@@ -80,20 +80,27 @@ struct TimelineView: View {
 
     /// Searches by title and notes across *every* loaded-or-not date — unlike the grouped list,
     /// this deliberately ignores `minLoadedDate`/`maxLoadedDate` since search is meant to reach
-    /// the whole history/future, not just the currently pre-cached window.
+    /// the whole history/future, not just the currently pre-cached window. Runs as a fresh
+    /// `FetchDescriptor` against the store (with the text match pushed down via
+    /// `localizedStandardContains`, not `allItems.filter` in memory) so search performance and
+    /// memory use don't scale with total item count as the database grows over time — only
+    /// `allItems` (the day-windowed browsing view) still holds everything matching `isTemplate ==
+    /// false` in memory; see the implementation plan for that remaining scaling concern.
     private var searchResults: [PlanItem] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return [] }
-        let matched = allItems.filter { item in
-            item.title.lowercased().contains(query) || item.notes.lowercased().contains(query)
+        let predicate = #Predicate<PlanItem> { item in
+            item.isTemplate == false
+            && (item.title.localizedStandardContains(query) || item.notes.localizedStandardContains(query))
         }
+        let descriptor = FetchDescriptor<PlanItem>(predicate: predicate, sortBy: [SortDescriptor(\.date)])
+        let matched = (try? modelContext.fetch(descriptor)) ?? []
         let filtered = matched.filter { item in
             (showCompleted || (item.status != .completed && item.status != .canceled))
             && (!showFlaggedOnly || item.isFlagged)
             && (!showMissedOnly || isMissed(item))
         }
-        let visible = categorySelectionService?.filterItems(filtered) ?? filtered
-        return visible.sorted { $0.date < $1.date }
+        return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
     /// Pending item whose deadline, day-section window, or entire day has already passed.
