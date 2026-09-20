@@ -90,8 +90,15 @@ struct TimelineView: View {
     private var searchResults: [PlanItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return [] }
+        // Same future-instance guard as `filteredItems` (line 60), expressed as `date < tomorrow`
+        // since #Predicate can't call `calendar.startOfDay` — a plain Date comparison computed
+        // outside the predicate. Without this, a materialized recurring instance dated in the
+        // future (possible via multi-device clock/timezone skew during CloudKit sync) would be
+        // hidden while browsing but resurface here if it happened to match the search text.
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
         let predicate = #Predicate<PlanItem> { item in
             item.isTemplate == false
+            && (item.date < tomorrow || item.template == nil)
             && (item.title.localizedStandardContains(query) || item.notes.localizedStandardContains(query))
         }
         let descriptor = FetchDescriptor<PlanItem>(predicate: predicate, sortBy: [SortDescriptor(\.date)])
