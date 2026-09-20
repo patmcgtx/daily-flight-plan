@@ -354,10 +354,6 @@ private struct TimelineItemRow: View {
             Text(deadline, format: .dateTime.hour().minute())
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        } else if let section = item.daySection {
-            Text(section.displayName)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 }
