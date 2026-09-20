@@ -437,12 +437,17 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - ✅ Add an app icon — see `app-icon.md` for the design description
 - **User's guide**: write a short guide covering the core concepts (flight plan metaphor, sections, recurring habits, AI chat) and the key gestures/actions; ship it as an in-app help sheet or a public web page linked from Settings
 
-### Phase release.2 — Tech Debt
+### Phase release.2a — Performance & Stability Audit
+- Performance audti - run through Instruments to find hangs, glitches, memory issues, core data issues, etc. 
+- Make sure it runs well on older phones
+- Confirm cross-device syncing is working as expected and bug-free
+
+### Phase release.2b — Tech Debt
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
 - Architecture review & refactor
-- **Rename day "section" to "segment"**: make this change in the code as well
+- **Rename code to match findl view names**: Rename day "section" to "segment" in the code. Also check backing code for timeline view, day view, comm view, etc.
 - **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
 - **Bug: completed/canceled items still accept context menu actions**: pills in the done or cancelled rows still show the "Cancel Item" context menu action. Fix: gate the context menu destructive action in `ItemPillView` on `item.status == .pending`.
