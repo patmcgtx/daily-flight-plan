@@ -20,6 +20,7 @@ struct TimelineView: View {
 
     @State private var itemToEdit: PlanItem? = nil
     @State private var addItemRequest: AddItemRequest? = nil
+    @State private var searchText: String = ""
 
     private struct AddItemRequest: Identifiable {
         let date: Date
@@ -33,6 +34,7 @@ struct TimelineView: View {
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
     @AppStorage(AppStorageKeys.showMissedOnly.rawValue) private var showMissedOnly: Bool = false
+    @AppStorage(AppStorageKeys.showCompletedOnly.rawValue) private var showCompletedOnly: Bool = false
 
     /// How many days of history/future are currently loaded, in each direction from today.
     /// Grows in weekly increments as the user scrolls toward either edge.
@@ -56,6 +58,8 @@ struct TimelineView: View {
             guard day >= minLoadedDate && day <= maxLoadedDate else { return false }
             // Future dates never show routine instances — routines could still change before then.
             guard day <= today || item.template == nil else { return false }
+            // Isolates rather than reveals: pending-only when off, completed/canceled-only when on.
+            guard (item.status == .completed || item.status == .canceled) == showCompletedOnly else { return false }
             guard !showFlaggedOnly || item.isFlagged else { return false }
             guard !showMissedOnly || isMissed(item) else { return false }
             return true
@@ -73,6 +77,38 @@ struct TimelineView: View {
             if dict[date] == nil { dict[date] = [] }
         }
         return dict.keys.sorted().map { date in (date: date, items: dict[date]!) }
+    }
+
+    /// Searches by title and notes across *every* loaded-or-not date — unlike the grouped list,
+    /// this deliberately ignores `minLoadedDate`/`maxLoadedDate` since search is meant to reach
+    /// the whole history/future, not just the currently pre-cached window. Runs as a fresh
+    /// `FetchDescriptor` against the store (with the text match pushed down via
+    /// `localizedStandardContains`, not `allItems.filter` in memory) so search performance and
+    /// memory use don't scale with total item count as the database grows over time — only
+    /// `allItems` (the day-windowed browsing view) still holds everything matching `isTemplate ==
+    /// false` in memory; see the implementation plan for that remaining scaling concern.
+    private var searchResults: [PlanItem] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return [] }
+        // Same future-instance guard as `filteredItems` (line 60), expressed as `date < tomorrow`
+        // since #Predicate can't call `calendar.startOfDay` — a plain Date comparison computed
+        // outside the predicate. Without this, a materialized recurring instance dated in the
+        // future (possible via multi-device clock/timezone skew during CloudKit sync) would be
+        // hidden while browsing but resurface here if it happened to match the search text.
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+        let predicate = #Predicate<PlanItem> { item in
+            item.isTemplate == false
+            && (item.date < tomorrow || item.template == nil)
+            && (item.title.localizedStandardContains(query) || item.notes.localizedStandardContains(query))
+        }
+        let descriptor = FetchDescriptor<PlanItem>(predicate: predicate, sortBy: [SortDescriptor(\.date)])
+        let matched = (try? modelContext.fetch(descriptor)) ?? []
+        let filtered = matched.filter { item in
+            ((item.status == .completed || item.status == .canceled) == showCompletedOnly)
+            && (!showFlaggedOnly || item.isFlagged)
+            && (!showMissedOnly || isMissed(item))
+        }
+        return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
     /// Pending item whose deadline, day-section window, or entire day has already passed.
@@ -93,39 +129,49 @@ struct TimelineView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
-                    ForEach(groupedByDate, id: \.date) { group in
-                        Section {
-                            let canAddItems = group.date >= today
-                            if group.items.isEmpty && !canAddItems {
-                                Text("Nothing planned")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.tertiary)
-                            } else {
-                                ForEach(segmentedGroups(for: group.items, includeEmpty: canAddItems)) { segment in
-                                    segmentHeader(
-                                        for: segment.section,
-                                        onAdd: canAddItems ? { addItemRequest = AddItemRequest(date: group.date, section: segment.section) } : nil
-                                    )
-                                    ForEach(segment.items) { item in
-                                        TimelineItemRow(item: item) {
-                                            itemToEdit = item
+                    if searchText.isEmpty {
+                        ForEach(groupedByDate, id: \.date) { group in
+                            Section {
+                                let canAddItems = group.date >= today
+                                if group.items.isEmpty && !canAddItems {
+                                    Text("Nothing planned")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.tertiary)
+                                } else {
+                                    ForEach(segmentedGroups(for: group.items, includeEmpty: canAddItems)) { segment in
+                                        segmentHeader(
+                                            for: segment.section,
+                                            onAdd: canAddItems ? { addItemRequest = AddItemRequest(date: group.date, section: segment.section) } : nil
+                                        )
+                                        ForEach(segment.items) { item in
+                                            TimelineItemRow(item: item) {
+                                                itemToEdit = item
+                                            }
                                         }
                                     }
                                 }
+                            } header: {
+                                dateHeader(for: group.date)
                             }
-                        } header: {
-                            dateHeader(for: group.date)
+                            .id(group.date)
+                            .onAppear {
+                                // Guard against a single visible group matching both first and last —
+                                // that's an initial-render artifact, not a real scroll-to-edge event.
+                                guard groupedByDate.count > 1 else { return }
+                                if group.date == groupedByDate.first?.date {
+                                    pastDaysWindow += 7
+                                }
+                                if group.date == groupedByDate.last?.date {
+                                    futureDaysWindow += 7
+                                }
+                            }
                         }
-                        .id(group.date)
-                        .onAppear {
-                            // Guard against a single visible group matching both first and last —
-                            // that's an initial-render artifact, not a real scroll-to-edge event.
-                            guard groupedByDate.count > 1 else { return }
-                            if group.date == groupedByDate.first?.date {
-                                pastDaysWindow += 7
-                            }
-                            if group.date == groupedByDate.last?.date {
-                                futureDaysWindow += 7
+                    } else if searchResults.isEmpty {
+                        ContentUnavailableView.search(text: searchText)
+                    } else {
+                        ForEach(searchResults) { item in
+                            TimelineItemRow(item: item, showDate: true) {
+                                itemToEdit = item
                             }
                         }
                     }
@@ -156,6 +202,17 @@ struct TimelineView: View {
                 }
             }
         }
+        // Attached to the NavigationStack itself, not nested inside the ScrollViewReader/List
+        // chain — keeps the system search field independent of the List's own top safeAreaInset
+        // (used by filterBar), which otherwise contend for the same "top of list" slot.
+        // Placement is forced to `.navigationBarDrawer(.always)` rather than left `.automatic` —
+        // the automatic resolution (always-visible bar vs. a minimized tap-to-expand button) was
+        // observed to differ between OS builds, leaving the field effectively invisible on some.
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search items"
+        )
     }
 
     // MARK: Date header
@@ -189,7 +246,14 @@ struct TimelineView: View {
                 filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
                     showFlaggedOnly.toggle()
                 }
+                filterToggle("Done", icon: "checkmark", isActive: showCompletedOnly) {
+                    // Mutually exclusive with Missed: both isolate to opposite categories (done
+                    // vs. overdue-pending), so both active at once would always show nothing.
+                    if !showCompletedOnly { showMissedOnly = false }
+                    showCompletedOnly.toggle()
+                }
                 filterToggle("Missed", icon: "clock.badge.exclamationmark", isActive: showMissedOnly) {
+                    if !showMissedOnly { showCompletedOnly = false }
                     showMissedOnly.toggle()
                 }
                 if !allCategories.isEmpty {
@@ -296,6 +360,7 @@ struct TimelineView: View {
 private struct TimelineItemRow: View {
 
     let item: PlanItem
+    var showDate: Bool = false
     let onEdit: () -> Void
 
     @Environment(\.modelContext) private var modelContext
@@ -362,10 +427,19 @@ private struct TimelineItemRow: View {
 
     @ViewBuilder
     private var subtitle: some View {
-        if let deadline = item.deadline {
-            Text(deadline, format: .dateTime.hour().minute())
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        if showDate || item.deadline != nil {
+            HStack(spacing: 4) {
+                if showDate {
+                    Text(item.date, format: .dateTime.month(.abbreviated).day())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let deadline = item.deadline {
+                    Text(deadline, format: .dateTime.hour().minute())
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 }
