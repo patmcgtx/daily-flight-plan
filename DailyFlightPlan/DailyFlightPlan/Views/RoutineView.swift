@@ -21,6 +21,7 @@ struct RoutineView: View {
     @State private var sectionToDelete: (title: String, pattern: Set<Locale.Weekday>)?
     @State private var collapsedCards: Set<String> = []
     @State private var collapsedSegments: Set<String> = []
+    @State private var dropTargetedSegmentKey: String? = nil
     @State private var segmentSummaries: [String: String] = [:]
     @State private var loadingSummarySegments: Set<String> = []
     @State private var summaryTasks: [String: Task<Void, Never>] = [:]
@@ -158,20 +159,17 @@ struct RoutineView: View {
                 .contentShape(Rectangle())
                 
                 Divider()
-                
-                if totalItems == 0 {
-                    Text("No routines yet.")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                        .padding(14)
-                } else {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(segments) { entry in
-                            segmentCard(for: entry, cardName: name, pattern: pattern)
-                        }
+
+                // Always render segment cards, even when totalItems == 0 — each segment shows
+                // its own "No routines yet." state, and (unlike a single placeholder Text) still
+                // exposes a per-segment drop target so a drag can land directly in a segment on
+                // an otherwise-empty schedule card.
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(segments) { entry in
+                        segmentCard(for: entry, cardName: name, pattern: pattern)
                     }
-                    .padding(12)
                 }
+                .padding(12)
             } else {
                 Button {
                     withAnimation(.spring(duration: 0.3)) { _ = collapsedCards.remove(name) }
@@ -345,6 +343,19 @@ struct RoutineView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(.separator, lineWidth: 0.5)
         }
+        .overlay {
+            if dropTargetedSegmentKey == key {
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.accentColor, lineWidth: 2)
+            }
+        }
+        .dropDestination(for: String.self) { dropped, _ in
+            guard let uuidString = dropped.first else { return false }
+            return reassignSegment(uuidString: uuidString, to: entry.segment, pattern: pattern)
+        } isTargeted: { targeted in
+            dropTargetedSegmentKey = targeted ? key : nil
+        }
+        .animation(.easeInOut(duration: 0.15), value: dropTargetedSegmentKey == key)
     }
 
     private func segmentHeader(entry: SegmentGroup, total: Int, isExpanded: Bool, key: String) -> some View {
@@ -609,6 +620,26 @@ struct RoutineView: View {
               let template = templates.first(where: { $0.uuid == uuid }),
               Set(template.recurringWeekdays) != pattern else { return false }
         template.recurringWeekdays = Array(pattern)
+        try? modelContext.save()
+        return true
+    }
+
+    /// Drops onto a specific day-segment card. Handles both same-card moves (just changes
+    /// `daySection`) and cross-card drags landing directly on a segment (changes the weekday
+    /// pattern too, in one motion) — the segment card sits in front of the schedule card's own
+    /// drop target, so this is the only handler that fires when the drop lands inside a segment.
+    @discardableResult
+    private func reassignSegment(uuidString: String, to segment: DaySection?, pattern: Set<Locale.Weekday>) -> Bool {
+        guard let uuid = UUID(uuidString: uuidString),
+              let template = templates.first(where: { $0.uuid == uuid }) else { return false }
+        let patternChanged = Set(template.recurringWeekdays) != pattern
+        let segmentChanged = template.daySection != segment
+        guard patternChanged || segmentChanged else { return false }
+        withAnimation(.spring(duration: 0.3)) {
+            template.recurringWeekdays = Array(pattern)
+            template.daySection = segment
+            template.deadline = nil
+        }
         try? modelContext.save()
         return true
     }

@@ -304,10 +304,22 @@ private struct TimelineItemRow: View {
         HStack(spacing: 10) {
             checkboxButton
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .strikethrough(item.status == .completed || item.status == .canceled)
-                    .foregroundStyle(item.status == .canceled ? .secondary : .primary)
-                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(item.title)
+                        .strikethrough(item.status == .completed || item.status == .canceled)
+                        .foregroundStyle(item.status == .canceled ? .secondary : .primary)
+                        .lineLimit(1)
+                    if item.isFlagged {
+                        Image(systemName: "flag.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                    }
+                    if !item.notes.isEmpty {
+                        Image(systemName: "note.text")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
                 subtitle
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -352,10 +364,6 @@ private struct TimelineItemRow: View {
     private var subtitle: some View {
         if let deadline = item.deadline {
             Text(deadline, format: .dateTime.hour().minute())
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        } else if let section = item.daySection {
-            Text(section.displayName)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

@@ -290,14 +290,15 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
 
 Improves existing features based on real use. No new capabilities — better UX on the four main views that need the most work.
 
-### Phase 2.1 — Routine View Refinements (in progress)
-- **✅ Segment cards match Day view visual language**: within each schedule card, day-segment groups (Morning, Midday, etc.) are now their own collapsible `RoundedRectangle(cornerRadius: 14)` cards with `.background(.background)` fill, matching `FlightPlanView`'s section cards; header shows segment name + time range + item-count badge; title enlarges (`.headline` vs. `.subheadline.bold()`) when expanded
-- **✅ Per-segment "Add item" button**: each expanded segment has an `+ Add item` button that opens `ItemForm` pre-filled with both the schedule's weekday pattern and that segment's `DaySection` — required a new combined `ItemForm(templateWeekdays:section:)` / `ItemFormViewModel` initializer (previously only one or the other could be set at once)
-- **✅ AI summary on collapsed segments**: collapsed segment headers show a one-line summary of routine content, generated via Foundation Models (`LanguageModelSession`) — same pattern as the Day view's section summaries; cache is keyed by schedule name + day-segment and invalidated whenever any template's title, section, deadline, or weekday pattern changes; empty segments show "No routines"
-- **✅ `quickSummary(for:)` deterministic fallback**: `SystemLanguageModel` (Apple Intelligence) is unavailable in the iOS Simulator, so a local fallback joins item titles/times (e.g. "Coffee · Stretch · Journal 7:00 AM +1 more") and is shown whenever no AI summary is cached yet — also covers AI failures/guardrail rejections on real devices, not just the Simulator
-- **✅ Tab reorder**: Routine now appears before Log in the tab bar (Day / Routine / Log / Comm). macOS keyboard shortcuts in `DayView.swift` match this order (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log, `Cmd+4` Comm)
-- Drag and drop between segments — not yet done (drag-and-drop still only reassigns items between schedule cards, not between day-segments within a card)
-- UX audit and fix — not yet done
+### ✅ Phase 2.1 — Routine View Refinements
+- **Segment cards match Day view visual language**: within each schedule card, day-segment groups (Morning, Midday, etc.) are now their own collapsible `RoundedRectangle(cornerRadius: 14)` cards with `.background(.background)` fill, matching `FlightPlanView`'s section cards; header shows segment name + time range + item-count badge; title enlarges (`.headline` vs. `.subheadline.bold()`) when expanded
+- **Per-segment "Add item" button**: each expanded segment has an `+ Add item` button that opens `ItemForm` pre-filled with both the schedule's weekday pattern and that segment's `DaySection` — required a new combined `ItemForm(templateWeekdays:section:)` / `ItemFormViewModel` initializer (previously only one or the other could be set at once)
+- **AI summary on collapsed segments**: collapsed segment headers show a one-line summary of routine content, generated via Foundation Models (`LanguageModelSession`) — same pattern as the Day view's section summaries; cache is keyed by schedule name + day-segment and invalidated whenever any template's title, section, deadline, or weekday pattern changes; empty segments show "No routines"
+- **`quickSummary(for:)` deterministic fallback**: `SystemLanguageModel` (Apple Intelligence) is unavailable in the iOS Simulator, so a local fallback joins item titles/times (e.g. "Coffee · Stretch · Journal 7:00 AM +1 more") and is shown whenever no AI summary is cached yet — also covers AI failures/guardrail rejections on real devices, not just the Simulator
+- **Tab reorder**: Routine now appears before Log in the tab bar (Day / Routine / Log / Comm). macOS keyboard shortcuts in `DayView.swift` match this order (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log, `Cmd+4` Comm)
+- **Drag and drop between segments**: each segment card is now its own `.dropDestination`, nested inside the schedule card's existing one — dropping directly on a segment sets `daySection` (and clears `deadline`, matching `FlightPlanView`'s drop convention); since the segment target sits in front of the card-level one, a cross-card drop landing on a segment reassigns weekday pattern *and* day-section in one motion via the new `reassignSegment(uuidString:to:pattern:)`, while dropping on the card's header/padding (outside any segment) still falls through to the original card-level `reassign(uuidString:to:)` for a pattern-only move
+- **Fix: empty schedule cards had no segment drop targets**: `scheduleCard` used to render just a "No routines yet." placeholder — no `segmentCard`s at all — whenever a weekday pattern had zero items, since `sortedSegments(for:)` already returns all six segments regardless of item count. That made an empty card's segments unreachable for drops, so a drag onto e.g. an empty "Weekends" card could only hit the outer card-level handler (pattern-only, `daySection` untouched) — placing an item into a specific segment on an empty card took two drags. Now segment cards always render (each showing its own "No routines yet." + Add item when empty), so every segment is a drop target from the start
+- **Note**: the open-ended "UX audit and fix" item originally tracked here was folded into a holistic full-app UX pass — see Phase release.1 under Version 1.0
 
 ### Phase 2.2 — Nav Log Refinements
 - **✅ The Nav Log should show *all* days, past, present, and future** — a time machine of sorts; starts on today (`ScrollViewReader` scrolls to today's section on appear)
@@ -331,7 +332,7 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Copyable responses**: allow long-press on assistant bubbles to copy the message text
 - **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
 - **Suggested follow-ups**: after each assistant response, optionally surface 2–3 short tappable follow-up questions relevant to the reply
-- **UX audit**: review empty state, bubble sizing, input bar behavior, and keyboard handling on both iPhone and Mac
+- **Note**: the "UX audit" item originally tracked here was folded into a holistic full-app UX pass — see Phase release.1 under Version 1.0
 
 ### Phase 2.5 — Smooth Day Swipe Navigation (Pager)
 *Partially implemented in Phase 1.19 (Flight Plan view): the infinite-reset `TabView(.page)` pattern is in place but swipe responsiveness is poor — gestures feel laggy or unresponsive in practice.*
@@ -402,7 +403,15 @@ Introduces monetization via StoreKit 2 — Pro Themes, Unlimited Categories, Mar
 
 The App Store release milestone. Addresses usability findings from real-world use, pays down tech debt, adds aviation-themed polish, completes the user's guide and app icon, and closes out with TestFlight beta testing before submission.
 
-### Phase release.1 — Fit and Finish
+### Phase release.1 — Full-App UX Audit
+A holistic pass across all four tabs, rather than scattering open-ended "UX audit" items across individual view phases. Best done by using the app for a real stretch of time (à la Phase 1.14) and noting friction points, then fixing what's found.
+- **Day tab** (Flight Plan view): general UX audit and fix
+- **Routine tab**: general UX audit and fix *(originally tracked in Phase 2.1)*
+- **Timeline tab** (Nav Log): general UX audit and fix
+- **Comm tab**: review empty state, bubble sizing, input bar behavior, and keyboard handling on both iPhone and Mac *(originally tracked in Phase 2.4)*
+- **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
+
+### Phase release.2 — Fit and Finish
 - Address findings from Phase 1.14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
@@ -428,12 +437,17 @@ The App Store release milestone. Addresses usability findings from real-world us
 - ✅ Add an app icon — see `app-icon.md` for the design description
 - **User's guide**: write a short guide covering the core concepts (flight plan metaphor, sections, recurring habits, AI chat) and the key gestures/actions; ship it as an in-app help sheet or a public web page linked from Settings
 
-### Phase release.2 — Tech Debt
+### Phase release.3 — Performance & Stability Audit
+- Performance audit — run through Instruments to find hangs, glitches, memory issues, Core Data issues, etc.
+- Make sure it runs well on older phones
+- Confirm cross-device syncing is working as expected and bug-free
+
+### Phase release.4 — Tech Debt
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
 - Architecture review & refactor
-- **Rename day "section" to "segment"**: make this change in the code as well
+- **Rename code to match final view names**: Rename day "section" to "segment" in the code. Also check backing code for Timeline view, Day view, Comm view, etc.
 - **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
 - **Bug: completed/canceled items still accept context menu actions**: pills in the done or cancelled rows still show the "Cancel Item" context menu action. Fix: gate the context menu destructive action in `ItemPillView` on `item.status == .pending`.
@@ -441,7 +455,7 @@ The App Store release milestone. Addresses usability findings from real-world us
 - Unit tests (Swift Testing framework): `DayViewModel`, `ItemFormViewModel`, `CategoriesEditViewModel`, `CategorySelectionService`, `DaySection`, `CalendarService`, `RemindersService`
 - UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings
 
-### Phase release.3 — Beta Testing
+### Phase release.5 — Beta Testing
 - Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
 - We'll want to get them to test In-App Purchase, etc. too.
 
