@@ -159,20 +159,17 @@ struct RoutineView: View {
                 .contentShape(Rectangle())
                 
                 Divider()
-                
-                if totalItems == 0 {
-                    Text("No routines yet.")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                        .padding(14)
-                } else {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(segments) { entry in
-                            segmentCard(for: entry, cardName: name, pattern: pattern)
-                        }
+
+                // Always render segment cards, even when totalItems == 0 — each segment shows
+                // its own "No routines yet." state, and (unlike a single placeholder Text) still
+                // exposes a per-segment drop target so a drag can land directly in a segment on
+                // an otherwise-empty schedule card.
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(segments) { entry in
+                        segmentCard(for: entry, cardName: name, pattern: pattern)
                     }
-                    .padding(12)
                 }
+                .padding(12)
             } else {
                 Button {
                     withAnimation(.spring(duration: 0.3)) { _ = collapsedCards.remove(name) }
