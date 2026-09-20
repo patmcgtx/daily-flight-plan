@@ -58,8 +58,8 @@ struct DayView: View {
                 RoutineView()
             }
 
-            Tab("Log", systemImage: "checklist", value: AppTab.timeline) {
-                TimelineView(onSelectDate: { _ in }, onDismiss: {})
+            Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
+                TimelineView(onDismiss: {})
             }
 
             Tab("Comm", systemImage: "apple.intelligence", value: AppTab.chat) {

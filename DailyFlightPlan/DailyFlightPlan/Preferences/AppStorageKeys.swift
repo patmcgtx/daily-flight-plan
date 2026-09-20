@@ -15,6 +15,9 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// Filter: show completed and canceled items
     case showCompleted
 
+    /// Filter: show only missed (overdue, pending) items in the Log view
+    case showMissedOnly
+
     /// Comma-separated EKCalendar identifiers to display (empty = show all calendars)
     case selectedCalendarIDs
 
