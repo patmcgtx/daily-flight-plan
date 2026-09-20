@@ -307,6 +307,10 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **✅ Lazy-load future days**: starts with a 7-day pre-cached window ahead of today; `futureDaysWindow` grows the same way as the newest loaded section scrolls into view
 - **✅ Dropped the "Done" filter** — completed/canceled items are shown by default now (no toggle needed)
 - **✅ Added a "Missed" filter** — pending items whose deadline, day-section window, or entire day has already passed (up to the current time); reuses the same missed-item logic as the Day view (`clock.badge.exclamationmark`)
+- **✅ Segmented by time of day**: each day's items are grouped under small bold/secondary sub-headers ("First Thing", "Morning", … "Open") instead of one flat list, for readability
+- **✅ Per-segment "Add item"**: today and future days show every segment (even empty ones) with a `+` button to the right of the segment title, opening `ItemForm(date:section:)` pre-filled; past days only show segments that already have items, with no add affordance (the log doesn't allow adding to the past)
+- **✅ Removed dead date-header navigation**: the per-day header's tap-to-navigate + `arrow.up.right` icon did nothing in production (`DayView` always passes no-op `onSelectDate`/`onDismiss` since the Log view became a permanent tab, not a sheet) — removed the icon, the `Button` wrapper, and the now-unused `onSelectDate` parameter
+- **✅ Tab renamed "Log" → "Timeline"**: tab label in `DayView.swift` and the view's `navigationTitle` both now read "Timeline" (was "Log" / "Nav Log")
 - Not yet done: editing on today/future items with swipe gestures (cancel, defer, flag, delete); per-day share icon; `.searchable` search across all dates
 
 ### Phase 2.3 — Day/Flight View Refinements

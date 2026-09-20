@@ -19,6 +19,13 @@ struct TimelineView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var itemToEdit: PlanItem? = nil
+    @State private var addItemRequest: AddItemRequest? = nil
+
+    private struct AddItemRequest: Identifiable {
+        let date: Date
+        let section: DaySection?
+        var id: String { "\(date)|\(section?.rawValue ?? "open")" }
+    }
 
     private func handleDismiss() {
         if let onDismiss { onDismiss() } else { envDismiss() }
@@ -82,13 +89,17 @@ struct TimelineView: View {
                 List {
                     ForEach(groupedByDate, id: \.date) { group in
                         Section {
-                            if group.items.isEmpty {
+                            let canAddItems = group.date >= today
+                            if group.items.isEmpty && !canAddItems {
                                 Text("Nothing planned")
                                     .font(.subheadline)
                                     .foregroundStyle(.tertiary)
                             } else {
-                                ForEach(segmentedGroups(for: group.items)) { segment in
-                                    segmentHeader(for: segment.section)
+                                ForEach(segmentedGroups(for: group.items, includeEmpty: canAddItems)) { segment in
+                                    segmentHeader(
+                                        for: segment.section,
+                                        onAdd: canAddItems ? { addItemRequest = AddItemRequest(date: group.date, section: segment.section) } : nil
+                                    )
                                     ForEach(segment.items) { item in
                                         TimelineItemRow(item: item) {
                                             itemToEdit = item
@@ -116,7 +127,10 @@ struct TimelineView: View {
                 .listStyle(.insetGrouped)
                 #endif
                 .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
-                .navigationTitle("Nav Log")
+                .sheet(item: $addItemRequest) { request in
+                    ItemForm(date: request.date, section: request.section)
+                }
+                .navigationTitle("Timeline")
                 .inlineNavigationTitle()
                 .toolbar {
                     if onDismiss == nil {
@@ -212,9 +226,10 @@ struct TimelineView: View {
 
     /// Groups a day's items into time-of-day segments for readability — deadline items fall into
     /// the segment containing their clock time; segment-assigned items use their explicit segment;
-    /// everything else lands in a trailing "Open" group. Empty segments are omitted (unlike the Day
-    /// view's persistent cards, this is a historical/scheduled log, not something to plan against).
-    private func segmentedGroups(for items: [PlanItem]) -> [SegmentGroup] {
+    /// everything else lands in a trailing "Open" group. Empty segments are omitted for past days
+    /// (a historical log isn't something to plan against), but included for today/future days so
+    /// every segment gets an "Add item" affordance even before it has anything in it.
+    private func segmentedGroups(for items: [PlanItem], includeEmpty: Bool) -> [SegmentGroup] {
         var grouped: [DaySection?: [PlanItem]] = [:]
         for item in items {
             if let section = item.daySection {
@@ -236,21 +251,34 @@ struct TimelineView: View {
             }
         }
         var result = DaySection.allCases.compactMap { section -> SegmentGroup? in
-            guard let items = grouped[section], !items.isEmpty else { return nil }
+            let items = grouped[section] ?? []
+            guard includeEmpty || !items.isEmpty else { return nil }
             return SegmentGroup(section: section, items: items)
         }
-        if let openItems = grouped[nil], !openItems.isEmpty {
+        let openItems = grouped[nil] ?? []
+        if includeEmpty || !openItems.isEmpty {
             result.append(SegmentGroup(section: nil, items: openItems))
         }
         return result
     }
 
-    private func segmentHeader(for section: DaySection?) -> some View {
-        Text(section?.displayName ?? "Open")
-            .font(.caption.bold())
-            .foregroundStyle(.secondary)
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 2, trailing: 16))
-            .listRowSeparator(.hidden)
+    private func segmentHeader(for section: DaySection?, onAdd: (() -> Void)?) -> some View {
+        HStack {
+            Text(section?.displayName ?? "Open")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+            Spacer()
+            if let onAdd {
+                Button(action: onAdd) {
+                    Image(systemName: "plus")
+                        .font(.caption.bold())
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 2, trailing: 16))
+        .listRowSeparator(.hidden)
     }
 }
 

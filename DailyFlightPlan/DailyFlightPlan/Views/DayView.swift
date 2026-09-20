@@ -58,7 +58,7 @@ struct DayView: View {
                 RoutineView()
             }
 
-            Tab("Log", systemImage: "checklist", value: AppTab.timeline) {
+            Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
 
