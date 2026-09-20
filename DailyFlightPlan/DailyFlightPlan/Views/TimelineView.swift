@@ -304,10 +304,22 @@ private struct TimelineItemRow: View {
         HStack(spacing: 10) {
             checkboxButton
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .strikethrough(item.status == .completed || item.status == .canceled)
-                    .foregroundStyle(item.status == .canceled ? .secondary : .primary)
-                    .lineLimit(1)
+                HStack(spacing: 4) {
+                    Text(item.title)
+                        .strikethrough(item.status == .completed || item.status == .canceled)
+                        .foregroundStyle(item.status == .canceled ? .secondary : .primary)
+                        .lineLimit(1)
+                    if item.isFlagged {
+                        Image(systemName: "flag.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                    }
+                    if !item.notes.isEmpty {
+                        Image(systemName: "note.text")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
                 subtitle
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -350,24 +362,10 @@ private struct TimelineItemRow: View {
 
     @ViewBuilder
     private var subtitle: some View {
-        if item.deadline != nil || item.isFlagged || !item.notes.isEmpty {
-            HStack(spacing: 4) {
-                if let deadline = item.deadline {
-                    Text(deadline, format: .dateTime.hour().minute())
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if item.isFlagged {
-                    Image(systemName: "flag.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.red)
-                }
-                if !item.notes.isEmpty {
-                    Image(systemName: "note.text")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-            }
+        if let deadline = item.deadline {
+            Text(deadline, format: .dateTime.hour().minute())
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }
