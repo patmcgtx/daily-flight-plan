@@ -334,6 +334,8 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 
 ### Phase 2.4 — Comm Tab Refinements
+- **Do we really need this view?** I already have AI-assisted import.
+- **Updated 'terminal' chat appearance**: Just for fun. Liek soe sort of airline terminal. Move away from the "Messages" style interface.
 - **Context freshness / Conversation reset**: the session is intentionally built once and reused across tab switches to preserve conversation history. Add an explicit reset button (toolbar or inline) that clears messages and rebuilds the session with current plan data — giving the user control over freshness without auto-wiping the conversation on every tab entry.
 - **Copyable responses**: allow long-press on assistant bubbles to copy the message text
 - **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
@@ -348,6 +350,11 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Ensure a fast, fluid swipe between yesterday / today / tomorrow with no perceptible lag or snap-back artifacts
 - macOS: `DragGesture` fallback should feel equally responsive
 - Consider whether the infinite-reset pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with paging, custom gesture recognizer) would be more reliable
+
+### Phase 2.7 - Import UX Refinements
+- **Flag dups on import**: This seems to be a common sourece of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
+- **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
+- **Add tagging on import**: Would be helpful to allow tagging items on import as well
 
 ---
 
