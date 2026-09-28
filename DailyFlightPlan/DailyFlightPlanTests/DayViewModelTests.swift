@@ -80,6 +80,61 @@ struct DayViewModelTests {
         #expect(viewModel.isToday == expected)
     }
 
+    // MARK: Date navigation
+
+    @Test("goToYesterday moves the selected date back one day and marks navigation backward")
+    func goToYesterdayMovesBackOneDay() {
+        let viewModel = DayViewModel()
+        let start = viewModel.selectedDate
+        viewModel.goToYesterday()
+        #expect(viewModel.selectedDate == Calendar.current.date(byAdding: .day, value: -1, to: start)!)
+        #expect(!viewModel.forwardNavigation)
+    }
+
+    @Test("goToTomorrow moves the selected date forward one day and marks navigation forward")
+    func goToTomorrowMovesForwardOneDay() {
+        let viewModel = DayViewModel()
+        let start = viewModel.selectedDate
+        viewModel.goToTomorrow()
+        #expect(viewModel.selectedDate == Calendar.current.date(byAdding: .day, value: 1, to: start)!)
+        #expect(viewModel.forwardNavigation)
+    }
+
+    @Test("goToToday returns to today's date and sets navigation direction based on where it came from", arguments: [
+        (daysFromToday: -3, expectedForward: true),
+        (daysFromToday: 3, expectedForward: false),
+    ])
+    func goToTodaySetsDirectionFromPriorDate(daysFromToday: Int, expectedForward: Bool) {
+        let viewModel = DayViewModel()
+        viewModel.selectedDate = Calendar.current.date(byAdding: .day, value: daysFromToday, to: Calendar.current.startOfDay(for: .now))!
+        viewModel.goToToday()
+        #expect(viewModel.selectedDate == Calendar.current.startOfDay(for: .now))
+        #expect(viewModel.forwardNavigation == expectedForward)
+    }
+
+    @Test("navigate jumps directly to the given date and sets navigation direction accordingly", arguments: [
+        (daysFromToday: 5, expectedForward: true),
+        (daysFromToday: -5, expectedForward: false),
+    ])
+    func navigateJumpsToDateAndSetsDirection(daysFromToday: Int, expectedForward: Bool) {
+        let viewModel = DayViewModel()
+        let target = Calendar.current.date(byAdding: .day, value: daysFromToday, to: Calendar.current.startOfDay(for: .now))!
+        viewModel.navigate(to: target)
+        #expect(viewModel.selectedDate == target)
+        #expect(viewModel.forwardNavigation == expectedForward)
+    }
+
+    @Test("navigate does nothing when the target date is already selected")
+    func navigateNoOpForSameDate() {
+        let viewModel = DayViewModel()
+        let target = Calendar.current.date(byAdding: .day, value: 5, to: Calendar.current.startOfDay(for: .now))!
+        viewModel.navigate(to: target)
+        let forwardBefore = viewModel.forwardNavigation
+        viewModel.navigate(to: target)
+        #expect(viewModel.selectedDate == target)
+        #expect(viewModel.forwardNavigation == forwardBefore)
+    }
+
     // MARK: Section collapse
 
     @Test("Toggling a section's collapsed state flips it, and toggling again restores it", arguments: DaySection.allCases)
@@ -120,6 +175,44 @@ struct DayViewModelTests {
         let timed = reminder(due: startDate(of: .morning))
         let result = viewModel.anyTimeReminderItems(from: [untimed, timed])
         #expect(result.map(\.id) == [untimed.id])
+    }
+
+    @Test("pastCalendarEvents includes only events in sections before the injected current time, while viewing today")
+    func pastCalendarEventsIncludesEarlierSections() {
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
+        viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
+        let pastEvent = event(start: startDate(of: .firstThing))
+        let currentEvent = event(start: startDate(of: .morning))
+        let futureEvent = event(start: startDate(of: .evening))
+        let result = viewModel.pastCalendarEvents(from: [pastEvent, currentEvent, futureEvent])
+        #expect(result.map(\.id) == [pastEvent.id])
+    }
+
+    @Test("pastCalendarEvents is empty when not viewing today")
+    func pastCalendarEventsEmptyWhenNotToday() {
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
+        viewModel.selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
+        let anEvent = event(start: startDate(of: .firstThing))
+        #expect(viewModel.pastCalendarEvents(from: [anEvent]).isEmpty)
+    }
+
+    @Test("pastReminderItems includes only reminders due in sections before the injected current time, while viewing today")
+    func pastReminderItemsIncludesEarlierSections() {
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
+        viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
+        let pastReminder = reminder(due: startDate(of: .firstThing))
+        let currentReminder = reminder(due: startDate(of: .morning))
+        let untimedReminder = reminder(due: nil)
+        let result = viewModel.pastReminderItems(from: [pastReminder, currentReminder, untimedReminder])
+        #expect(result.map(\.id) == [pastReminder.id])
+    }
+
+    @Test("pastReminderItems is empty when not viewing today")
+    func pastReminderItemsEmptyWhenNotToday() {
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
+        viewModel.selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
+        let aReminder = reminder(due: startDate(of: .firstThing))
+        #expect(viewModel.pastReminderItems(from: [aReminder]).isEmpty)
     }
 
     // MARK: anyTimeItems
@@ -272,6 +365,22 @@ struct DayViewModelTests {
         #expect(viewModel.currentSection == .morning)
         viewModel.selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
         #expect(viewModel.currentSection == nil)
+    }
+
+    // MARK: pastSections
+
+    @Test("pastSections returns every section before the one containing the injected current time, while viewing today")
+    func pastSectionsBeforeCurrentToday() {
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
+        viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
+        #expect(viewModel.pastSections == [.firstThing])
+    }
+
+    @Test("pastSections is empty when not viewing today")
+    func pastSectionsEmptyWhenNotToday() {
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
+        viewModel.selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
+        #expect(viewModel.pastSections.isEmpty)
     }
 
     // MARK: applyAutoCollapse
