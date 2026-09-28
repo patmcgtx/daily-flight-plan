@@ -190,6 +190,55 @@ func startLiveClock() {
         }
     }
 
+    // MARK: Recurring instance materialization (today)
+
+    /// Builds per-day instances for templates that match `date`'s weekday and have no existing
+    /// instance for that date, given a fresh fetch of templates and same-day items. Pure — the
+    /// caller is responsible for inserting the returned instances into the model context and saving.
+    ///
+    /// Coverage is keyed by title alone rather than title+section: an instance's section can change
+    /// via drag-and-drop, and it must still count as covering its template, or a moved instance
+    /// gets duplicated back into the template's original section on the next materialization pass.
+    func recurringInstancesToMaterialize(
+        for date: Date,
+        templates: [PlanItem],
+        existingItemsForDate: [PlanItem]
+    ) -> [PlanItem] {
+        guard let weekday = localeWeekday(of: date) else { return [] }
+        let cal = Calendar.current
+        let startOfDay = cal.startOfDay(for: date)
+
+        var coveredKeys = Set(existingItemsForDate.map { $0.title.lowercased() })
+        var newInstances: [PlanItem] = []
+        for template in templates where template.isTemplate {
+            guard template.recurringWeekdays.contains(weekday) else { continue }
+            let key = template.title.lowercased()
+            guard !coveredKeys.contains(key) else { continue }
+            let instanceDeadline: Date? = template.deadline.flatMap { dl in
+                cal.date(
+                    bySettingHour: cal.component(.hour, from: dl),
+                    minute: cal.component(.minute, from: dl),
+                    second: 0, of: startOfDay
+                )
+            }
+            let instance = PlanItem(
+                title: template.title,
+                notes: template.notes,
+                isFlagged: template.isFlagged,
+                date: startOfDay,
+                deadline: instanceDeadline,
+                daySection: template.daySection,
+                recurringWeekdays: [],
+                isTemplate: false
+            )
+            instance.categories = template.categories
+            instance.template = template
+            newInstances.append(instance)
+            coveredKeys.insert(key)
+        }
+        return newInstances
+    }
+
     // MARK: Calendar events
 
     /// Calendar events whose start time falls within this section

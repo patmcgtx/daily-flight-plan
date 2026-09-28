@@ -260,7 +260,7 @@ final class CommViewModel {
             if let wd {
                 ghosted = templates
                     .filter { $0.recurringWeekdays.contains(wd) }
-                    .filter { t in !dayItems.contains { $0.title == t.title && $0.daySection == t.daySection } }
+                    .filter { t in !dayItems.contains { $0.title == t.title } }
             }
             let allForDay = (dayItems + ghosted).sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
             let header = offset == 1
