@@ -19,13 +19,13 @@ struct DaySectionTests {
         return Calendar.current.date(from: components)!
     }
 
-    @Test
+    @Test("Sections are ordered chronologically through the day")
     func allCasesAreInChronologicalOrder() {
         let startMinutes = DaySection.allCases.map(\.startMinutes)
         #expect(startMinutes == startMinutes.sorted())
     }
 
-    @Test(arguments: [
+    @Test("Display name matches the expected human-readable section name", arguments: [
         (DaySection.firstThing, "First Thing"),
         (DaySection.morning, "Morning"),
         (DaySection.midday, "Midday"),
@@ -37,7 +37,7 @@ struct DaySectionTests {
         #expect(section.displayName == expected)
     }
 
-    @Test(arguments: [
+    @Test("Time range label matches the expected displayed range", arguments: [
         (DaySection.firstThing, "before 7:30 AM"),
         (DaySection.morning, "7:30 – 11 AM"),
         (DaySection.midday, "11 AM – 1 PM"),
@@ -49,7 +49,7 @@ struct DaySectionTests {
         #expect(section.timeRangeLabel == expected)
     }
 
-    @Test(arguments: [
+    @Test("Start and end hour are derived correctly from the section's minute range", arguments: [
         (DaySection.firstThing, 0, 7),
         (DaySection.morning, 7, 10),
         (DaySection.midday, 11, 12),
@@ -64,7 +64,7 @@ struct DaySectionTests {
 
     /// Each pair marks a section's first and last minute, verifying `containing(_:)`
     /// resolves both edges (and the handoff to the next section) correctly.
-    @Test(arguments: [
+    @Test("Containing(_:) resolves the correct section at each boundary minute", arguments: [
         (hour: 0, minute: 0, expected: DaySection.firstThing),
         (hour: 7, minute: 29, expected: DaySection.firstThing),
         (hour: 7, minute: 30, expected: DaySection.morning),
