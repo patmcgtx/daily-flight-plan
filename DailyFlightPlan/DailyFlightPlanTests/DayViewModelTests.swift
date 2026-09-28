@@ -8,6 +8,7 @@ import SwiftUI
 import Foundation
 @testable import DailyFlightPlan
 
+@Suite(.serialized)
 @MainActor
 struct DayViewModelTests {
 
@@ -24,6 +25,18 @@ struct DayViewModelTests {
 
     private func startDate(of section: DaySection, daysFromNow: Int = 0) -> Date {
         date(hour: section.startMinutes / 60, minute: section.startMinutes % 60, daysFromNow: daysFromNow)
+    }
+
+    /// A fixed, arbitrary instant used to inject `DayViewModel.currentTime` so clock-dependent
+    /// tests don't depend on the real wall clock at the moment the test happens to run.
+    private func fixedTime(hour: Int, minute: Int) -> Date {
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 6
+        components.day = 15
+        components.hour = hour
+        components.minute = minute
+        return Calendar.current.date(from: components)!
     }
 
     private func item(
@@ -138,10 +151,11 @@ struct DayViewModelTests {
 
     @Test("sectionPills excludes items whose deadline has already passed today")
     func sectionPillsExcludesMissedItems() {
-        let viewModel = DayViewModel()
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
         viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
-        let missed = item(deadline: Date.now.addingTimeInterval(-3600), daySection: .morning)
-        let notMissed = item(deadline: Date.now.addingTimeInterval(3600), daySection: .morning)
+        let missed = item(deadline: currentTime.addingTimeInterval(-3600), daySection: .morning)
+        let notMissed = item(deadline: currentTime.addingTimeInterval(3600), daySection: .morning)
         let result = viewModel.sectionPills(.morning, from: [missed, notMissed])
         #expect(result.map(\.uuid) == [notMissed.uuid])
     }
@@ -162,10 +176,11 @@ struct DayViewModelTests {
 
     @Test("deadlineRows excludes items whose deadline has already passed today")
     func deadlineRowsExcludesMissedItems() {
-        let viewModel = DayViewModel()
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
         viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
-        let missed = item(deadline: Date.now.addingTimeInterval(-3600))
-        let notMissed = item(deadline: Date.now.addingTimeInterval(3600))
+        let missed = item(deadline: currentTime.addingTimeInterval(-3600))
+        let notMissed = item(deadline: currentTime.addingTimeInterval(3600))
         let missedSection = DaySection.containing(missed.deadline!)!
         let notMissedSection = DaySection.containing(notMissed.deadline!)!
         #expect(viewModel.deadlineRows(missedSection, from: [missed]).isEmpty)
@@ -176,12 +191,13 @@ struct DayViewModelTests {
 
     @Test("missedDeadlineItems returns only pending items with a passed deadline, sorted earliest first")
     func missedDeadlineItems() {
-        let viewModel = DayViewModel()
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
         viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
-        let missedEarlier = item(deadline: Date.now.addingTimeInterval(-7200), status: .pending)
-        let missedLater = item(deadline: Date.now.addingTimeInterval(-3600), status: .pending)
-        let notYetMissed = item(deadline: Date.now.addingTimeInterval(3600), status: .pending)
-        let completedPastDeadline = item(deadline: Date.now.addingTimeInterval(-3600), status: .completed)
+        let missedEarlier = item(deadline: currentTime.addingTimeInterval(-7200), status: .pending)
+        let missedLater = item(deadline: currentTime.addingTimeInterval(-3600), status: .pending)
+        let notYetMissed = item(deadline: currentTime.addingTimeInterval(3600), status: .pending)
+        let completedPastDeadline = item(deadline: currentTime.addingTimeInterval(-3600), status: .completed)
         let result = viewModel.missedDeadlineItems(from: [missedLater, missedEarlier, notYetMissed, completedPastDeadline])
         #expect(result.map(\.uuid) == [missedEarlier.uuid, missedLater.uuid])
     }
@@ -196,15 +212,16 @@ struct DayViewModelTests {
         (daysFromToday: -1, status: ItemStatus.pending, deadlineOffset: -3600.0, expected: false),
     ])
     func isDeadlineMissed(daysFromToday: Int, status: ItemStatus, deadlineOffset: Double, expected: Bool) {
-        let viewModel = DayViewModel()
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
         viewModel.selectedDate = Calendar.current.date(byAdding: .day, value: daysFromToday, to: .now)!
-        let subject = item(deadline: Date.now.addingTimeInterval(deadlineOffset), status: status)
+        let subject = item(deadline: currentTime.addingTimeInterval(deadlineOffset), status: status)
         #expect(viewModel.isDeadlineMissed(subject) == expected)
     }
 
     @Test("isDeadlineMissed is false for items without a deadline")
     func isDeadlineMissedWithNoDeadline() {
-        let viewModel = DayViewModel()
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 12, minute: 0))
         viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
         let subject = item(deadline: nil, status: .pending)
         #expect(!viewModel.isDeadlineMissed(subject))
@@ -248,24 +265,23 @@ struct DayViewModelTests {
 
     // MARK: currentSection
 
-    @Test("currentSection matches the section containing the real time only while viewing today")
+    @Test("currentSection matches the section containing the injected current time only while viewing today")
     func currentSectionRespectsIsToday() {
-        let viewModel = DayViewModel()
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
         viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
-        #expect(viewModel.currentSection == DaySection.containing(.now))
+        #expect(viewModel.currentSection == .morning)
         viewModel.selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
         #expect(viewModel.currentSection == nil)
     }
 
     // MARK: applyAutoCollapse
 
-    @Test("applyAutoCollapse collapses every section except the current one while viewing today")
+    @Test("applyAutoCollapse collapses every section except the one containing the injected current time")
     func applyAutoCollapseWhenToday() {
-        let viewModel = DayViewModel()
+        let viewModel = DayViewModel(currentTime: fixedTime(hour: 8, minute: 0))
         viewModel.selectedDate = Calendar.current.startOfDay(for: .now)
         viewModel.applyAutoCollapse()
-        let expectedCurrent = DaySection.containing(.now)
-        let expectedCollapsed = Set(DaySection.allCases.filter { $0 != expectedCurrent })
+        let expectedCollapsed = Set(DaySection.allCases.filter { $0 != .morning })
         #expect(viewModel.collapsedSections == expectedCollapsed)
     }
 

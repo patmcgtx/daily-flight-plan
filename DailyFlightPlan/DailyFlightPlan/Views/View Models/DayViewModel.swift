@@ -19,6 +19,11 @@ final class DayViewModel {
     private var clockTask: Task<Void, Never>?
     private var summaryTasks: [DaySection: Task<Void, Never>] = [:]
 
+    /// `currentTime` defaults to the real clock but can be injected for deterministic testing.
+    init(currentTime: Date = .now) {
+        self.currentTime = currentTime
+    }
+
     // MARK: Date helpers
 
     var isToday: Bool {
