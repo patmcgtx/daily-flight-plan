@@ -191,7 +191,7 @@ Items identified during early real-world use.
 
 ### ✅ Phase 1.18 — Mac Support
 *Moved up from Version 2.0 — needed alongside iCloud sync for the plan-on-Mac, execute-on-iPhone workflow.*
-- Project already had `TARGETED_DEVICE_FAMILY = "1,2,7"`, `SUPPORTED_PLATFORMS` including `macosx`, and `MACOSX_DEPLOYMENT_TARGET = 26.5` — no project file changes needed
+- Project already had `TARGETED_DEVICE_FAMILY = "1,2,7"`, `SUPPORTED_PLATFORMS` including `macosx`, and `MACOSX_DEPLOYMENT_TARGET = 26.5` (later lowered to `26.2`, alongside `IPHONEOS_DEPLOYMENT_TARGET` and `XROS_DEPLOYMENT_TARGET`, to support an older iPhone — see "Allow running on my old iPhone" commit; both test targets' deployment targets were aligned to match) — no project file changes needed at the time
 - Created `Common/ViewExtensions.swift` with platform-conditional View + `ToolbarItemPlacement` extensions:
   - `inlineNavigationTitle()` — no-op on macOS (`.navigationBarTitleDisplayMode(.inline)` is iOS-only)
   - `.trailingBar` / `.leadingBar` — resolves to `.automatic` on macOS (`.topBarTrailing` / `.topBarLeading` are iOS-only)
