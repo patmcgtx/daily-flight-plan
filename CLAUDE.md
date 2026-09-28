@@ -25,3 +25,9 @@ Key files to copy/adapt: `Theming/`, `Views/Components/CategoryCapsule.swift`, `
 - SwiftData for persistence (iCloud sync deferred)
 - SwiftUI-Flow (`HFlow`) for category/item flow layouts
 - `@Observable @MainActor` ViewModels, protocol-based services via `@Environment` + `@Entry`
+
+## Testing conventions
+- Swift Testing (`import Testing`), not XCTest — test suites are plain `struct`s, assertions use `#expect`
+- Every `@Test` gets a plain-English description string, e.g. `@Test("Containing(_:) resolves the correct section at each boundary minute")` — no bare `func testFoo()` names
+- Prefer parameterized cases over repeated near-identical test functions: `@Test("...", arguments: [...])` with a tuple/array of inputs and expected outputs
+- See `DailyFlightPlanTests/DaySectionTests.swift` for the reference pattern
