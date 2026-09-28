@@ -90,7 +90,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
 - Calendar events from EventKit shown inline, with calendar color indicator
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
-- **Spillover**: pending items from previous days automatically move to today on launch or at midnight
+- **Fresh start each day**: no automatic carry-forward — pending items stay on their original date unless you move them yourself; a dedicated missed-items review flow is planned (see Phase 2.8)
 - **Future date preview**: recurring habits for a future weekday appear ghosted in their section
 - iCloud sync via CloudKit (plan on Mac, execute on iPhone)
 
@@ -134,6 +134,8 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | 2.3 | Day/Flight view refinements |
 | 2.4 | Comm tab refinements (context freshness, copyable responses, reset, error recovery) |
 | 2.5 | Smooth day swipe navigation — fix laggy/unresponsive pager |
+| 2.6 | Import UX refinements (flag duplicates, notes, tagging) |
+| 2.7 | Missed items review & pull-forward |
 
 **Version 0.3** expands device support and adds missing features:
 
