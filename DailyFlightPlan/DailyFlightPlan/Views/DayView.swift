@@ -91,7 +91,6 @@ struct DayView: View {
             ModelContainer.deduplicateItems(in: modelContext)
             ModelContainer.deduplicateInstances(in: modelContext)
             ModelContainer.deduplicateCategories(in: modelContext)
-            await watchForMidnight()
         }
         .task(id: viewModel.selectedDate) {
             viewModel.clearSummaries()
@@ -115,7 +114,6 @@ struct DayView: View {
                 ModelContainer.deduplicateItems(in: modelContext)
                 ModelContainer.deduplicateInstances(in: modelContext)
                 ModelContainer.deduplicateCategories(in: modelContext)
-                performSpilloverIfNeeded()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
@@ -191,29 +189,6 @@ struct DayView: View {
         try? modelContext.save()
     }
 
-    // MARK: Spillover
-
-    /// Moves all pending items from days before today to today.
-    private func performSpilloverIfNeeded() {
-        let today = Calendar.current.startOfDay(for: .now)
-        let toSpill = allItems.filter {
-            $0.status == .pending &&
-            $0.template == nil &&
-            Calendar.current.startOfDay(for: $0.date) < today
-        }
-        guard !toSpill.isEmpty else { return }
-        for item in toSpill {
-            item.date = today
-            if item.deadline != nil {
-                item.deadline = nil
-            }
-        }
-        try? modelContext.save()
-        withAnimation(.easeInOut(duration: 0.3)) {
-            viewModel.goToToday()
-        }
-    }
-
     // MARK: Recurring item management
 
     /// Converts any old-style recurring items (pre-template model) to templates.
@@ -284,25 +259,6 @@ struct DayView: View {
         }
         if didInsert {
             try? modelContext.save()
-        }
-    }
-
-    private func watchForMidnight() async {
-        while !Task.isCancelled {
-            let now = Date.now
-            let calendar = Calendar.current
-            guard let tomorrow = calendar.date(
-                byAdding: .day, value: 1, to: calendar.startOfDay(for: now)
-            ) else { break }
-            let secondsUntilMidnight = tomorrow.timeIntervalSince(now)
-            do {
-                try await Task.sleep(for: .seconds(max(1, secondsUntilMidnight + 1)))
-            } catch {
-                break
-            }
-            withAnimation(.easeInOut(duration: 0.3)) {
-                performSpilloverIfNeeded()
-            }
         }
     }
 
