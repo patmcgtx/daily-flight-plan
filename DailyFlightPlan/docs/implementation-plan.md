@@ -88,7 +88,7 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - **Deferred**: reminder list selection UI — moved to Phase 3.1 (Settings)
 
 ### ✅ Phase 1.9 — Workflow Refinements
-- **Spillover**: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
+- **Spillover** *(removed in Phase 2.7 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
 - **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their past calendar events appear in a non-section "Past" area at the top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
 - **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the missed time.
 - **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
@@ -191,7 +191,7 @@ Items identified during early real-world use.
 
 ### ✅ Phase 1.18 — Mac Support
 *Moved up from Version 2.0 — needed alongside iCloud sync for the plan-on-Mac, execute-on-iPhone workflow.*
-- Project already had `TARGETED_DEVICE_FAMILY = "1,2,7"`, `SUPPORTED_PLATFORMS` including `macosx`, and `MACOSX_DEPLOYMENT_TARGET = 26.5` — no project file changes needed
+- Project already had `TARGETED_DEVICE_FAMILY = "1,2,7"`, `SUPPORTED_PLATFORMS` including `macosx`, and `MACOSX_DEPLOYMENT_TARGET = 26.5` (later lowered to `26.2`, alongside `IPHONEOS_DEPLOYMENT_TARGET` and `XROS_DEPLOYMENT_TARGET`, to support an older iPhone — see "Allow running on my old iPhone" commit; both test targets' deployment targets were aligned to match) — no project file changes needed at the time
 - Created `Common/ViewExtensions.swift` with platform-conditional View + `ToolbarItemPlacement` extensions:
   - `inlineNavigationTitle()` — no-op on macOS (`.navigationBarTitleDisplayMode(.inline)` is iOS-only)
   - `.trailingBar` / `.leadingBar` — resolves to `.automatic` on macOS (`.topBarTrailing` / `.topBarLeading` are iOS-only)
@@ -307,7 +307,12 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **✅ Lazy-load past days**: starts with a 7-day pre-cached window behind today; `pastDaysWindow` grows by 7 more each time the oldest loaded section scrolls into view
 - **✅ Lazy-load future days**: starts with a 7-day pre-cached window ahead of today; `futureDaysWindow` grows the same way as the newest loaded section scrolls into view
 - **✅ Dropped, then restored, the "Done" filter** — initially removed in favor of always showing completed/canceled items by default; once search shipped, using search surfaced real value in being able to hide completed/canceled items to cut down noise in results, so the toggle came back, defaulting to off/hidden like it did originally
-- **✅ Fix: "Done" + "Missed" together showed items, contradicting their apparent meaning**: "Missed" isolates (only pending+overdue pass), but "Done" originally only revealed (it never excluded pending items) — so with both on, "Done" contributed no restriction and results were just whatever "Missed" alone would show, not the empty set a user would expect from two seemingly opposite filters. First patched at the UX level (tapping either turns the other off), then properly fixed at the root: "Done" surfaced the exact same mismatch again when combined with search (completed *and* pending search results both showing with "Done" on) — because it was sharing `AppStorageKeys.showCompleted` with the Day view's reveal-style filter of the same name. Gave Timeline its own dedicated `showCompletedOnly` key with true isolate semantics (`(status is completed/canceled) == showCompletedOnly`, matching Flagged/Missed's isolate-when-on pattern) instead of reinterpreting a shared boolean two different ways depending on which screen reads it. The mutual-exclusion tap behavior with Missed stays, now redundant-but-harmless since true isolation already makes both-on logically show nothing on its own.
+- **✅ Fix: "Done" + "Missed" together showed items, contradicting their apparent meaning**
+  - "Missed" isolates (only pending+overdue pass), but "Done" originally only revealed (it never excluded pending items) — so with both on, "Done" contributed no restriction and results were just whatever "Missed" alone would show, not the empty set a user would expect from two seemingly opposite filters
+  - First patched at the UX level (tapping either turns the other off)
+  - Then properly fixed at the root: "Done" surfaced the exact same mismatch again when combined with search (completed *and* pending search results both showing with "Done" on) — because it was sharing `AppStorageKeys.showCompleted` with the Day view's reveal-style filter of the same name
+  - Gave Timeline its own dedicated `showCompletedOnly` key with true isolate semantics (`(status is completed/canceled) == showCompletedOnly`), matching Flagged/Missed's isolate-when-on pattern, instead of reinterpreting a shared boolean two different ways depending on which screen reads it
+  - The mutual-exclusion tap behavior with Missed stays, now redundant-but-harmless since true isolation already makes both-on logically show nothing on its own
 - **✅ Added a "Missed" filter** — pending items whose deadline, day-section window, or entire day has already passed (up to the current time); reuses the same missed-item logic as the Day view (`clock.badge.exclamationmark`)
 - **✅ Segmented by time of day**: each day's items are grouped under small bold/secondary sub-headers ("First Thing", "Morning", … "Open") instead of one flat list, for readability
 - **✅ Per-segment "Add item"**: today and future days show every segment (even empty ones) with a `+` button to the right of the segment title, opening `ItemForm(date:section:)` pre-filled; past days only show segments that already have items, with no add affordance (the log doesn't allow adding to the past)
@@ -334,6 +339,8 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 
 ### Phase 2.4 — Comm Tab Refinements
+- **Do we really need this view?** I already have AI-assisted import.
+- **Updated 'terminal' chat appearance**: Just for fun. Like some sort of airline terminal. Move away from the "Messages" style interface.
 - **Context freshness / Conversation reset**: the session is intentionally built once and reused across tab switches to preserve conversation history. Add an explicit reset button (toolbar or inline) that clears messages and rebuilds the session with current plan data — giving the user control over freshness without auto-wiping the conversation on every tab entry.
 - **Copyable responses**: allow long-press on assistant bubbles to copy the message text
 - **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
@@ -348,6 +355,21 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Ensure a fast, fluid swipe between yesterday / today / tomorrow with no perceptible lag or snap-back artifacts
 - macOS: `DragGesture` fallback should feel equally responsive
 - Consider whether the infinite-reset pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with paging, custom gesture recognizer) would be more reliable
+
+### Phase 2.6 - Import UX Refinements
+- **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
+- **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
+- **Add tagging on import**: Would be helpful to allow tagging items on import as well
+
+### Phase 2.7 — Missed Items Review & Pull-Forward
+**Note**: this phase replaces the automatic "Spillover" behavior from Phase 1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
+
+- Entry point: a way to review pending items left behind on past days — modeled on the Markdown Import flow (Phase 1.21)'s paste → review-list → commit shape, but sourced from existing overdue items instead of pasted text
+- Review list: past pending one-off items (not recurring instances — each day already gets its own fresh instance via materialization, so a stale recurring instance isn't a "missed" item in the same sense), grouped by original date, most recent first
+- Per-item choice, not all-or-nothing: select which items to pull forward to today, which to cancel outright, and which to leave alone (still visible/actionable via Timeline)
+- Pulling an item forward sets `date = today`; clear any stale `deadline` the same way spillover used to (becomes an "any time" item unless the user re-times it)
+- Surface a lightweight indicator (badge on the Day tab, or a banner in Flight Plan view) when missed items exist, so the review flow is discoverable without being forced
+- Consider whether this should also run automatically prompt-on-launch after a detected gap (e.g. "You were away N days — review N missed items?") vs. purely user-initiated via a toolbar button
 
 ---
 

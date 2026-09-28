@@ -32,6 +32,15 @@ struct TimelineView: View {
         if let onDismiss { onDismiss() } else { envDismiss() }
     }
 
+    // `.navigationBarDrawer` is a UIKit-only placement and unavailable on macOS.
+    private var searchFieldPlacement: SearchFieldPlacement {
+        #if os(macOS)
+        .automatic
+        #else
+        .navigationBarDrawer(displayMode: .always)
+        #endif
+    }
+
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
     @AppStorage(AppStorageKeys.showMissedOnly.rawValue) private var showMissedOnly: Bool = false
     @AppStorage(AppStorageKeys.showCompletedOnly.rawValue) private var showCompletedOnly: Bool = false
@@ -210,7 +219,7 @@ struct TimelineView: View {
         // observed to differ between OS builds, leaving the field effectively invisible on some.
         .searchable(
             text: $searchText,
-            placement: .navigationBarDrawer(displayMode: .always),
+            placement: searchFieldPlacement,
             prompt: "Search items"
         )
     }

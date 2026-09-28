@@ -91,7 +91,7 @@ struct DayView: View {
             ModelContainer.deduplicateItems(in: modelContext)
             ModelContainer.deduplicateInstances(in: modelContext)
             ModelContainer.deduplicateCategories(in: modelContext)
-            await watchForMidnight()
+            await watchForCalendarDayChange()
         }
         .task(id: viewModel.selectedDate) {
             viewModel.clearSummaries()
@@ -115,7 +115,6 @@ struct DayView: View {
                 ModelContainer.deduplicateItems(in: modelContext)
                 ModelContainer.deduplicateInstances(in: modelContext)
                 ModelContainer.deduplicateCategories(in: modelContext)
-                performSpilloverIfNeeded()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
@@ -191,29 +190,6 @@ struct DayView: View {
         try? modelContext.save()
     }
 
-    // MARK: Spillover
-
-    /// Moves all pending items from days before today to today.
-    private func performSpilloverIfNeeded() {
-        let today = Calendar.current.startOfDay(for: .now)
-        let toSpill = allItems.filter {
-            $0.status == .pending &&
-            $0.template == nil &&
-            Calendar.current.startOfDay(for: $0.date) < today
-        }
-        guard !toSpill.isEmpty else { return }
-        for item in toSpill {
-            item.date = today
-            if item.deadline != nil {
-                item.deadline = nil
-            }
-        }
-        try? modelContext.save()
-        withAnimation(.easeInOut(duration: 0.3)) {
-            viewModel.goToToday()
-        }
-    }
-
     // MARK: Recurring item management
 
     /// Converts any old-style recurring items (pre-template model) to templates.
@@ -287,21 +263,25 @@ struct DayView: View {
         }
     }
 
-    private func watchForMidnight() async {
+    /// If the app is left open across midnight, moves the view forward to the new today —
+    /// but only when it was still tracking the day that just ended, so a deliberate visit
+    /// to a future/past date isn't yanked back. Never mutates item dates (that's the removed
+    /// spillover behavior); `.task(id: viewModel.selectedDate)` re-running is what triggers
+    /// today's recurring-instance materialization once the date actually changes.
+    private func watchForCalendarDayChange() async {
         while !Task.isCancelled {
-            let now = Date.now
             let calendar = Calendar.current
-            guard let tomorrow = calendar.date(
-                byAdding: .day, value: 1, to: calendar.startOfDay(for: now)
-            ) else { break }
-            let secondsUntilMidnight = tomorrow.timeIntervalSince(now)
+            let dayBeingWatched = calendar.startOfDay(for: .now)
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayBeingWatched) else { break }
+            let secondsUntilNextDay = nextDay.timeIntervalSince(.now)
             do {
-                try await Task.sleep(for: .seconds(max(1, secondsUntilMidnight + 1)))
+                try await Task.sleep(for: .seconds(max(1, secondsUntilNextDay + 1)))
             } catch {
                 break
             }
+            guard calendar.isDate(viewModel.selectedDate, inSameDayAs: dayBeingWatched) else { continue }
             withAnimation(.easeInOut(duration: 0.3)) {
-                performSpilloverIfNeeded()
+                viewModel.goToToday()
             }
         }
     }
