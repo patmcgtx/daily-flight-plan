@@ -91,6 +91,7 @@ struct DayView: View {
             ModelContainer.deduplicateItems(in: modelContext)
             ModelContainer.deduplicateInstances(in: modelContext)
             ModelContainer.deduplicateCategories(in: modelContext)
+            await watchForCalendarDayChange()
         }
         .task(id: viewModel.selectedDate) {
             viewModel.clearSummaries()
@@ -259,6 +260,29 @@ struct DayView: View {
         }
         if didInsert {
             try? modelContext.save()
+        }
+    }
+
+    /// If the app is left open across midnight, moves the view forward to the new today —
+    /// but only when it was still tracking the day that just ended, so a deliberate visit
+    /// to a future/past date isn't yanked back. Never mutates item dates (that's the removed
+    /// spillover behavior); `.task(id: viewModel.selectedDate)` re-running is what triggers
+    /// today's recurring-instance materialization once the date actually changes.
+    private func watchForCalendarDayChange() async {
+        while !Task.isCancelled {
+            let calendar = Calendar.current
+            let dayBeingWatched = calendar.startOfDay(for: .now)
+            guard let nextDay = calendar.date(byAdding: .day, value: 1, to: dayBeingWatched) else { break }
+            let secondsUntilNextDay = nextDay.timeIntervalSince(.now)
+            do {
+                try await Task.sleep(for: .seconds(max(1, secondsUntilNextDay + 1)))
+            } catch {
+                break
+            }
+            guard calendar.isDate(viewModel.selectedDate, inSameDayAs: dayBeingWatched) else { continue }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                viewModel.goToToday()
+            }
         }
     }
 
