@@ -90,7 +90,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
 - Calendar events from EventKit shown inline, with calendar color indicator
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
-- **Fresh start each day**: no automatic carry-forward — pending items stay on their original date unless you move them yourself; a dedicated missed-items review flow is planned (see Phase 2.8)
+- **Fresh start each day**: no automatic carry-forward — pending items stay on their original date unless you move them yourself; a dedicated missed-items review flow is planned (see Phase 2.7)
 - **Future date preview**: recurring habits for a future weekday appear ghosted in their section
 - iCloud sync via CloudKit (plan on Mac, execute on iPhone)
 
