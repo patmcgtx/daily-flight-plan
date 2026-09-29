@@ -258,10 +258,9 @@ final class CommViewModel {
             let wd = weekdayMap[cal.component(.weekday, from: dayStart)]
             var ghosted: [PlanItem] = []
             if let wd {
-                let coveredKeys = Set(dayItems.map(\.dailyOccurrenceKey))
                 ghosted = templates
                     .filter { $0.recurringWeekdays.contains(wd) }
-                    .filter { !coveredKeys.contains(PlanItem.dailyOccurrenceKey(title: $0.title, date: dayStart)) }
+                    .filter { template in !dayItems.contains { $0.coversRecurringOccurrence(ofTemplate: template, on: dayStart) } }
             }
             let allForDay = (dayItems + ghosted).sorted { ($0.deadline ?? .distantFuture) < ($1.deadline ?? .distantFuture) }
             let header = offset == 1

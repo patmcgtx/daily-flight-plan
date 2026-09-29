@@ -174,7 +174,7 @@ extension ModelContainer {
     }
 
     /// Template identity — a schedule definition (title + day section + weekday pattern), not a
-    /// single day's occurrence. Deliberately separate from `PlanItem.dailyOccurrenceKey`: a
+    /// single day's occurrence. Deliberately separate from `PlanItem.instanceDedupeKey`: a
     /// template's day section is part of what it recurs into, so two templates with the same
     /// title in different sections are legitimately distinct routines.
     private static func templateContentKey(_ item: PlanItem) -> String {

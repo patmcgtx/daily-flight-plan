@@ -196,10 +196,10 @@ func startLiveClock() {
     /// instance for that date, given a fresh fetch of templates and same-day items. Pure — the
     /// caller is responsible for inserting the returned instances into the model context and saving.
     ///
-    /// Coverage is keyed by `PlanItem.dailyOccurrenceKey` (title + date, not day section): an
-    /// instance's section can change via drag-and-drop, and it must still count as covering its
-    /// template, or a moved instance gets duplicated back into the template's original section
-    /// on the next materialization pass.
+    /// Coverage is determined by `PlanItem.coversRecurringOccurrence`, which matches by the
+    /// template's identity (not just title) and ignores day section: a drag-moved instance must
+    /// still count as covering its template, but a *different* same-titled template's instance
+    /// — or an unrelated one-off item that happens to share a title — must not.
     func recurringInstancesToMaterialize(
         for date: Date,
         templates: [PlanItem],
@@ -209,12 +209,11 @@ func startLiveClock() {
         let cal = Calendar.current
         let startOfDay = cal.startOfDay(for: date)
 
-        var coveredKeys = Set(existingItemsForDate.map(\.dailyOccurrenceKey))
         var newInstances: [PlanItem] = []
         for template in templates where template.isTemplate {
             guard template.recurringWeekdays.contains(weekday) else { continue }
-            let key = PlanItem.dailyOccurrenceKey(title: template.title, date: date)
-            guard !coveredKeys.contains(key) else { continue }
+            let isCovered = existingItemsForDate.contains { $0.coversRecurringOccurrence(ofTemplate: template, on: date) }
+            guard !isCovered else { continue }
             let instanceDeadline: Date? = template.deadline.flatMap { dl in
                 cal.date(
                     bySettingHour: cal.component(.hour, from: dl),
@@ -235,7 +234,6 @@ func startLiveClock() {
             instance.categories = template.categories
             instance.template = template
             newInstances.append(instance)
-            coveredKeys.insert(key)
         }
         return newInstances
     }
