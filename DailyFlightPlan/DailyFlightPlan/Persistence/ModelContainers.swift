@@ -135,20 +135,21 @@ extension ModelContainer {
     }
 
     /// Removes duplicate per-day instances (isTemplate == false) that share the same
-    /// title, daySection, and calendar date. Does not rely on the template relationship,
-    /// which may be nil while CloudKit is still delivering records.
-    /// Prefers completed/skipped instances over pending ones when choosing which to keep.
+    /// `instanceDedupeKey` — section-independent for recurring instances (so a drag-moved
+    /// instance still gets merged with a re-materialized duplicate), section-sensitive for
+    /// one-off items. If a recurring instance's `template` link hasn't resolved yet (CloudKit
+    /// may still be delivering it), it's conservatively treated as one-off for this pass and
+    /// merged correctly on a later pass once the relationship resolves. Prefers completed/skipped
+    /// instances over pending ones when choosing which to keep.
     @MainActor
     static func deduplicateInstances(in context: ModelContext) {
         do {
             let all = try context.fetch(FetchDescriptor<PlanItem>())
-            let cal = Calendar.current
             var seen = [String: PlanItem]()
             var toDelete = [PlanItem]()
 
             for instance in all where !instance.isTemplate {
-                let dayKey = cal.startOfDay(for: instance.date).timeIntervalSinceReferenceDate
-                let key = "\(instance.title.lowercased())|\(instance.daySection?.rawValue ?? "")|\(dayKey)"
+                let key = instance.instanceDedupeKey
                 if let existing = seen[key] {
                     if existing.status == .pending && instance.status != .pending {
                         toDelete.append(existing)
@@ -172,6 +173,10 @@ extension ModelContainer {
         }
     }
 
+    /// Template identity — a schedule definition (title + day section + weekday pattern), not a
+    /// single day's occurrence. Deliberately separate from `PlanItem.dailyOccurrenceKey`: a
+    /// template's day section is part of what it recurs into, so two templates with the same
+    /// title in different sections are legitimately distinct routines.
     private static func templateContentKey(_ item: PlanItem) -> String {
         let order: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
         let days = item.recurringWeekdays

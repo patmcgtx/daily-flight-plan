@@ -196,9 +196,10 @@ func startLiveClock() {
     /// instance for that date, given a fresh fetch of templates and same-day items. Pure — the
     /// caller is responsible for inserting the returned instances into the model context and saving.
     ///
-    /// Coverage is keyed by title alone rather than title+section: an instance's section can change
-    /// via drag-and-drop, and it must still count as covering its template, or a moved instance
-    /// gets duplicated back into the template's original section on the next materialization pass.
+    /// Coverage is keyed by `PlanItem.dailyOccurrenceKey` (title + date, not day section): an
+    /// instance's section can change via drag-and-drop, and it must still count as covering its
+    /// template, or a moved instance gets duplicated back into the template's original section
+    /// on the next materialization pass.
     func recurringInstancesToMaterialize(
         for date: Date,
         templates: [PlanItem],
@@ -208,11 +209,11 @@ func startLiveClock() {
         let cal = Calendar.current
         let startOfDay = cal.startOfDay(for: date)
 
-        var coveredKeys = Set(existingItemsForDate.map { $0.title.lowercased() })
+        var coveredKeys = Set(existingItemsForDate.map(\.dailyOccurrenceKey))
         var newInstances: [PlanItem] = []
         for template in templates where template.isTemplate {
             guard template.recurringWeekdays.contains(weekday) else { continue }
-            let key = template.title.lowercased()
+            let key = PlanItem.dailyOccurrenceKey(title: template.title, date: date)
             guard !coveredKeys.contains(key) else { continue }
             let instanceDeadline: Date? = template.deadline.flatMap { dl in
                 cal.date(

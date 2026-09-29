@@ -47,6 +47,38 @@ class PlanItem {
         isTemplate || template != nil
     }
 
+    /// Identity key for "this day's occurrence" of a *recurring* item — used to check whether a
+    /// template already has an instance for a given date, and to de-duplicate recurring
+    /// instances. Deliberately excludes daySection: a recurring instance's section is a mutable
+    /// placement (e.g. dragged between sections) and must not affect which occurrence it is, or
+    /// a moved instance gets duplicated back into the template's original section on the next
+    /// materialization pass. Does not apply to template identity, which is a schedule definition
+    /// (see `ModelContainer.templateContentKey`), not a single day's occurrence — nor to one-off
+    /// items (see `instanceDedupeKey` below), which have no template to duplicate them back.
+    static func dailyOccurrenceKey(title: String, date: Date) -> String {
+        let day = Calendar.current.startOfDay(for: date).timeIntervalSinceReferenceDate
+        return "\(title.lowercased())|\(day)"
+    }
+
+    var dailyOccurrenceKey: String {
+        PlanItem.dailyOccurrenceKey(title: title, date: date)
+    }
+
+    /// Identity key used by `ModelContainer.deduplicateInstances` to catch true duplicate
+    /// per-day instances. Recurring instances (with a resolved `template` link) are keyed
+    /// section-independently via `dailyOccurrenceKey`, since materialization must recognize a
+    /// drag-moved instance as still covering its template. One-off items keep daySection as part
+    /// of their identity: nothing auto-regenerates a one-off item, so two same-titled one-off
+    /// items in different sections on the same day are presumed to be genuinely distinct tasks,
+    /// not duplicates.
+    var instanceDedupeKey: String {
+        guard template != nil else {
+            let day = Calendar.current.startOfDay(for: date).timeIntervalSinceReferenceDate
+            return "\(title.lowercased())|\(daySection?.rawValue ?? "")|\(day)"
+        }
+        return dailyOccurrenceKey
+    }
+
     var status: ItemStatus = ItemStatus.pending
 
     @Relationship(deleteRule: .nullify, inverse: \PlanCategory.items)

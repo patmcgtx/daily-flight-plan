@@ -183,13 +183,50 @@ struct ModelContainersTests {
         #expect(remaining.count == 1)
     }
 
-    @Test("deduplicateInstances leaves instances with different titles, sections, or days untouched")
+    @Test("deduplicateInstances leaves instances with different titles or days untouched")
     func deduplicateInstancesLeavesDistinctInstancesAlone() throws {
         let context = try makeContext()
         let day = Calendar.current.startOfDay(for: .now)
         let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: day)!
         context.insert(PlanItem(title: "Habit", date: day, daySection: .morning))
         context.insert(PlanItem(title: "Habit", date: nextDay, daySection: .morning))
+        try context.save()
+
+        ModelContainer.deduplicateInstances(in: context)
+
+        let remaining = try fetchItems(context).filter { !$0.isTemplate }
+        #expect(remaining.count == 2)
+    }
+
+    @Test("deduplicateInstances merges same-day recurring instances that differ only by day section, so a drag-moved instance doesn't stay duplicated after re-materialization")
+    func deduplicateInstancesMergesRecurringInstancesAcrossDaySections() throws {
+        let context = try makeContext()
+        let day = Calendar.current.startOfDay(for: .now)
+        let template = PlanItem(title: "Habit", date: day, daySection: .morning, recurringWeekdays: [.monday], isTemplate: true)
+        context.insert(template)
+
+        let movedInstance = PlanItem(title: "Habit", date: day, daySection: .evening, status: .pending)
+        movedInstance.template = template
+        context.insert(movedInstance)
+
+        let regeneratedDuplicate = PlanItem(title: "Habit", date: day, daySection: .morning, status: .pending)
+        regeneratedDuplicate.template = template
+        context.insert(regeneratedDuplicate)
+
+        try context.save()
+
+        ModelContainer.deduplicateInstances(in: context)
+
+        let remaining = try fetchItems(context).filter { !$0.isTemplate }
+        #expect(remaining.count == 1)
+    }
+
+    @Test("deduplicateInstances leaves same-titled one-off items in different sections on the same day alone, since they may be genuinely distinct tasks")
+    func deduplicateInstancesLeavesOneOffItemsAcrossSectionsAlone() throws {
+        let context = try makeContext()
+        let day = Calendar.current.startOfDay(for: .now)
+        context.insert(PlanItem(title: "Call mom", date: day, daySection: .morning, status: .pending))
+        context.insert(PlanItem(title: "Call mom", date: day, daySection: .evening, status: .pending))
         try context.save()
 
         ModelContainer.deduplicateInstances(in: context)
