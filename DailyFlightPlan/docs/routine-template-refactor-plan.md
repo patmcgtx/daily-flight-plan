@@ -10,10 +10,17 @@ Every bug we found and fixed today (`coversRecurringOccurrence`, `instanceDedupe
 `deduplicateInstances`) was some piece of code accidentally treating one role as another because
 nothing at the type level prevents it.
 
-Since the app hasn't shipped, there's no CloudKit schema-migration cost to worry about — this is
-a good time to split the type properly: a dedicated `RoutineTemplate` model for the schedule
-definition, and a slimmed `PlanItem` for one-off items and per-day instances only. This removes
-the conflation at its source instead of continuing to patch call sites one at a time.
+Since the app hasn't shipped, there's no CloudKit schema-migration cost *for end users* to worry
+about — this is a good time to split the type properly: a dedicated `RoutineTemplate` model for
+the schedule definition, and a slimmed `PlanItem` for one-off items and per-day instances only.
+This removes the conflation at its source instead of continuing to patch call sites one at a time.
+
+**Caveat**: "no migration cost" only means no shipped-user devices to migrate. Existing
+development/TestFlight CloudKit containers still hold `PlanItem` records with `isTemplate: true`
+under the old schema — those become orphaned once the field is removed, and `RoutineTemplate` is
+a wholly new record type CloudKit has never seen. Before merging, reset dev/test CloudKit data
+(wipe the dev container, or just delete-all-data from Settings on each test device) rather than
+relying on any automatic reconciliation.
 
 Decisions already made with the user:
 - **No in-form promote/demote.** `ItemForm` will only ever edit `PlanItem` (one-off + instance) —
@@ -36,12 +43,32 @@ entirely; `template` becomes typed `RoutineTemplate?` instead of self-referentia
 `categories`, `reminderIdentifier`. `isRecurring` simplifies to `template != nil`.
 `instanceDedupeKey` and `coversRecurringOccurrence(ofTemplate: RoutineTemplate, on:)` keep their
 current logic, just type-checked against `RoutineTemplate` instead of a same-typed "template".
+Both intentionally still return `false`/no-match when `template` hasn't resolved yet (e.g.
+mid-CloudKit-sync) rather than falling back to a fuzzy title match — that's an accepted,
+self-healing transient (a rare duplicate that `deduplicateInstances` cleans up on its next pass),
+not a gap this refactor needs to close.
+
+**`PlanCategory`** (`Persistence/PlanCategory.swift`): needs a second inverse relationship,
+`templates: [RoutineTemplate]?`, alongside the existing `items: [PlanItem]?`, since
+`RoutineTemplate.categories` needs a valid inverse and can't share `items` (that inverse is
+already claimed by `PlanItem.categories`). Every current consumer of `category.items` needs a
+matching `category.templates` pass:
+- `ModelContainers.deleteAllCategories`: also nil `category.templates` before delete.
+- `ModelContainers.deduplicateCategories`: also re-point `category.templates ?? []` onto the
+  survivor, mirroring the existing `category.items` loop.
+- `CategoriesEditView`'s displayed per-category item count: sum `category.items?.count` and
+  `category.templates?.count` so routines count too.
+- Tests (`CategoriesEditViewModelTests`, `ModelContainersTests`): add a case asserting a
+  `RoutineTemplate`'s categories survive category rename/delete/dedupe, matching the existing
+  `PlanItem` coverage.
 
 ## File-by-file plan
 
 **Persistence**
 - `PlanItem.swift`: remove `isTemplate`, `recurringWeekdays`, `instances`; retype `template`.
 - New `RoutineTemplate.swift`: the model above.
+- `PlanCategory.swift`: add `templates: [RoutineTemplate]?` as the second inverse relationship
+  (see "New model shape" above).
 - `ModelContainers.swift`:
   - Register `RoutineTemplate.self` in both `persistentContainer()` and `inMemorySampleContainer()`.
   - `deduplicateItems` → rename `deduplicateTemplates`, fetch `RoutineTemplate` directly (no
@@ -54,6 +81,8 @@ current logic, just type-checked against `RoutineTemplate` instead of a same-typ
     this likely doesn't need `deleteAllItems`'s two-phase nil-out dance — verify during
     implementation and simplify `deleteAllItems` similarly if the self-reference was the only
     reason for the two-phase save there.
+  - `deleteAllCategories` / `deduplicateCategories`: extend to also handle `category.templates`
+    (see `PlanCategory.swift` note above).
   - `seedSampleDataIfNeeded` / `inMemorySampleContainer`: construct `RoutineTemplate(...)` instead
     of `PlanItem(..., isTemplate: true)`.
 
@@ -98,6 +127,9 @@ or one-off now; `item.isRecurring` keeps working unchanged since it's still a co
 - `CommView.swift`: `templates` query retypes to `[RoutineTemplate]`; `CommViewModel.buildContext`
   retypes its `templates` param; the `CreateItemTool`/`onItemsCreated` handler splits its
   constructor branch the same way as `MarkdownImportView`.
+- `CategoriesEditView.swift`: displayed per-category item count sums `category.items?.count` and
+  `category.templates?.count` (see `PlanCategory.swift` note above) — not purely mechanical, easy
+  to miss since it's a display-only screen that doesn't otherwise touch `PlanItem`/`RoutineTemplate`.
 
 **Tests**
 - `PlanItemTests.swift`: update `coversRecurringOccurrence`/`instanceDedupeKey` tests to construct
@@ -107,7 +139,12 @@ or one-off now; `item.isRecurring` keeps working unchanged since it's still a co
 - `ModelContainersTests.swift`: rename `deduplicateItems*` tests to `deduplicateTemplates*`,
   construct `RoutineTemplate` directly; add a `deleteAllTemplatesRemovesEverything` test; update
   seed/in-memory-container assertions to check `RoutineTemplate` non-empty and `PlanItem` empty
-  (seed data is templates only — no pre-materialized instances).
+  (seed data is templates only — no pre-materialized instances); add cases to
+  `deduplicateCategoriesMergesCaseInsensitiveDuplicates` and `deleteAllCategoriesRemovesEverything`
+  asserting a `RoutineTemplate`'s categories survive/get re-pointed, mirroring existing `PlanItem`
+  coverage (see `PlanCategory.swift` note above).
+- `CategoriesEditViewModelTests.swift`: add a case covering a category used by a `RoutineTemplate`
+  (not just a `PlanItem`) to whatever test currently exercises per-category item counts.
 - `ItemFormViewModelTests.swift`: remove all promote/demote and template-editing tests
   (`willDemoteTemplate`, `initForTemplateShowsRecurringWeekdays`, `saveDemotesTemplateAndSevers
   Instances`, `savePromotesOneOffToTemplate`, etc.) — `ItemForm` no longer touches templates.
@@ -116,9 +153,13 @@ or one-off now; `item.isRecurring` keeps working unchanged since it's still a co
 
 ## Verification
 
+- Before testing on any device signed into a real/dev iCloud account, wipe that device's app data
+  (delete-all-data from Settings, or reinstall) so no stale pre-split CloudKit records linger —
+  see the CloudKit caveat in Context.
 - After each phase, `XcodeRefreshCodeIssuesInFile` the touched files and `RunAllTests` — expect 0
   failures among the ~170 non-UI tests (the 3 UI tests are environment-gated, unrelated).
-- Manual smoke test via `RunProject`/simulator: create a one-off item; create a routine; drag an
+- Manual smoke test via `RunProject`/simulator: create a one-off item; create a routine; assign a
+  category to a routine and confirm it survives category rename/delete/dedupe in Settings; drag an
   item between day sections and confirm no duplicate reappears later (the original reported bug);
   confirm Comm chat's "Upcoming" ghost projections still show for future days; confirm dragging a
   routine pill between weekday-pattern cards in `RoutineView` still works; confirm Settings'
