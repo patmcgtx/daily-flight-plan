@@ -402,4 +402,85 @@ struct DayViewModelTests {
         viewModel.applyAutoCollapse()
         #expect(viewModel.collapsedSections.isEmpty)
     }
+
+    // MARK: recurringInstancesToMaterialize
+
+    @Test("recurringInstancesToMaterialize creates an instance for a template scheduled on that weekday with no existing instance")
+    func recurringInstancesToMaterializeCreatesMissingInstance() {
+        let viewModel = DayViewModel()
+        let today = Calendar.current.startOfDay(for: .now)
+        let template = item(daySection: .morning, isTemplate: true, recurringWeekdays: [weekday(of: today)])
+        let result = viewModel.recurringInstancesToMaterialize(for: today, templates: [template], existingItemsForDate: [])
+        #expect(result.map(\.title) == [template.title])
+        #expect(result.first?.daySection == .morning)
+        #expect(result.first?.template === template)
+    }
+
+    @Test("recurringInstancesToMaterialize skips templates not scheduled on that weekday")
+    func recurringInstancesToMaterializeSkipsWrongWeekday() {
+        let viewModel = DayViewModel()
+        let today = Calendar.current.startOfDay(for: .now)
+        let otherWeekday: Locale.Weekday = weekday(of: today) == .sunday ? .monday : .sunday
+        let template = item(daySection: .morning, isTemplate: true, recurringWeekdays: [otherWeekday])
+        let result = viewModel.recurringInstancesToMaterialize(for: today, templates: [template], existingItemsForDate: [])
+        #expect(result.isEmpty)
+    }
+
+    @Test("recurringInstancesToMaterialize skips a template that already has an instance for that date, regardless of which section the instance is in")
+    func recurringInstancesToMaterializeSkipsWhenAlreadyCovered() {
+        let viewModel = DayViewModel()
+        let today = Calendar.current.startOfDay(for: .now)
+        let template = PlanItem(
+            title: "Walk the dog",
+            date: today,
+            daySection: .morning,
+            recurringWeekdays: [weekday(of: today)],
+            isTemplate: true
+        )
+        // Simulates the instance having been dragged from Morning to Evening earlier — the
+        // template link survives a drag, since only daySection is mutated on the instance.
+        let movedInstance = PlanItem(title: "Walk the dog", date: today, daySection: .evening)
+        movedInstance.template = template
+        let result = viewModel.recurringInstancesToMaterialize(
+            for: today, templates: [template], existingItemsForDate: [movedInstance]
+        )
+        #expect(result.isEmpty)
+    }
+
+    @Test("recurringInstancesToMaterialize does not let a different template with the same title stand in for another template's coverage")
+    func recurringInstancesToMaterializeDoesNotConflateSameTitledTemplates() {
+        let viewModel = DayViewModel()
+        let today = Calendar.current.startOfDay(for: .now)
+        let morningTemplate = PlanItem(
+            title: "Stretch", date: today, daySection: .morning,
+            recurringWeekdays: [weekday(of: today)], isTemplate: true, sourceID: "morning-stretch"
+        )
+        let eveningTemplate = PlanItem(
+            title: "Stretch", date: today, daySection: .evening,
+            recurringWeekdays: [weekday(of: today)], isTemplate: true, sourceID: "evening-stretch"
+        )
+        // Only the morning template already has an instance today; the evening template — a
+        // distinct routine that happens to share a title — must still get materialized.
+        let morningInstance = PlanItem(title: "Stretch", date: today, daySection: .morning)
+        morningInstance.template = morningTemplate
+        let result = viewModel.recurringInstancesToMaterialize(
+            for: today, templates: [morningTemplate, eveningTemplate], existingItemsForDate: [morningInstance]
+        )
+        #expect(result.map(\.template) == [eveningTemplate])
+    }
+
+    @Test("recurringInstancesToMaterialize is not suppressed by an unrelated one-off item that happens to share a title")
+    func recurringInstancesToMaterializeIgnoresUnrelatedOneOffItem() {
+        let viewModel = DayViewModel()
+        let today = Calendar.current.startOfDay(for: .now)
+        let template = PlanItem(
+            title: "Stretch", date: today, daySection: .morning,
+            recurringWeekdays: [weekday(of: today)], isTemplate: true
+        )
+        let unrelatedOneOff = PlanItem(title: "Stretch", date: today, daySection: .evening)
+        let result = viewModel.recurringInstancesToMaterialize(
+            for: today, templates: [template], existingItemsForDate: [unrelatedOneOff]
+        )
+        #expect(result.map(\.template) == [template])
+    }
 }

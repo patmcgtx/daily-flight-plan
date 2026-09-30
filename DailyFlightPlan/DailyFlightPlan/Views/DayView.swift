@@ -210,57 +210,19 @@ struct DayView: View {
     /// and has no existing instance for the given date.
     private func materializeRecurringInstances(for date: Date) {
         let cal = Calendar.current
-        let startOfDay = cal.startOfDay(for: date)
-        let weekdayInt = cal.component(.weekday, from: date)
-        let weekdayMap: [Int: Locale.Weekday] = [
-            1: .sunday, 2: .monday, 3: .tuesday, 4: .wednesday,
-            5: .thursday, 6: .friday, 7: .saturday
-        ]
-        guard let weekday = weekdayMap[weekdayInt] else { return }
 
         // Fresh fetch from the persistent store — bypasses stale @Query results and the
         // lazy template.instances relationship, which may lag CloudKit delivery.
-        // Key by title+section rather than template UUID: CloudKit may deliver instances
-        // before their template relationship resolves, making template?.uuid unreliable.
         let allFetched = (try? modelContext.fetch(FetchDescriptor<PlanItem>())) ?? []
         let freshTemplates = allFetched.filter { $0.isTemplate }
-        var coveredKeys = Set(
-            allFetched
-                .filter { !$0.isTemplate && cal.isDate($0.date, inSameDayAs: date) }
-                .map { "\($0.title.lowercased())|\($0.daySection?.rawValue ?? "")" }
-        )
+        let existingForDate = allFetched.filter { !$0.isTemplate && cal.isDate($0.date, inSameDayAs: date) }
 
-        var didInsert = false
-        for template in freshTemplates {
-            guard template.recurringWeekdays.contains(weekday) else { continue }
-            let key = "\(template.title.lowercased())|\(template.daySection?.rawValue ?? "")"
-            guard !coveredKeys.contains(key) else { continue }
-            let instanceDeadline: Date? = template.deadline.flatMap { dl in
-                cal.date(
-                    bySettingHour: cal.component(.hour, from: dl),
-                    minute: cal.component(.minute, from: dl),
-                    second: 0, of: startOfDay
-                )
-            }
-            let instance = PlanItem(
-                title: template.title,
-                notes: template.notes,
-                isFlagged: template.isFlagged,
-                date: startOfDay,
-                deadline: instanceDeadline,
-                daySection: template.daySection,
-                recurringWeekdays: [],
-                isTemplate: false
-            )
-            instance.categories = template.categories
-            instance.template = template
-            modelContext.insert(instance)
-            coveredKeys.insert(key)
-            didInsert = true
-        }
-        if didInsert {
-            try? modelContext.save()
-        }
+        let newInstances = viewModel.recurringInstancesToMaterialize(
+            for: date, templates: freshTemplates, existingItemsForDate: existingForDate
+        )
+        guard !newInstances.isEmpty else { return }
+        newInstances.forEach(modelContext.insert)
+        try? modelContext.save()
     }
 
     /// If the app is left open across midnight, moves the view forward to the new today —
