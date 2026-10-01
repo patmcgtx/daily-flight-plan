@@ -18,6 +18,7 @@ final class DayViewModel {
     private(set) var loadingSummarySections: Set<DaySection> = []
     private var clockTask: Task<Void, Never>?
     private var summaryTasks: [DaySection: Task<Void, Never>] = [:]
+    private var sectionContentSignatures: [DaySection: String] = [:]
 
     /// `currentTime` defaults to the real clock but can be injected for deterministic testing.
     init(currentTime: Date = .now) {
@@ -304,6 +305,7 @@ func startLiveClock() {
         summaryTasks[section]?.cancel()
         summaryTasks[section] = nil
         sectionSummaries[section] = nil
+        sectionContentSignatures[section] = nil
         loadingSummarySections.remove(section)
     }
 
@@ -312,7 +314,43 @@ func startLiveClock() {
         summaryTasks.values.forEach { $0.cancel() }
         summaryTasks = [:]
         sectionSummaries = [:]
+        sectionContentSignatures = [:]
         loadingSummarySections = []
+    }
+
+    /// A string that changes whenever the set or state of items/events/reminders feeding a
+    /// section's summary changes — membership (moved in/out), status (e.g. canceled), title,
+    /// or timing. Used to detect that a cached summary is stale and needs regenerating.
+    func contentSignature(items: [PlanItem], events: [CalendarEvent], reminders: [ReminderItem]) -> String {
+        let itemPart = items
+            .sorted { $0.uuid.uuidString < $1.uuid.uuidString }
+            .map { "\($0.uuid)|\($0.status.rawValue)|\($0.title)|\($0.deadline?.timeIntervalSinceReferenceDate ?? 0)" }
+            .joined(separator: ",")
+        let eventPart = events
+            .sorted { $0.id < $1.id }
+            .map { "\($0.id)|\($0.title)|\($0.startDate.timeIntervalSinceReferenceDate)" }
+            .joined(separator: ",")
+        let reminderPart = reminders
+            .sorted { $0.id < $1.id }
+            .map { "\($0.id)|\($0.title)|\($0.isCompleted)|\($0.dueDate?.timeIntervalSinceReferenceDate ?? 0)" }
+            .joined(separator: ",")
+        return [itemPart, eventPart, reminderPart].joined(separator: "||")
+    }
+
+    /// Regenerates a section's summary if its content has changed since the last generation
+    /// (items moved in/out, canceled, titles/deadlines edited, etc.), then generates it if needed.
+    func refreshSummaryIfNeeded(
+        for section: DaySection,
+        items: [PlanItem],
+        events: [CalendarEvent],
+        reminders: [ReminderItem]
+    ) {
+        let signature = contentSignature(items: items, events: events, reminders: reminders)
+        if let previous = sectionContentSignatures[section], previous != signature {
+            clearSummary(for: section)
+        }
+        sectionContentSignatures[section] = signature
+        generateSummaryIfNeeded(for: section, items: items, events: events, reminders: reminders)
     }
 
     /// Generate a one-line AI summary for a collapsed section. Skips if already cached or in-flight.
@@ -335,19 +373,26 @@ func startLiveClock() {
             }
 
             let session = LanguageModelSession(
-                instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
+                instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Items marked (done) are already completed — reflect that rather than treating them as upcoming. Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
             )
 
+            func label(_ title: String, done: Bool) -> String {
+                done ? "\(title) (done)" : title
+            }
+
             // All timed items merged and sorted by clock time — deadline plan items,
-            // calendar events, and timed reminders are equally time-sensitive.
+            // calendar events, and timed reminders are equally time-sensitive. Completed
+            // items are included (marked done) so a fully-finished section still has enough
+            // material for a coherent summary; canceled items are excluded entirely.
             struct TimedEntry {
                 let time: Date
                 let label: String
             }
             var timedEntries: [TimedEntry] = []
-            for item in items where item.deadline != nil && item.status == .pending {
+            for item in items where item.deadline != nil && item.status != .canceled {
                 if let dl = item.deadline {
-                    timedEntries.append(TimedEntry(time: dl, label: "\(item.title) at \(dl.formatted(.dateTime.hour().minute()))"))
+                    let text = label(item.title, done: item.status == .completed)
+                    timedEntries.append(TimedEntry(time: dl, label: "\(text) at \(dl.formatted(.dateTime.hour().minute()))"))
                 }
             }
             for event in events {
@@ -362,10 +407,10 @@ func startLiveClock() {
 
             var parts = timedEntries.prefix(6).map(\.label)
 
-            // Non-recurring pending items — one-off tasks without a fixed time
-            let oneOffItems = items.filter { $0.deadline == nil && $0.status == .pending && !$0.isRecurring }
+            // Non-recurring items without a fixed time — completed included (marked done), canceled excluded
+            let oneOffItems = items.filter { $0.deadline == nil && $0.status != .canceled && !$0.isRecurring }
             for item in oneOffItems.prefix(4) {
-                parts.append(item.title)
+                parts.append(label(item.title, done: item.status == .completed))
             }
 
             // Untimed reminders
@@ -373,11 +418,13 @@ func startLiveClock() {
                 parts.append(reminder.title)
             }
 
-            // Recurring habits — least surprising, capped tightly
-            let habitItems = items.filter { $0.deadline == nil && $0.status == .pending && $0.isRecurring }
+            // Recurring habits — least surprising, capped tightly; completed included (marked done)
+            let habitItems = items.filter { $0.deadline == nil && $0.status != .canceled && $0.isRecurring }
             for item in habitItems.prefix(2) {
-                parts.append(item.title)
+                parts.append(label(item.title, done: item.status == .completed))
             }
+
+            guard !parts.isEmpty else { return }
 
             let prompt = parts.joined(separator: "; ")
             if let response = try? await session.respond(to: prompt) {

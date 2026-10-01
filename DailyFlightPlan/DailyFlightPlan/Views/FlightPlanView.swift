@@ -369,6 +369,7 @@ struct FlightPlanView: View {
         let deadlines = viewModel.deadlineRows(section, from: activeItems(for: date))
         let allSectionItems = pills + deadlines
         let hasContent = !allSectionItems.isEmpty || !events.isEmpty || !reminders.isEmpty
+        let contentSignature = viewModel.contentSignature(items: allSectionItems, events: events, reminders: reminders)
         let rawAll = viewModel.sectionPills(section, from: rawItems(for: date))
                    + viewModel.deadlineRows(section, from: rawItems(for: date))
         let completed = rawAll.filter { $0.status == .completed }.count
@@ -527,7 +528,14 @@ struct FlightPlanView: View {
         .animation(.easeInOut(duration: 0.15), value: dropTargetedSection == section)
         .onAppear {
             if hasContent {
-                viewModel.generateSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
+            }
+        }
+        .onChange(of: contentSignature) { _, _ in
+            if hasContent {
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
+            } else {
+                viewModel.clearSummary(for: section)
             }
         }
     }

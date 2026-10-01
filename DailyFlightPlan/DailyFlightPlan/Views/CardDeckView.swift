@@ -208,6 +208,7 @@ struct CardDeckView: View {
         let pills = viewModel.sectionPills(section, from: activeItems)
         let deadlines = viewModel.deadlineRows(section, from: activeItems)
         let allSectionItems = pills + deadlines
+        let contentSignature = viewModel.contentSignature(items: allSectionItems, events: [], reminders: [])
         let completed = allSectionItems.filter { $0.status == .completed }.count
         let total = allSectionItems.count
         let pct = total > 0 ? Double(completed) / Double(total) : 0
@@ -292,7 +293,14 @@ struct CardDeckView: View {
         .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 4)
         .onAppear {
             if !allSectionItems.isEmpty {
-                viewModel.generateSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
+            }
+        }
+        .onChange(of: contentSignature) { _, _ in
+            if !allSectionItems.isEmpty {
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
+            } else {
+                viewModel.clearSummary(for: section)
             }
         }
     }
