@@ -355,23 +355,23 @@ disclaimer) — none apply to a feature that no longer exists.
   removed now that the tab is gone
 
 ### Phase 2.5 — Global Filter Sheet + Category Management
-*Placeholder — not yet implemented. Notes only; design/scope to be fleshed out when this phase is picked up.*
+*Planned — full design in `docs/global-filter-sheet-plan.md`. Not yet implemented.*
 
-- **Filter button placement**: a dedicated button in the lower-right, in the spot where a search
-  button tends to live in Liquid Glass apps (trailing edge, near/in the tab bar area) — not
-  folded into an existing toolbar menu
-- **Filter sheet**: tapping it presents a sheet with global filter controls — category, done
-  status, routine/recurring status, and likely the existing Flagged/Calendar/Reminders toggles
-  too; replaces (or absorbs) the current per-view filter menus so filtering is consistent across
-  Day/Routine/Timeline rather than each view having its own
+- **Filter button placement**: a dedicated floating button, bottom-trailing above the tab bar
+  (Music/Podcasts search-button spot), reachable from all three tabs — not folded into an
+  existing toolbar menu, and not built on SwiftUI's `Tab(role: .search)` (that role is wired to
+  `.searchable()` semantics, not arbitrary sheets)
+- **Filter sheet**: a **General** section (search text, category selection, flagged-only) plus a
+  **Specific** section that adapts to whichever tab is active (Day: done/routines/calendar/
+  reminders; Timeline: missed-only/completed-only; Routine: none) — resolves the prior open
+  question: this **replaces** the per-view filter menus (FlightPlanView's toolbar menu, Timeline's
+  inline filter bar) outright, rather than sitting alongside them
 - **Category editing lives in the same sheet**: an edit-categories entry point (add/rename/delete,
-  plus selecting which categories are active for filtering) rather than a separate screen
-- **Handle categories like MapsPlus**: mirror MapsPlus's category selection/editing UX and
-  interaction patterns (see `CategoryCapsule.swift` / `CategoriesSelectFlow.swift` in
-  `github.com/patmcgtx/mapplus`) rather than inventing a new pattern — reconcile with the existing
-  `CategoriesEditView`/`CategoriesEditViewModel` and `CategorySelectionService`
-- Open question: does this sheet replace the existing per-view filter menus (Day/Timeline) outright,
-  or sit alongside them as a global superset?
+  plus selecting which categories are active for filtering) rather than a separate screen —
+  reuses the existing `CategoriesEditView`/`CategoriesEditViewModel`/`CategorySelectionService`
+- **New behavior**: Routine gains category + search filtering for the first time (previously had
+  none at all), since those two are promoted to "General, applies on every tab"
+- See `docs/global-filter-sheet-plan.md` for the full file-by-file plan before implementing
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
