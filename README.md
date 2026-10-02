@@ -49,7 +49,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 
 ## Features (current)
 
-**Four tabs:**
+**Three tabs:**
 
 - **Day** — primary day view (Flight Plan) with swipe-between-days pager
   - Swipe left/right to navigate days (iOS: `TabView(.page)` pager; macOS: drag gesture)
@@ -75,9 +75,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Shows all plan items across all dates with a filter bar
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
-- **Comm** — AI chat powered by on-device Foundation Models; knows the last 7 days and next 7 days of your plan; streaming responses rendered as markdown; can create new plan items via tool calling
-
-**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Routine · `Cmd+3` Log · `Cmd+4` Comm
+**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Routine · `Cmd+3` Log
 
 **Shared across tabs:**
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
@@ -113,7 +111,6 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
     ├── FlightPlanView.swift   — Flight Plan tab (primary day view, swipe pager)
     ├── RoutineView.swift      — Routine tab (recurring habit template management)
-    ├── CommView.swift         — Comm tab; AI chat with streaming Foundation Models responses
     ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)
     ├── TimelineView.swift     — Nav Log tab
@@ -132,8 +129,8 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | 2.1 | Routine view refinements |
 | 2.2 | Nav Log — full history + future, lazy-load, search |
 | 2.3 | Day/Flight view refinements |
-| 2.4 | Comm tab refinements (context freshness, copyable responses, reset, error recovery) |
-| 2.5 | Smooth day swipe navigation — fix laggy/unresponsive pager |
+| 2.4 | ✅ Remove Comm tab (too buggy, superseded by Markdown Import) |
+| 2.5 | Global filter sheet + category management (placeholder, not yet implemented) |
 | 2.6 | Import UX refinements (flag duplicates, notes, tagging) |
 | 2.7 | Missed items review & pull-forward |
 
@@ -156,9 +153,11 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 
 | Phase | Description |
 |-------|-------------|
-| release.1 | Fit and finish + aviation UI spike |
-| release.2 | Tech debt (unit tests, UI tests, architecture review) |
-| release.3 | Beta testing |
+| release.1 | Full-app UX audit |
+| release.2 | Fit and finish + aviation UI spike |
+| release.3 | Performance & stability audit (incl. smooth day swipe navigation) |
+| release.4 | Tech debt (unit tests, UI tests, architecture review) |
+| release.5 | Beta testing |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 3.0 plans (Siri, Widgets, Apple Watch).
 

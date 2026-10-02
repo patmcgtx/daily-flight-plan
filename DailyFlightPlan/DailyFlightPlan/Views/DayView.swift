@@ -67,7 +67,7 @@ struct DayView: View {
         }
         #if os(macOS)
         .overlay(alignment: .topLeading) {
-            // Hidden buttons so Cmd+1–4 switch tabs on macOS.
+            // Hidden buttons so Cmd+1–3 switch tabs on macOS.
             // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
             VStack {
                 Button("") { activeTab = .flightDeck }.keyboardShortcut("1", modifiers: .command)

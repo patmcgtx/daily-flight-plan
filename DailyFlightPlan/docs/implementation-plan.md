@@ -516,7 +516,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - Fix all runtime warnings.
 - Confirm cross-device syncing is working as expected and bug-free
 - **Timeline browsing view still loads everything in memory** *(moved here from Phase 2.2)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
-- **Smooth Day Swipe Navigation (Pager)** *(moved here from Phase 2.6)*: the Flight Plan view's
+- **Smooth Day Swipe Navigation (Pager)** *(moved here from Phase 2.5)*: the Flight Plan view's
   swipe pager (Phase 1.19) uses a 3-page `TabView(.page)` infinite-reset pattern (yesterday /
   today / tomorrow, silently snapping back to center after each swipe), but swipe responsiveness
   is poor — gestures feel laggy or unresponsive in practice. Diagnose and fix the gesture
