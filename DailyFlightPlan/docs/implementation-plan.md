@@ -6,7 +6,7 @@ See `ux-improvements.md` for a running list of UX/workflow improvement ideas wit
 
 ## Version 0.1 — Core Functionality (feature-complete, not release-ready)
 
-All 22 phases complete. Core features are working: daily plan view with swipe navigation, recurring habits/routines, Calendar and Reminders integration, iCloud sync, Markdown import, AI chat (Foundation Models), Mac support. Not yet polished for public release — see Phases 28–30 for fit/finish, accessibility, and beta testing.
+All 22 phases complete. Core features are working: daily plan view with swipe navigation, recurring habits/routines, Calendar and Reminders integration, iCloud sync, Markdown import (Foundation Models), Mac support. Not yet polished for public release — see Phases 28–30 for fit/finish, accessibility, and beta testing.
 
 ### ✅ Phase 1.1 — Skeleton + Models
 - Set up folder structure mirroring MapsPlus
@@ -255,8 +255,8 @@ Paste markdown or plain text (e.g. a Things export) → Foundation Models parses
 - **Section mapping**: AI outputs one of firstThing / morning / midday / afternoon / evening / bedtime / open; "open" (or unknown) → `daySection = nil` (any time)
 - Wired into `DayView` via `onShowImport` callback on `FlightPlanView`; sheet dismissal triggers `materializeRecurringInstances` so any new templates immediately appear as today's instances
 
-### ✅ Phase 1.22 — Chat / Quick Entry (Natural Language)
-Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation Models tool calling added in a follow-up pass.
+### ✅ Phase 1.22 — Chat / Quick Entry (Natural Language) *(removed — see Phase 2.4)*
+Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation Models tool calling added in a follow-up pass. The Comm tab and all code below were removed in Phase 2.4 — too buggy and not useful enough to keep, especially with Markdown Import (Phase 1.21) already covering the "get my stuff into the app quickly" need. Left here for history.
 
 - **`CommView`** (`CommViewModel`) replaces the placeholder on the Comm tab
 - **Context injection**: today's and tomorrow's plan items (with section, status, deadline) are serialized into the `LanguageModelSession` system prompt on tab appear; pre-computed aggregate counts (completed/canceled/pending) prevent model from miscounting; "ghost" recurring habits from templates included in tomorrow's context
@@ -296,7 +296,7 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Per-segment "Add item" button**: each expanded segment has an `+ Add item` button that opens `ItemForm` pre-filled with both the schedule's weekday pattern and that segment's `DaySection` — required a new combined `ItemForm(templateWeekdays:section:)` / `ItemFormViewModel` initializer (previously only one or the other could be set at once)
 - **AI summary on collapsed segments**: collapsed segment headers show a one-line summary of routine content, generated via Foundation Models (`LanguageModelSession`) — same pattern as the Day view's section summaries; cache is keyed by schedule name + day-segment and invalidated whenever any template's title, section, deadline, or weekday pattern changes; empty segments show "No routines"
 - **`quickSummary(for:)` deterministic fallback**: `SystemLanguageModel` (Apple Intelligence) is unavailable in the iOS Simulator, so a local fallback joins item titles/times (e.g. "Coffee · Stretch · Journal 7:00 AM +1 more") and is shown whenever no AI summary is cached yet — also covers AI failures/guardrail rejections on real devices, not just the Simulator
-- **Tab reorder**: Routine now appears before Log in the tab bar (Day / Routine / Log / Comm). macOS keyboard shortcuts in `DayView.swift` match this order (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log, `Cmd+4` Comm)
+- **Tab reorder**: Routine now appears before Log in the tab bar (Day / Routine / Log / Comm). macOS keyboard shortcuts in `DayView.swift` match this order (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log, `Cmd+4` Comm) *(Comm tab and its shortcut removed in Phase 2.4)*
 - **Drag and drop between segments**: each segment card is now its own `.dropDestination`, nested inside the schedule card's existing one — dropping directly on a segment sets `daySection` (and clears `deadline`, matching `FlightPlanView`'s drop convention); since the segment target sits in front of the card-level one, a cross-card drop landing on a segment reassigns weekday pattern *and* day-section in one motion via the new `reassignSegment(uuidString:to:pattern:)`, while dropping on the card's header/padding (outside any segment) still falls through to the original card-level `reassign(uuidString:to:)` for a pattern-only move
 - **Fix: empty schedule cards had no segment drop targets**: `scheduleCard` used to render just a "No routines yet." placeholder — no `segmentCard`s at all — whenever a weekday pattern had zero items, since `sortedSegments(for:)` already returns all six segments regardless of item count. That made an empty card's segments unreachable for drops, so a drag onto e.g. an empty "Weekends" card could only hit the outer card-level handler (pattern-only, `daySection` untouched) — placing an item into a specific segment on an empty card took two drags. Now segment cards always render (each showing its own "No routines yet." + Add item when empty), so every segment is a drop target from the start
 - **Note**: the open-ended "UX audit and fix" item originally tracked here was folded into a holistic full-app UX pass — see Phase release.1 under Version 1.0
@@ -339,23 +339,39 @@ Improves existing features based on real use. No new capabilities — better UX 
 - Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 
-### Phase 2.4 — Comm Tab Refinements
-- **Do we really need this view?** I already have AI-assisted import.
-- **Updated 'terminal' chat appearance**: Just for fun. Like some sort of airline terminal. Move away from the "Messages" style interface.
-- **Context freshness / Conversation reset**: the session is intentionally built once and reused across tab switches to preserve conversation history. Add an explicit reset button (toolbar or inline) that clears messages and rebuilds the session with current plan data — giving the user control over freshness without auto-wiping the conversation on every tab entry.
-- **Copyable responses**: allow long-press on assistant bubbles to copy the message text
-- **Error recovery**: clearer error messages and a retry option when the model fails or the context window is exceeded
-- **Suggested follow-ups**: after each assistant response, optionally surface 2–3 short tappable follow-up questions relevant to the reply
-- **AI disclaimer**: And a hard text limit. The local AI can be crazy sometimes! Apple some crazy stuff in there sometimes if you mention a pill or anything that can be potentially misused. I had to rename my "take my pills" routine for prescriptions to "take my supplements", for example. Apple spit out a very long and shocking warning about drug abuse or something. 🤦🏻‍♂️
-- **Note**: the "UX audit" item originally tracked here was folded into a holistic full-app UX pass — see Phase release.1 under Version 1.0
+### ✅ Phase 2.4 — Remove Comm Tab
+Superseded by this decision all the open refinement items originally listed here (terminal-style
+appearance, conversation reset, copyable responses, error recovery, suggested follow-ups, AI
+disclaimer) — none apply to a feature that no longer exists.
 
-### Phase 2.5 — Smooth Day Swipe Navigation (Pager)
-*Partially implemented in Phase 1.19 (Flight Plan view): the infinite-reset `TabView(.page)` pattern is in place but swipe responsiveness is poor — gestures feel laggy or unresponsive in practice.*
+- **Removed, not refined**: the Comm tab was buggy and not very useful in practice; Markdown
+  Import (Phase 1.21) already covers the "get my stuff into the app quickly" need that chat-based
+  quick entry (Phase 1.22) was reaching for
+- Deleted `Views/CommView.swift` (`CommView`, `CommViewModel`, `MessageBubble`)
+- Removed the `Comm` tab and its `AppTab.chat` case from `DayView`; dropped the macOS `Cmd+4`
+  keyboard shortcut along with it
+- **Note**: the "UX audit" item originally tracked here was folded into a holistic full-app UX
+  pass — see Phase release.1 under Version 1.0, which has also had its Comm-specific bullet
+  removed now that the tab is gone
 
-- Diagnose and fix the swipe gesture responsiveness — the 3-page TabView infinite-reset approach may need to be replaced or tuned
-- Ensure a fast, fluid swipe between yesterday / today / tomorrow with no perceptible lag or snap-back artifacts
-- macOS: `DragGesture` fallback should feel equally responsive
-- Consider whether the infinite-reset pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with paging, custom gesture recognizer) would be more reliable
+### Phase 2.5 — Global Filter Sheet + Category Management
+*Placeholder — not yet implemented. Notes only; design/scope to be fleshed out when this phase is picked up.*
+
+- **Filter button placement**: a dedicated button in the lower-right, in the spot where a search
+  button tends to live in Liquid Glass apps (trailing edge, near/in the tab bar area) — not
+  folded into an existing toolbar menu
+- **Filter sheet**: tapping it presents a sheet with global filter controls — category, done
+  status, routine/recurring status, and likely the existing Flagged/Calendar/Reminders toggles
+  too; replaces (or absorbs) the current per-view filter menus so filtering is consistent across
+  Day/Routine/Timeline rather than each view having its own
+- **Category editing lives in the same sheet**: an edit-categories entry point (add/rename/delete,
+  plus selecting which categories are active for filtering) rather than a separate screen
+- **Handle categories like MapsPlus**: mirror MapsPlus's category selection/editing UX and
+  interaction patterns (see `CategoryCapsule.swift` / `CategoriesSelectFlow.swift` in
+  `github.com/patmcgtx/mapplus`) rather than inventing a new pattern — reconcile with the existing
+  `CategoriesEditView`/`CategoriesEditViewModel` and `CategorySelectionService`
+- Open question: does this sheet replace the existing per-view filter menus (Day/Timeline) outright,
+  or sit alongside them as a global superset?
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
@@ -422,23 +438,25 @@ A general look at sharing across the app, rather than one-off share buttons per 
 
 ## Version 0.4 — In-App Purchases
 
-Introduces monetization via StoreKit 2 — Pro Themes, Unlimited Categories, Markdown Import, and Comm AI Chat as individual unlocks, bundled as Daily Flight Plan Pro. An `EntitlementManager` service gates premium features across the app.
+Introduces monetization via StoreKit 2 — Pro Themes, Unlimited Categories, and Markdown Import as
+individual unlocks, bundled as Daily Flight Plan Pro. An `EntitlementManager` service gates
+premium features across the app.
 
 - **Monetization model TBD** — likely a free tier with limits + optional unlock
-- **Pricing model:** four individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $2.99
+- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $2.49
 - **Individual unlocks:**
   - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
   - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
   - **Markdown Import** ($0.99) — Foundation Models text-to-plan import (paste any text → AI parses titles, sections, and schedules → review and commit); gate the Parse button behind this entitlement
-  - **Comm AI Chat** ($0.99) — on-device AI chat with full ±7-day plan context and `createPlanItem` tool calling; free tier could offer a limited number of messages per day or a simpler context window
-- **Daily Flight Plan Pro bundle** ($2.99) — all four unlocks; $0.97 savings vs. buying separately
+- **Daily Flight Plan Pro bundle** ($2.49) — all three unlocks; $0.48 savings vs. buying separately
 - **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
 - Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
 - Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
 - Gate Markdown Import Parse button: show upsell sheet when tapped without entitlement
-- Gate Comm chat send: show upsell sheet or daily-limit banner without entitlement
 - `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
 - Restore purchases flow (required for App Store)
+- **Note**: a "Comm AI Chat" unlock was originally planned here; dropped when the Comm tab itself
+  was removed in Phase 2.4
 
 ---
 
@@ -451,7 +469,6 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - **Day tab** (Flight Plan view): general UX audit and fix
 - **Routine tab**: general UX audit and fix *(originally tracked in Phase 2.1)*
 - **Timeline tab** (Nav Log): general UX audit and fix
-- **Comm tab**: review empty state, bubble sizing, input bar behavior, and keyboard handling on both iPhone and Mac *(originally tracked in Phase 2.4)*
 - **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
 - **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 2.2)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase release.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
 
@@ -499,6 +516,15 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - Fix all runtime warnings.
 - Confirm cross-device syncing is working as expected and bug-free
 - **Timeline browsing view still loads everything in memory** *(moved here from Phase 2.2)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
+- **Smooth Day Swipe Navigation (Pager)** *(moved here from Phase 2.5)*: the Flight Plan view's
+  swipe pager (Phase 1.19) uses a 3-page `TabView(.page)` infinite-reset pattern (yesterday /
+  today / tomorrow, silently snapping back to center after each swipe), but swipe responsiveness
+  is poor — gestures feel laggy or unresponsive in practice. Diagnose and fix the gesture
+  responsiveness (the infinite-reset approach itself may need to be replaced or tuned so swiping
+  between days feels fast and fluid with no perceptible lag or snap-back artifacts); macOS's
+  `DragGesture` fallback should feel equally responsive. Consider whether the infinite-reset
+  pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with
+  paging, custom gesture recognizer) would be more reliable.
 
 ### Phase release.4 — Tech Debt
 - **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see `docs/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since the app hasn't shipped, no CloudKit migration cost to worry about.
@@ -506,7 +532,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
 - Architecture review & refactor
-- **Rename code to match final view names**: Rename day "section" to "segment" in the code. Also check backing code for Timeline view, Day view, Comm view, etc.
+- **Rename code to match final view names**: Rename day "section" to "segment" in the code. Also check backing code for Timeline view, Day view, etc.
 - **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
 - **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
 - **✅ CloudKit dedup for user-created templates**: `deduplicateItems` now performs a second pass matching `title + daySection + recurringWeekdays`, merging instances onto the canonical copy before deleting duplicates.

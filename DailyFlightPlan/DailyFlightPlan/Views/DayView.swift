@@ -6,7 +6,7 @@ import SwiftUI
 import SwiftData
 import EventKit
 
-private enum AppTab: Hashable { case focus, flightDeck, timeline, routines, chat }
+private enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
 
 struct DayView: View {
 
@@ -61,23 +61,18 @@ struct DayView: View {
             Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
-
-            Tab("Comm", systemImage: "apple.intelligence", value: AppTab.chat) {
-                CommView()
-            }
         }
         .onAppear {
             if activeTab == .focus { activeTab = .flightDeck }
         }
         #if os(macOS)
         .overlay(alignment: .topLeading) {
-            // Hidden buttons so Cmd+1–4 switch tabs on macOS.
+            // Hidden buttons so Cmd+1–3 switch tabs on macOS.
             // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
             VStack {
                 Button("") { activeTab = .flightDeck }.keyboardShortcut("1", modifiers: .command)
                 Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
                 Button("") { activeTab = .timeline }.keyboardShortcut("3", modifiers: .command)
-                Button("") { activeTab = .chat }.keyboardShortcut("4", modifiers: .command)
             }
             .opacity(0)
             .frame(width: 0, height: 0)
