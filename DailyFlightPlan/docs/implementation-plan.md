@@ -88,7 +88,7 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - **Deferred**: reminder list selection UI — moved to Phase 3.1 (Settings)
 
 ### ✅ Phase 1.9 — Workflow Refinements
-- **Spillover** *(removed in Phase 2.7 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
+- **Spillover** *(removed in Phase 2.8 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
 - **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their past calendar events appear in a non-section "Past" area at the top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
 - **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the missed time.
 - **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
@@ -354,7 +354,26 @@ disclaimer) — none apply to a feature that no longer exists.
   pass — see Phase release.1 under Version 1.0, which has also had its Comm-specific bullet
   removed now that the tab is gone
 
-### Phase 2.5 — Smooth Day Swipe Navigation (Pager)
+### Phase 2.5 — Global Filter Sheet + Category Management
+*Placeholder — not yet implemented. Notes only; design/scope to be fleshed out when this phase is picked up.*
+
+- **Filter button placement**: a dedicated button in the lower-right, in the spot where a search
+  button tends to live in Liquid Glass apps (trailing edge, near/in the tab bar area) — not
+  folded into an existing toolbar menu
+- **Filter sheet**: tapping it presents a sheet with global filter controls — category, done
+  status, routine/recurring status, and likely the existing Flagged/Calendar/Reminders toggles
+  too; replaces (or absorbs) the current per-view filter menus so filtering is consistent across
+  Day/Routine/Timeline rather than each view having its own
+- **Category editing lives in the same sheet**: an edit-categories entry point (add/rename/delete,
+  plus selecting which categories are active for filtering) rather than a separate screen
+- **Handle categories like MapsPlus**: mirror MapsPlus's category selection/editing UX and
+  interaction patterns (see `CategoryCapsule.swift` / `CategoriesSelectFlow.swift` in
+  `github.com/patmcgtx/mapplus`) rather than inventing a new pattern — reconcile with the existing
+  `CategoriesEditView`/`CategoriesEditViewModel` and `CategorySelectionService`
+- Open question: does this sheet replace the existing per-view filter menus (Day/Timeline) outright,
+  or sit alongside them as a global superset?
+
+### Phase 2.6 — Smooth Day Swipe Navigation (Pager)
 *Partially implemented in Phase 1.19 (Flight Plan view): the infinite-reset `TabView(.page)` pattern is in place but swipe responsiveness is poor — gestures feel laggy or unresponsive in practice.*
 
 - Diagnose and fix the swipe gesture responsiveness — the 3-page TabView infinite-reset approach may need to be replaced or tuned
@@ -362,12 +381,12 @@ disclaimer) — none apply to a feature that no longer exists.
 - macOS: `DragGesture` fallback should feel equally responsive
 - Consider whether the infinite-reset pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with paging, custom gesture recognizer) would be more reliable
 
-### Phase 2.6 - Import UX Refinements
+### Phase 2.7 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
 - **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
 - **Add tagging on import**: Would be helpful to allow tagging items on import as well
 
-### Phase 2.7 — Missed Items Review & Pull-Forward
+### Phase 2.8 — Missed Items Review & Pull-Forward
 **Note**: this phase replaces the automatic "Spillover" behavior from Phase 1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
 
 - Entry point: a way to review pending items left behind on past days — modeled on the Markdown Import flow (Phase 1.21)'s paste → review-list → commit shape, but sourced from existing overdue items instead of pasted text
