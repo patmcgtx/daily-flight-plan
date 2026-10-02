@@ -483,4 +483,69 @@ struct DayViewModelTests {
         )
         #expect(result.map(\.template) == [template])
     }
+
+    // MARK: Section summary invalidation
+
+    @Test("contentSignature is stable across calls for an unchanged set of items, events, and reminders")
+    func contentSignatureIsStableWhenNothingChanges() {
+        let viewModel = DayViewModel()
+        let planItem = item()
+        let event = CalendarEvent(
+            id: "evt-1", title: "Standup", startDate: date(hour: 9, minute: 0),
+            endDate: date(hour: 9, minute: 30), calendarTitle: "Work", calendarColor: .blue
+        )
+        let reminder = ReminderItem(
+            id: "rem-1", title: "Call dentist", notes: nil,
+            dueDate: date(hour: 10, minute: 0), listTitle: "Errands", listColor: .green, isCompleted: false
+        )
+        let first = viewModel.contentSignature(items: [planItem], events: [event], reminders: [reminder])
+        let second = viewModel.contentSignature(items: [planItem], events: [event], reminders: [reminder])
+        #expect(first == second)
+    }
+
+    @Test(
+        "contentSignature changes when an item's membership, status, title, or deadline changes",
+        arguments: [
+            "item moved into the section",
+            "item canceled",
+            "item title edited",
+            "item deadline edited",
+        ]
+    )
+    func contentSignatureReflectsItemChanges(scenario: String) {
+        let viewModel = DayViewModel()
+        let baseItem = item(deadline: date(hour: 8, minute: 0))
+        let baseline = viewModel.contentSignature(items: [baseItem], events: [], reminders: [])
+
+        let changedItems: [PlanItem]
+        switch scenario {
+        case "item moved into the section":
+            changedItems = [baseItem, item()]
+        case "item canceled":
+            let canceled = item(deadline: date(hour: 8, minute: 0), status: .canceled)
+            canceled.uuid = baseItem.uuid
+            changedItems = [canceled]
+        case "item title edited":
+            baseItem.title = "Updated title"
+            changedItems = [baseItem]
+        case "item deadline edited":
+            baseItem.deadline = date(hour: 9, minute: 0)
+            changedItems = [baseItem]
+        default:
+            changedItems = [baseItem]
+        }
+
+        let updated = viewModel.contentSignature(items: changedItems, events: [], reminders: [])
+        #expect(updated != baseline)
+    }
+
+    @Test("contentSignature changes when an item is removed from the section (e.g. moved elsewhere)")
+    func contentSignatureReflectsItemRemoval() {
+        let viewModel = DayViewModel()
+        let remaining = item()
+        let removed = item()
+        let baseline = viewModel.contentSignature(items: [remaining, removed], events: [], reminders: [])
+        let updated = viewModel.contentSignature(items: [remaining], events: [], reminders: [])
+        #expect(updated != baseline)
+    }
 }
