@@ -6,7 +6,7 @@ import SwiftUI
 import SwiftData
 import EventKit
 
-private enum AppTab: Hashable { case focus, flightDeck, timeline, routines, chat }
+private enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
 
 struct DayView: View {
 
@@ -61,10 +61,6 @@ struct DayView: View {
             Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
-
-            Tab("Comm", systemImage: "apple.intelligence", value: AppTab.chat) {
-                CommView()
-            }
         }
         .onAppear {
             if activeTab == .focus { activeTab = .flightDeck }
@@ -77,7 +73,6 @@ struct DayView: View {
                 Button("") { activeTab = .flightDeck }.keyboardShortcut("1", modifiers: .command)
                 Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
                 Button("") { activeTab = .timeline }.keyboardShortcut("3", modifiers: .command)
-                Button("") { activeTab = .chat }.keyboardShortcut("4", modifiers: .command)
             }
             .opacity(0)
             .frame(width: 0, height: 0)

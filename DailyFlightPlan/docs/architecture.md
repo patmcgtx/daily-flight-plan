@@ -21,7 +21,6 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
     ├── FlightPlanView.swift   — Flight Plan tab (struct FlightPlanView): primary day view, swipe pager
     ├── RoutineView.swift      — Routine tab: manage recurring habit templates; grouped by weekday pattern and day segment
-    ├── CommView.swift         — Comm tab: AI chat with -7/+7 day context, streaming responses, and CreateItemTool for adding plan items
     ├── MarkdownImportView.swift — Paste-to-import sheet: TextEditor → Foundation Models parse → review list → commit
     ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
     ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
@@ -39,7 +38,6 @@ Mock service implementations live alongside their protocols in `#if DEBUG` block
 - **`#if DEBUG` mock services** — used in SwiftUI previews; `injectMockServices()` view modifier wires them all at once
 - **Theme via single modifier** — `ThemeViewModifier` applied once at the root preserves view identity across theme changes
 - **Foundation Models structured generation** — `@Generable` structs (`ParsedTask`, `ParsedTaskList`) + `LanguageModelSession` used in `MarkdownImportView`; graceful fallback (regex strip) when `SystemLanguageModel.default.isAvailable` is false
-- **Foundation Models tool calling** — `CommView` uses a `CreateItemTool` (`Tool` protocol, `@Generable Arguments`) to let the AI chat create `PlanItem` records; tool calls are buffered via `ItemCreationQueue` actor and committed to SwiftData after each streaming response
 
 ## Data models
 
@@ -85,7 +83,7 @@ enum ItemStatus: String, Codable
 
 **Item identity & deduplication:** "What makes two `PlanItem`s the same" isn't one rule — it's three, each answering a different question:
 - **Template identity** (`ModelContainers.templateContentKey`) — is this the same *routine definition* as another template? Keyed by `title + daySection + weekday pattern`. A template's day section is part of its schedule, so two templates with the same title in different sections are legitimately distinct routines. Used by `deduplicateItems` as a fallback merge pass after matching by `sourceID`.
-- **Template coverage** (`PlanItem.coversRecurringOccurrence(ofTemplate:on:)`) — does this instance already represent *this specific template's* occurrence for a given date? Matches only via a resolved `template` link, compared by the template's `sourceID` (never by title, and never by day section — a drag-moved instance must still count as covering its template). Returns `false` if the link hasn't resolved yet (e.g. mid-CloudKit-sync) rather than falling back to a fuzzy title match, since a one-off item's `template` is *permanently* nil and a title fallback would risk an unrelated one-off suppressing a real habit. Drives `DayViewModel.recurringInstancesToMaterialize` (decides whether a template needs a new instance today) and `CommView`'s future-day ghost-projection filter.
+- **Template coverage** (`PlanItem.coversRecurringOccurrence(ofTemplate:on:)`) — does this instance already represent *this specific template's* occurrence for a given date? Matches only via a resolved `template` link, compared by the template's `sourceID` (never by title, and never by day section — a drag-moved instance must still count as covering its template). Returns `false` if the link hasn't resolved yet (e.g. mid-CloudKit-sync) rather than falling back to a fuzzy title match, since a one-off item's `template` is *permanently* nil and a title fallback would risk an unrelated one-off suppressing a real habit. Drives `DayViewModel.recurringInstancesToMaterialize` (decides whether a template needs a new instance today) and the future-day ghost-projection filter.
 - **Instance dedupe** (`PlanItem.instanceDedupeKey`) — is this instance a true accidental duplicate of another (e.g. a CloudKit sync race)? Recurring instances key by `template.sourceID + day` (section-independent, matching `coversRecurringOccurrence`'s rule); one-off items key by `title + daySection + day` (section-*sensitive*, since nothing auto-regenerates a one-off item — two same-titled one-off tasks in different sections are presumed genuinely distinct). Drives `ModelContainers.deduplicateInstances`.
 
 The unresolved-`template`-link case (`coversRecurringOccurrence` returning `false`, `instanceDedupeKey` falling back to the one-off key) is an accepted, self-healing transient: a brief duplicate can appear mid-sync, cleaned up by the next `deduplicateInstances` pass once the relationship resolves. It is not treated as a bug to fix.
@@ -114,8 +112,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 - **Day** (`airplane`) — primary day view (Flight Plan); swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
 - **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all start expanded; collapsed shows name + item count). Within each card, items are subdivided by day segment (Morning, Midday, …), and each segment is itself a collapsible card matching `FlightPlanView`'s section-card styling (`.background` fill, 0.5pt border, title enlarges to `.headline` when expanded, item-count badge, `+ Add item` button pre-wired to that weekday pattern + segment via a combined `ItemForm(templateWeekdays:section:)` initializer); untimed items flow as `HFlow` pills, timed items get full-width deadline rows. Collapsed segment headers show a one-line AI summary (Foundation Models `LanguageModelSession`, same pattern as the Day view) with a deterministic title/time-based fallback when the on-device model is unavailable (e.g. Simulator) or fails. Tap any item to edit, long-press for Edit/Delete context menu; drag items between schedule cards to reassign weekday pattern; add/delete custom weekday sections.
 - **Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
-- **Comm** (`apple.intelligence`) — on-device AI chat (Foundation Models); context covers the last 7 days and next 7 days; streaming responses rendered as markdown; `CreateItemTool` lets the model add items to the plan
-- Tab order in the UI is Day / Routine / Log / Comm (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log, `Cmd+4` Comm on macOS)
+- Tab order in the UI is Day / Routine / Log (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log on macOS)
 
 **Navigation bar toolbar (Flight Plan tab, inside `NavigationStack`):**
 - Leading: `⚙` Settings button
