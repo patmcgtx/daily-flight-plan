@@ -19,6 +19,10 @@ final class DayViewModel {
     private var clockTask: Task<Void, Never>?
     private var summaryTasks: [DaySection: Task<Void, Never>] = [:]
     private var sectionContentSignatures: [DaySection: String] = [:]
+    // Identifies which generation of a section's summary task is current. A canceled task
+    // whose generation no longer matches must not clear shared state or publish its result —
+    // otherwise it can clobber a newer in-flight (or already-completed) generation.
+    private var summaryGenerations: [DaySection: UUID] = [:]
 
     /// `currentTime` defaults to the real clock but can be injected for deterministic testing.
     init(currentTime: Date = .now) {
@@ -313,6 +317,7 @@ func startLiveClock() {
     func clearSummaries() {
         summaryTasks.values.forEach { $0.cancel() }
         summaryTasks = [:]
+        summaryGenerations = [:]
         sectionSummaries = [:]
         sectionContentSignatures = [:]
         loadingSummarySections = []
@@ -364,13 +369,21 @@ func startLiveClock() {
         guard !items.isEmpty || !events.isEmpty || !reminders.isEmpty else { return }
         guard SystemLanguageModel.default.availability == .available else { return }
 
+        let generation = UUID()
+        summaryGenerations[section] = generation
         loadingSummarySections.insert(section)
         summaryTasks[section] = Task { @MainActor [weak self] in
             guard let self else { return }
             defer {
-                self.summaryTasks[section] = nil
-                self.loadingSummarySections.remove(section)
+                // A canceled predecessor's defer must not clobber a newer generation that has
+                // already taken over this section's task/loading state.
+                if self.summaryGenerations[section] == generation {
+                    self.summaryTasks[section] = nil
+                    self.loadingSummarySections.remove(section)
+                }
             }
+
+            guard !Task.isCancelled else { return }
 
             let session = LanguageModelSession(
                 instructions: "Summarize listed items in under 10 words. Use very short phrases joined by · (middle dot). Items marked (done) are already completed — reflect that rather than treating them as upcoming. Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
@@ -400,7 +413,8 @@ func startLiveClock() {
             }
             for reminder in reminders where reminder.dueDate != nil {
                 if let due = reminder.dueDate {
-                    timedEntries.append(TimedEntry(time: due, label: "\(reminder.title) at \(due.formatted(.dateTime.hour().minute()))"))
+                    let text = label(reminder.title, done: reminder.isCompleted)
+                    timedEntries.append(TimedEntry(time: due, label: "\(text) at \(due.formatted(.dateTime.hour().minute()))"))
                 }
             }
             timedEntries.sort { $0.time < $1.time }
@@ -415,7 +429,7 @@ func startLiveClock() {
 
             // Untimed reminders
             for reminder in reminders.filter({ $0.dueDate == nil }).prefix(4) {
-                parts.append(reminder.title)
+                parts.append(label(reminder.title, done: reminder.isCompleted))
             }
 
             // Recurring habits — least surprising, capped tightly; completed included (marked done)
@@ -427,7 +441,8 @@ func startLiveClock() {
             guard !parts.isEmpty else { return }
 
             let prompt = parts.joined(separator: "; ")
-            if let response = try? await session.respond(to: prompt) {
+            if let response = try? await session.respond(to: prompt),
+               !Task.isCancelled, self.summaryGenerations[section] == generation {
                 self.sectionSummaries[section] = response.content
                     .components(separatedBy: .newlines)
                     .joined(separator: " · ")
