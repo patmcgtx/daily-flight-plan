@@ -88,7 +88,7 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - **Deferred**: reminder list selection UI — moved to Phase 3.1 (Settings)
 
 ### ✅ Phase 1.9 — Workflow Refinements
-- **Spillover** *(removed in Phase 2.8 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
+- **Spillover** *(removed in Phase 2.7 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
 - **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their past calendar events appear in a non-section "Past" area at the top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
 - **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the missed time.
 - **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
@@ -373,20 +373,12 @@ disclaimer) — none apply to a feature that no longer exists.
 - Open question: does this sheet replace the existing per-view filter menus (Day/Timeline) outright,
   or sit alongside them as a global superset?
 
-### Phase 2.6 — Smooth Day Swipe Navigation (Pager)
-*Partially implemented in Phase 1.19 (Flight Plan view): the infinite-reset `TabView(.page)` pattern is in place but swipe responsiveness is poor — gestures feel laggy or unresponsive in practice.*
-
-- Diagnose and fix the swipe gesture responsiveness — the 3-page TabView infinite-reset approach may need to be replaced or tuned
-- Ensure a fast, fluid swipe between yesterday / today / tomorrow with no perceptible lag or snap-back artifacts
-- macOS: `DragGesture` fallback should feel equally responsive
-- Consider whether the infinite-reset pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with paging, custom gesture recognizer) would be more reliable
-
-### Phase 2.7 - Import UX Refinements
+### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
 - **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
 - **Add tagging on import**: Would be helpful to allow tagging items on import as well
 
-### Phase 2.8 — Missed Items Review & Pull-Forward
+### Phase 2.7 — Missed Items Review & Pull-Forward
 **Note**: this phase replaces the automatic "Spillover" behavior from Phase 1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
 
 - Entry point: a way to review pending items left behind on past days — modeled on the Markdown Import flow (Phase 1.21)'s paste → review-list → commit shape, but sourced from existing overdue items instead of pasted text
@@ -524,6 +516,15 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - Fix all runtime warnings.
 - Confirm cross-device syncing is working as expected and bug-free
 - **Timeline browsing view still loads everything in memory** *(moved here from Phase 2.2)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
+- **Smooth Day Swipe Navigation (Pager)** *(moved here from Phase 2.6)*: the Flight Plan view's
+  swipe pager (Phase 1.19) uses a 3-page `TabView(.page)` infinite-reset pattern (yesterday /
+  today / tomorrow, silently snapping back to center after each swipe), but swipe responsiveness
+  is poor — gestures feel laggy or unresponsive in practice. Diagnose and fix the gesture
+  responsiveness (the infinite-reset approach itself may need to be replaced or tuned so swiping
+  between days feels fast and fluid with no perceptible lag or snap-back artifacts); macOS's
+  `DragGesture` fallback should feel equally responsive. Consider whether the infinite-reset
+  pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with
+  paging, custom gesture recognizer) would be more reliable.
 
 ### Phase release.4 — Tech Debt
 - **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see `docs/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since the app hasn't shipped, no CloudKit migration cost to worry about.
