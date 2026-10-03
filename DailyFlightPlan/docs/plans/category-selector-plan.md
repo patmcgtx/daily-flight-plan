@@ -1,7 +1,19 @@
 # Port MapsPlus's Category Selector UX into DailyFlightPlan (interim implementation)
 
 Sub-plan of Phase 2.5 (see `../implementation-plan.md` and `global-filter-sheet-plan.md`). Written
-during planning on 2026-10-02; not yet implemented — review before picking up.
+during planning on 2026-10-02.
+
+**✅ Implemented 2026-10-03**, with one deviation from the plan below: `.popover(...)` +
+`.presentationCompactAdaptation(.popover)` was found to be broken on the iOS 27 beta used for
+this project — on the iPhone-class simulator it rendered as a nearly full-screen cover (confirmed
+via on-device screenshots, not a content-sizing issue) with no working tap-outside-to-dismiss, so
+it was unusable. Dropped `.presentationCompactAdaptation(.popover)` and kept plain `.popover(...)`
+instead, which lets SwiftUI fall back to its own default compact-width adaptation — a `.sheet`
+with `.presentationDetents([.medium])` and a drag indicator, reliably dismissible. On iPad/
+regular-width this still renders as a true small anchored popover, matching MapsPlus, for free.
+Revisit forcing `.presentationCompactAdaptation(.popover)` on iPhone once this OS stabilizes past
+beta. Floating "+" buttons on FlightPlanView/RoutineView (also decided alongside this plan) were
+implemented in the same pass — see `global-filter-sheet-plan.md`'s "Add button" section.
 
 ## Context
 

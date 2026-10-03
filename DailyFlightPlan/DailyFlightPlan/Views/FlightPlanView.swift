@@ -20,9 +20,6 @@ struct FlightPlanView: View {
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
 
-    @Query(sort: \PlanCategory.name)
-    private var allCategories: [PlanCategory]
-
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
     private var showFlaggedOnly: Bool = false
 
@@ -52,7 +49,6 @@ struct FlightPlanView: View {
     @State private var addingItemForDate: Date? = nil
     @State private var isAddingItem = false
     @State private var showCategorySelector = false
-    @State private var isShowingCategoriesEdit = false
     @State private var expandedSections: Set<DaySection> = []
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
@@ -111,6 +107,15 @@ struct FlightPlanView: View {
                             Image(systemName: "tag")
                         }
                         .accessibilityLabel("Filter by Category")
+                        .popover(
+                            isPresented: $showCategorySelector,
+                            attachmentAnchor: .point(.bottom),
+                            arrowEdge: .top
+                        ) {
+                            CategoriesSelectFlow()
+                                .presentationDetents([.medium])
+                                .presentationDragIndicator(.visible)
+                        }
 
                         Menu {
                             ForEach(DFPTheme.allCases) { option in
@@ -124,14 +129,19 @@ struct FlightPlanView: View {
                         }
                         .accessibilityLabel("Theme")
                     }
-
-                    ToolbarItem(placement: .trailingBar) {
-                        Button { isAddingItem = true } label: {
-                            Image(systemName: "plus")
-                        }
-                        .accessibilityLabel("Add Item")
-                    }
                 }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button { isAddingItem = true } label: {
+                Image(systemName: "plus")
+                    .font(.title2)
+            }
+            .buttonStyle(.glass)
+            .frame(width: 52, height: 52)
+            .clipShape(Circle())
+            .padding(.trailing, 16)
+            .padding(.bottom, 16)
+            .accessibilityLabel("Add Item")
         }
         .environment(\.editItem) { item in itemToEdit = item }
         .sheet(isPresented: $isAddingItem) {
@@ -146,11 +156,6 @@ struct FlightPlanView: View {
             }
         }
         .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
-        .sheet(isPresented: $showCategorySelector) { categorySelectorSheet }
-        .sheet(isPresented: $isShowingCategoriesEdit) {
-            CategoriesEditView(allCategories: allCategories)
-                .environment(\.modelContext, modelContext)
-        }
         .onAppear { initializeExpandedSections() }
         .onChange(of: viewModel.selectedDate) { initializeExpandedSections() }
         .onChange(of: filterKey) { applyFilterToExpandedSections() }
@@ -871,41 +876,6 @@ struct FlightPlanView: View {
         }
     }
 
-    // MARK: - Category selector sheet
-
-    private var categorySelectorSheet: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Filter by Category")
-                .font(.headline)
-                .padding(.horizontal)
-                .padding(.top)
-            if allCategories.isEmpty {
-                Text("No categories yet.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(allCategories) { category in
-                            CategoryCapsule(category: category)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-            Button("Manage Categories") {
-                showCategorySelector = false
-                isShowingCategoriesEdit = true
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal)
-            .padding(.bottom)
-        }
-        .presentationDetents([.height(160)])
-        .presentationDragIndicator(.visible)
-    }
 }
 
 #if DEBUG

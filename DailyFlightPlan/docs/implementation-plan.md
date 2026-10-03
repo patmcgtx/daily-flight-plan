@@ -372,10 +372,13 @@ disclaimer) — none apply to a feature that no longer exists.
 - **New behavior**: Routine gains category + search filtering for the first time (previously had
   none at all), since those two are promoted to "General, applies on every tab"
 - See `docs/plans/global-filter-sheet-plan.md` for the full file-by-file plan before implementing
-- **First step in progress**: porting MapsPlus's category selector/editor UX as an interim,
-  throwaway-persistence implementation (UserDefaults-backed, no SwiftData changes) — see
-  `docs/plans/category-selector-plan.md`. To be replaced once MapsPlus ships its own CloudKit
-  refactor and a real shared categories package can be pulled into this project
+- **✅ First step done**: ported MapsPlus's category selector/editor UX as an interim,
+  throwaway-persistence implementation (UserDefaults-backed, no SwiftData changes), plus moved the
+  Day/Routine "+" add buttons to floating bottom-trailing buttons — see
+  `docs/plans/category-selector-plan.md`. The category selector's persistence is still to be
+  replaced once MapsPlus ships its own CloudKit refactor and a real shared categories package can
+  be pulled into this project. The rest of this phase (global filter sheet, old Filters menu
+  removal) is still open
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.

@@ -56,15 +56,20 @@ struct RoutineView: View {
                 .padding()
             }
             .navigationTitle("Routine")
-            .toolbar {
-                ToolbarItem(placement: .trailingBar) {
-                    Button {
-                        isPickingCustomSection = true
-                    } label: {
-                        Label("Add Section", systemImage: "plus.rectangle.portrait")
-                    }
-                }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                isPickingCustomSection = true
+            } label: {
+                Image(systemName: "plus.rectangle.portrait")
+                    .font(.title2)
             }
+            .buttonStyle(.glass)
+            .frame(width: 52, height: 52)
+            .clipShape(Circle())
+            .padding(.trailing, 16)
+            .padding(.bottom, 16)
+            .accessibilityLabel("Add Section")
         }
         .sheet(item: $itemToEdit) { item in
             ItemForm(item: item)
