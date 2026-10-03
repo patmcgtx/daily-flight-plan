@@ -192,6 +192,15 @@ struct TimelineView: View {
                         }
                     }
                     ToolbarItem(placement: .trailingBar) {
+                        Button {
+                            withAnimation { proxy.scrollTo(today, anchor: .center) }
+                        } label: {
+                            Image(systemName: "scope")
+                        }
+                        .disabled(!searchText.isEmpty)
+                        .accessibilityLabel("Go to Today")
+                    }
+                    ToolbarItem(placement: .trailingBar) {
                         FilterToolbarButton(activeTab: .timeline, searchText: $searchText)
                     }
                 }
@@ -210,9 +219,10 @@ struct TimelineView: View {
         let isPast = date < today
         HStack {
             if isToday {
-                Text("Today")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(Color.accentColor)
+                Circle().fill(.red).frame(width: 6, height: 6)
+                Text("TODAY")
+                    .font(.caption.bold())
+                    .foregroundStyle(.red)
                 Text(date, format: .dateTime.month(.abbreviated).day())
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

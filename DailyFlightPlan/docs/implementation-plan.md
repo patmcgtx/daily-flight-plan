@@ -354,31 +354,25 @@ disclaimer) — none apply to a feature that no longer exists.
   pass — see Phase release.1 under Version 1.0, which has also had its Comm-specific bullet
   removed now that the tab is gone
 
-### Phase 2.5 — Global Filter Sheet + Category Management
-*Planned — full design in `docs/plans/global-filter-sheet-plan.md`. Not yet implemented.*
+### ✅ Phase 2.5 — Global Filter Sheet + Category Management
+Full design in `docs/plans/global-filter-sheet-plan.md` and `docs/plans/category-selector-plan.md`;
+implementation notes/deviations are recorded at the end of each.
 
-- **Filter button placement**: a dedicated floating button, bottom-trailing above the tab bar
-  (Music/Podcasts search-button spot), reachable from all three tabs — not folded into an
-  existing toolbar menu, and not built on SwiftUI's `Tab(role: .search)` (that role is wired to
-  `.searchable()` semantics, not arbitrary sheets)
-- **Filter sheet**: a **General** section (search text, category selection, flagged-only) plus a
-  **Specific** section that adapts to whichever tab is active (Day: done/routines/calendar/
-  reminders; Timeline: missed-only/completed-only; Routine: none) — resolves the prior open
-  question: this **replaces** the per-view filter menus (FlightPlanView's toolbar menu, Timeline's
-  inline filter bar) outright, rather than sitting alongside them
-- **Category editing lives in the same sheet**: an edit-categories entry point (add/rename/delete,
-  plus selecting which categories are active for filtering) rather than a separate screen —
-  reuses the existing `CategoriesEditView`/`CategoriesEditViewModel`/`CategorySelectionService`
-- **New behavior**: Routine gains category + search filtering for the first time (previously had
-  none at all), since those two are promoted to "General, applies on every tab"
-- See `docs/plans/global-filter-sheet-plan.md` for the full file-by-file plan before implementing
-- **✅ First step done**: ported MapsPlus's category selector/editor UX as an interim,
-  throwaway-persistence implementation (UserDefaults-backed, no SwiftData changes), plus moved the
-  Day/Routine "+" add buttons to floating bottom-trailing buttons — see
-  `docs/plans/category-selector-plan.md`. The category selector's persistence is still to be
-  replaced once MapsPlus ships its own CloudKit refactor and a real shared categories package can
-  be pulled into this project. The rest of this phase (global filter sheet, old Filters menu
-  removal) is still open
+- **Filter button**: a single toolbar `FilterToolbarButton` on each tab (Day/Routine/Timeline),
+  not a floating button or `Tab(role: .search)` — opens `FilterSheetView` as a popover (falls back
+  to a `.presentationDetents` sheet on iPhone; see implementation notes on the compact-adaptation
+  bug)
+- **Filter sheet**: a **General** section (search text, category selection via an embedded
+  `CategoriesSelectFlow`, flagged-only) plus a **Specific** section that adapts to whichever tab
+  is active (Day: completed/routines/calendar/reminders; Timeline: completed-only/missed-only;
+  Routine: none) — replaces the old per-view filter menus (FlightPlanView's toolbar menu,
+  Timeline's inline filter bar) outright
+- **Category editing lives in the same sheet**: the "Edit" button inside the embedded
+  `CategoriesSelectFlow` presents the existing `CategoriesEditView` as a sheet
+- **New behavior**: Routine and Timeline both gained category + search filtering for the first
+  time (Routine had none at all before; Timeline had its own separate inline filter bar)
+- **Added along the way**: a "go to today" button and red/bold "TODAY" header styling on
+  `TimelineView`, matching the Day view's "NOW" treatment
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.

@@ -1,10 +1,12 @@
 # Global Filter Button + Sheet — Design Plan
 
-Design doc for Phase 2.5 (see `../implementation-plan.md`). Written during planning on 2026-10-02;
-not yet implemented — review before picking up.
+Design doc for Phase 2.5 (see `../implementation-plan.md`). Written during planning on 2026-10-02.
 
-**Note**: the category-selection piece of the General section below is being tackled first, as
-its own interim step — see `category-selector-plan.md`.
+**✅ Implemented 2026-10-03.** See "Implementation notes" at the end of this doc for what actually
+shipped and where it deviated from the plan below.
+
+**Note**: the category-selection piece of the General section below was tackled first, as its own
+interim step — see `category-selector-plan.md`.
 
 **Superseded placement/presentation (2026-10-03)**: based on screenshots of MapsPlus's actual
 category selector, the button lives in the top toolbar (not a floating bottom-trailing button),
@@ -226,3 +228,52 @@ primary add action —
   button, there's no one-size-fits-all shared instance here.
 - Per-section/per-card inline `+` buttons (e.g. inside a day section card, not the toolbar) are
   unaffected — this only moves the one primary/global add action per tab.
+
+## Implementation notes (2026-10-03)
+
+What actually shipped, and how it differs from the plan above:
+
+- **`PlanItem+Filtering.swift`**: built as planned — `matchingSearchText(_:)`,
+  `matchingDayStatusFilters(...)`, `matchingTimelineStatusFilters(...)` on
+  `Sequence where Element == PlanItem`. Fully unit-tested in `PlanItemFilteringTests.swift`.
+- **`FilterSheetView.swift`**: a `NavigationStack` + `Form` (not `List`) with a "Done" button —
+  kept the Done button even though it's presented as a popover-that-falls-back-to-a-sheet (see
+  below), since the fallback is a real `.sheet` on iPhone and needs an explicit dismiss affordance.
+  The Categories section **embeds `CategoriesSelectFlow()` directly** (reused as-is, after
+  stripping its old standalone-popover sizing modifiers) rather than reimplementing category
+  selection inline — General section is Search + Categories + Flagged Only; Specific section
+  switches on `activeTab` exactly as planned (Day: Completed/Routines/Calendar/Reminders;
+  Timeline: Completed Only/Missed Only, mutually exclusive; Routine: nothing).
+- **`FilterToolbarButton.swift`**: the shared toolbar-item component materialized as planned,
+  with its own `@AppStorage` reads to compute `isFilterActive` per tab (mirrors the existing
+  pattern of each view independently reading the same `@AppStorage` keys).
+- **Popover → sheet fallback (same issue as `category-selector-plan.md`)**: `.popover(...)`
+  without `.presentationCompactAdaptation(.popover)` was used from the start here (the compact-
+  adaptation bug was already known from the category-selector work), so `FilterToolbarButton`
+  falls back to a `.presentationDetents([.medium, .large])` sheet with a drag indicator on iPhone,
+  same as the category selector. Revisit alongside that fix once the OS stabilizes.
+- **Search integration differed per tab**, based on each view's actual data-access pattern
+  (discovered during implementation, not fully anticipated in the plan):
+  - `FlightPlanView`: `activeItems(for:)` now chains `.matchingDayStatusFilters(...)` →
+    `.matchingSearchText(searchText)` → category filter, as planned.
+  - `TimelineView`: **kept its existing dual-path design** (`filteredItems` for day-windowed
+    browsing, a separate `searchResults` using a fresh `FetchDescriptor` with the text match
+    pushed into the predicate) rather than switching to the in-memory `matchingSearchText`
+    extension — that fetch-based approach is a deliberate memory-scaling choice (per its own
+    doc comment) that the shared extension would have regressed. Only the status-filter portion
+    was deduplicated via `matchingTimelineStatusFilters(...)`, used in both paths. Its old
+    `.searchable()` field and inline filter bar (Flagged/Done/Missed toggles + category capsules)
+    were removed in favor of the shared `searchText` binding and `FilterToolbarButton`.
+  - `RoutineView`: new `filteredTemplates` computed property
+    (`templates.matchingSearchText(searchText)` → category filter) feeds `items(for pattern:)`,
+    so search/category filtering affects what's shown inside each schedule card's segments.
+    Drag/delete/rename actions still resolve against raw `templates` by UUID so they work
+    regardless of the active filter. Schedule card *existence* (`sortedCustomGroups`) stays based
+    on all templates, not the filtered set, so cards don't disappear under an active filter.
+- **`searchText`** lives as `@State` on `DayView`, threaded down as `@Binding` into all three tabs
+  — shared across tabs, not reset when switching.
+- **`DayView.AppTab`** was de-privatized (dropped `private`) so it could be passed as a parameter.
+- Bonus, requested alongside this work: added a "go to today" toolbar button on `TimelineView`
+  (scrolls its `ScrollViewReader` back to `today`, disabled while searching) and restyled its
+  "Today" section header to match the Day view's red/bold "NOW" treatment (all-caps "TODAY" + red
+  dot), for visual consistency between the two.
