@@ -8,8 +8,8 @@ import Flow
 
 /// Displays plan categories, allowing individual ones to be selected or unselected, with a
 /// Match Any/Match All filter mode picker once 2+ categories are selected, and an entry point
-/// into category management (add/rename/delete). Designed to be presented as a popover dropdown
-/// anchored to a toolbar button (no internal "Done" button — dismissed by tapping outside).
+/// into category management (add/rename/delete). Embedded inside `FilterSheetView`'s General
+/// section — no outer sizing/padding of its own, since its container controls that.
 struct CategoriesSelectFlow: View {
 
     // MARK: Environment
@@ -121,9 +121,6 @@ struct CategoriesSelectFlow: View {
                 .frame(maxHeight: 220)
             }
         }
-        .padding()
-        .frame(width: 340)
-        .fixedSize(horizontal: false, vertical: true)
         .animation(.default, value: viewModel?.shouldShowFilterModePicker ?? false)
         .sheet(isPresented: $isShowingEditView) {
             CategoriesEditView(allCategories: allCategories)

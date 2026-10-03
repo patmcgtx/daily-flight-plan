@@ -9,10 +9,13 @@ import FoundationModels
 
 struct RoutineView: View {
 
+    @Binding var searchText: String
+
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == true }, sort: \PlanItem.title)
     private var templates: [PlanItem]
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.categorySelectionService) private var categorySelectionService: CategorySelectionService?
 
     @State private var itemToEdit: PlanItem?
     @State private var addingRoutine: RoutineAddRequest?
@@ -56,6 +59,11 @@ struct RoutineView: View {
                 .padding()
             }
             .navigationTitle("Routine")
+            .toolbar {
+                ToolbarItem(placement: .trailingBar) {
+                    FilterToolbarButton(activeTab: .routines, searchText: $searchText)
+                }
+            }
         }
         .overlay(alignment: .bottomTrailing) {
             Button {
@@ -581,8 +589,16 @@ struct RoutineView: View {
         return result
     }
     
+    /// Templates matching the global search text + category selection — used everywhere templates
+    /// are grouped for display. Drag/delete/rename actions still resolve against raw `templates`
+    /// by UUID so they work regardless of the current filter.
+    private var filteredTemplates: [PlanItem] {
+        let matched = templates.matchingSearchText(searchText)
+        return categorySelectionService?.filterItems(matched) ?? matched
+    }
+
     private func items(for pattern: Set<Locale.Weekday>) -> [PlanItem] {
-        templates.filter { Set($0.recurringWeekdays) == pattern }
+        filteredTemplates.filter { Set($0.recurringWeekdays) == pattern }
     }
     
     private struct CustomGroup {
@@ -748,7 +764,8 @@ struct RoutineView: View {
 #if DEBUG
 
 #Preview {
-    RoutineView()
+    @Previewable @State var searchText = ""
+    RoutineView(searchText: $searchText)
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }

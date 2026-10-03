@@ -14,6 +14,7 @@ struct FlightPlanView: View {
     var calendarEvents: [CalendarEvent] = []
     var reminderItems: [ReminderItem] = []
     var isDeletingData: Bool = false
+    @Binding var searchText: String
     let onShowSettings: () -> Void
     let onShowImport: () -> Void
 
@@ -48,14 +49,14 @@ struct FlightPlanView: View {
     @State private var addingToSection: DaySection? = nil
     @State private var addingItemForDate: Date? = nil
     @State private var isAddingItem = false
-    @State private var showCategorySelector = false
     @State private var expandedSections: Set<DaySection> = []
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
-            || !(categorySelectionService?.selectedNames.isEmpty ?? true)
+            || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || (categorySelectionService?.hasSelectedCategories ?? false)
     }
 
     var body: some View {
@@ -78,44 +79,7 @@ struct FlightPlanView: View {
                     }
 
                     ToolbarItemGroup(placement: .trailingBar) {
-                        Menu {
-                            Toggle(isOn: $showFlaggedOnly) {
-                                Label("Flagged Only", systemImage: "flag.fill")
-                            }
-                            Toggle(isOn: $showCompleted) {
-                                Label("Show Completed", systemImage: "checkmark")
-                            }
-                            Toggle(isOn: $showRecurring) {
-                                Label("Routines", systemImage: "infinity")
-                            }
-                            Divider()
-                            Toggle(isOn: $showCalendarEvents) {
-                                Label("Calendar Events", systemImage: "calendar")
-                            }
-                            Toggle(isOn: $showReminderItems) {
-                                Label("Reminders", systemImage: "bell")
-                            }
-                        } label: {
-                            Image(systemName: isFilterActive
-                                ? "line.3.horizontal.decrease.circle.fill"
-                                : "line.3.horizontal.decrease.circle")
-                                .foregroundStyle(isFilterActive ? Color.accentColor : Color.primary)
-                        }
-                        .accessibilityLabel("Filters")
-
-                        Button { showCategorySelector = true } label: {
-                            Image(systemName: "tag")
-                        }
-                        .accessibilityLabel("Filter by Category")
-                        .popover(
-                            isPresented: $showCategorySelector,
-                            attachmentAnchor: .point(.bottom),
-                            arrowEdge: .top
-                        ) {
-                            CategoriesSelectFlow()
-                                .presentationDetents([.medium])
-                                .presentationDragIndicator(.visible)
-                        }
+                        FilterToolbarButton(activeTab: .flightDeck, searchText: $searchText)
 
                         Menu {
                             ForEach(DFPTheme.allCases) { option in
@@ -299,12 +263,12 @@ struct FlightPlanView: View {
 
     private func activeItems(for date: Date) -> [PlanItem] {
         guard !isDeletingData else { return [] }
-        let filtered = allItems.filter {
-            Calendar.current.isDate($0.date, inSameDayAs: date)
-            && (showCompleted || ($0.status != .completed && $0.status != .canceled))
-            && (!showFlaggedOnly || $0.isFlagged)
-            && (showRecurring || !$0.isRecurring)
-        }
+        let sameDay = allItems.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        let filtered = sameDay
+            .matchingDayStatusFilters(
+                showFlaggedOnly: showFlaggedOnly, showCompleted: showCompleted, showRecurring: showRecurring
+            )
+            .matchingSearchText(searchText)
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
@@ -321,7 +285,7 @@ struct FlightPlanView: View {
     // onChange can react to any filter change (including category toggles).
     private var filterKey: String {
         let cats = categorySelectionService?.selectedNames.sorted().joined() ?? ""
-        return "\(showFlaggedOnly)-\(showCompleted)-\(showRecurring)-\(cats)"
+        return "\(showFlaggedOnly)-\(showCompleted)-\(showRecurring)-\(searchText)-\(cats)"
     }
 
     private func initializeExpandedSections() {
@@ -881,7 +845,8 @@ struct FlightPlanView: View {
 #if DEBUG
 
 #Preview {
-    FlightPlanView(viewModel: DayViewModel(), onShowSettings: {}, onShowImport: {})
+    @Previewable @State var searchText = ""
+    FlightPlanView(viewModel: DayViewModel(), searchText: $searchText, onShowSettings: {}, onShowImport: {})
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
