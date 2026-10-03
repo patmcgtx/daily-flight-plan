@@ -1,7 +1,18 @@
 # Global Filter Button + Sheet — Design Plan
 
-Design doc for Phase 2.5 (see `implementation-plan.md`). Written during planning on 2026-10-02;
+Design doc for Phase 2.5 (see `../implementation-plan.md`). Written during planning on 2026-10-02;
 not yet implemented — review before picking up.
+
+**Note**: the category-selection piece of the General section below is being tackled first, as
+its own interim step — see `category-selector-plan.md`.
+
+**Superseded placement/presentation (2026-10-03)**: based on screenshots of MapsPlus's actual
+category selector, the button lives in the top toolbar (not a floating bottom-trailing button),
+and the content drops down as a `.popover` anchored to that button (not a `.presentationDetents`
+sheet). Sections below describing "floating button," "bottom-trailing overlay," and
+`FilterSheetView` as a sheet are superseded by this — keep the General/Specific content split and
+the "replaces the per-view filter menus" decision, but see the end of this doc for the corrected
+placement/presentation approach before implementing.
 
 ## Context
 
@@ -165,5 +176,53 @@ No changes needed — confirmed all required keys and the shared service already
   - `BuildProject` to confirm compiles; `RunAllTests` for the new filtering unit tests.
 
 ## Follow-up (once implemented)
-Mark Phase 2.5 ✅ in `implementation-plan.md` with a note on the General/Specific sheet design and
+Mark Phase 2.5 ✅ in `../implementation-plan.md` with a note on the General/Specific sheet design and
 the Routine-now-respects-category/search deviation from the original placeholder notes.
+
+## Corrected placement/presentation (supersedes the floating-button sections above)
+
+Per screenshots confirming MapsPlus's actual UX: a toolbar button, not a floating overlay.
+
+- **No new floating button on `DayView`.** Instead, each tab's own view (`FlightPlanView`,
+  `TimelineView`, `RoutineView`) gets a filter `ToolbarItem` in its own existing toolbar — same SF
+  Symbol (`line.3.horizontal.decrease.circle`/`.fill`), same filled/outline-on-active-filter logic.
+  `FlightPlanView` already has this button (today it opens the category-only popover from
+  `category-selector-plan.md`); it becomes the same button that opens the full General/Specific
+  content once this phase lands. `TimelineView`/`RoutineView` need the button added to their
+  toolbars.
+- **Avoid tripling the button/logic across three views** by factoring the toolbar item + its
+  "is any filter active" icon logic into one shared piece (e.g. a `ToolbarContentBuilder`
+  computed property or small reusable view) that each of the three views applies, parameterized by
+  which tab it's for (so the Specific section content still varies by tab as designed above).
+- **Presentation**: `.popover(isPresented:, attachmentAnchor: .point(.bottom), arrowEdge: .top) {
+  FilterSheetView(activeTab:, ...) }.presentationCompactAdaptation(.popover)` anchored to the
+  toolbar button, dropping down as a card — not a `.sheet`/`.presentationDetents`. `FilterSheetView`
+  itself can likely drop the `NavigationStack`/`.confirmationAction` "Done" button chrome that
+  made sense for a sheet, since a popover dismisses by tapping outside it (check against
+  MapsPlus's `CategoriesSelectFlow`, which has no "Done" button for exactly this reason).
+- **Category management** ("Edit" button inside the popover) still presents `CategoriesEditView`
+  as a real `.sheet` — a full screen, not a quick dropdown, same as `category-selector-plan.md`.
+- This placement doesn't change anything about *what* gets removed (FlightPlanView's old filter
+  `Menu` + category button, Timeline's whole inline filter bar) — only where the one replacement
+  button lives and how its content is presented.
+
+## Add button also moves to the floating bottom area (2026-10-03)
+
+Separately from the filter button, the existing "+" Add toolbar buttons move to a floating
+bottom-trailing button — mirroring Maps' own floating "+" (add pin) button, the one in its
+bottom-right stack alongside navigate/list. Decided scope: applies to both tabs that have a
+primary add action —
+
+- **`FlightPlanView`**: today's `ToolbarItem(placement: .trailingBar) { Button { isAddingItem =
+  true } ... }` (the standalone `+`, separate from the `ToolbarItemGroup`) is removed from the
+  toolbar and becomes a `.overlay(alignment: .bottomTrailing)` floating circular button on that
+  tab's own content, same FAB sizing/spacing as previously sketched for the (now-dropped) floating
+  filter button idea. Still opens the same `ItemForm` sheet.
+- **`RoutineView`**: its toolbar "add routine" `+` button (around line 60) moves the same way —
+  floating bottom-trailing on `RoutineView`'s own content, same action as today.
+- **`TimelineView`**: no primary add action today, so nothing changes there.
+- Each lives on its own tab's content (not a single shared overlay on `DayView`'s `TabView`),
+  since Day and Routine trigger different add flows and Timeline has none — unlike the filter
+  button, there's no one-size-fits-all shared instance here.
+- Per-section/per-card inline `+` buttons (e.g. inside a day section card, not the toolbar) are
+  unaffected — this only moves the one primary/global add action per tab.

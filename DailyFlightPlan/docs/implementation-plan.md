@@ -355,7 +355,7 @@ disclaimer) — none apply to a feature that no longer exists.
   removed now that the tab is gone
 
 ### Phase 2.5 — Global Filter Sheet + Category Management
-*Planned — full design in `docs/global-filter-sheet-plan.md`. Not yet implemented.*
+*Planned — full design in `docs/plans/global-filter-sheet-plan.md`. Not yet implemented.*
 
 - **Filter button placement**: a dedicated floating button, bottom-trailing above the tab bar
   (Music/Podcasts search-button spot), reachable from all three tabs — not folded into an
@@ -371,7 +371,11 @@ disclaimer) — none apply to a feature that no longer exists.
   reuses the existing `CategoriesEditView`/`CategoriesEditViewModel`/`CategorySelectionService`
 - **New behavior**: Routine gains category + search filtering for the first time (previously had
   none at all), since those two are promoted to "General, applies on every tab"
-- See `docs/global-filter-sheet-plan.md` for the full file-by-file plan before implementing
+- See `docs/plans/global-filter-sheet-plan.md` for the full file-by-file plan before implementing
+- **First step in progress**: porting MapsPlus's category selector/editor UX as an interim,
+  throwaway-persistence implementation (UserDefaults-backed, no SwiftData changes) — see
+  `docs/plans/category-selector-plan.md`. To be replaced once MapsPlus ships its own CloudKit
+  refactor and a real shared categories package can be pulled into this project
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
@@ -527,7 +531,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
   paging, custom gesture recognizer) would be more reliable.
 
 ### Phase release.4 — Tech Debt
-- **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see `docs/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since the app hasn't shipped, no CloudKit migration cost to worry about.
+- **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see `docs/plans/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since the app hasn't shipped, no CloudKit migration cost to worry about.
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
