@@ -528,7 +528,11 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
   paging, custom gesture recognizer) would be more reliable.
 
 ### Phase release.4 — Tech Debt
-- **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see `docs/plans/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since the app hasn't shipped, no CloudKit migration cost to worry about.
+- **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see
+  `docs/plans/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three
+  roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause
+  behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since
+  the app hasn't shipped, no CloudKit migration cost to worry about.
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
