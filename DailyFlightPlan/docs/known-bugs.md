@@ -58,3 +58,48 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
   and untimed) alongside pending ones, but only `PlanItem`s were getting the `(done)` label — a
   finished reminder looked identical to an upcoming one, undermining the fix above. Both reminder
   loops in `generateSummaryIfNeeded` now mark `reminder.isCompleted` the same way.
+
+- **`filterMode` changes didn't trigger view updates** *(Phase 2.5, found via Copilot review)*:
+  `CategorySelectionService.filterMode` was computed directly from `UserDefaults` on every access,
+  so `@Observable` had no stored property to track — changing the mode via the Match Any/Match All
+  picker could leave both the picker's own selection and `filterModeExplanation` stale until an
+  unrelated redraw. Added a `storedFilterMode` stored property that `filterMode`'s getter/setter
+  read/write (persisting to `UserDefaults` as a setter side effect), giving `@Observable` something
+  to actually track.
+
+- **`CategoryCapsule` lost button semantics for assistive tech** *(Phase 2.5, found via Copilot
+  review)*: the selectable capsule used `.contentShape(Rectangle()).onTapGesture { ... }` instead
+  of a real `Button`, so VoiceOver/Switch Control/keyboard users saw it as static text even though
+  tapping it changed filter state. Restored a real `Button` for the selectable path (with
+  `.accessibilityAddTraits(.isSelected)` exposing selection state), rendering the non-selectable/
+  action variant separately.
+
+- **`FilterToolbarButton` ignored the Day tab's Calendar/Reminders toggles** *(Phase 2.5, found via
+  Copilot review)*: `isFilterActive` for `.flightDeck` checked `showCompleted`/`showRecurring` but
+  not `showCalendarEvents`/`showReminderItems` — turning either off hides content but left the
+  toolbar icon unfilled. Added both as `@AppStorage` reads and included `!showCalendarEvents ||
+  !showReminderItems` in the active-state check.
+
+- **Routine tab's "Flagged Only" toggle didn't filter routines** *(Phase 2.5, found via Copilot
+  review)*: the General section's "Flagged Only" toggle is shown (and reported as active) on the
+  Routine tab, but `RoutineView`'s `filteredTemplates` only applied search and category filters, so
+  unflagged routines stayed visible regardless. Added a `showFlaggedOnly` `@AppStorage` read and an
+  `isFlagged` filter clause, matching Day and Timeline.
+
+- **Timeline's whitespace-only search desynced from Day/Routine** *(Phase 2.5, found via Copilot
+  review)*: `matchingSearchText(_:)` treats whitespace-only input as empty (no-op), but
+  `TimelineView` still branched on the raw `searchText.isEmpty` for its day-windowed vs.
+  search-results view switch and the "Go to Today" button's disabled state. Entering only spaces
+  left Day/Routine unfiltered while Timeline switched to an empty search-results screen. Added a
+  single `trimmedSearchText` computed property and used it everywhere Timeline checks for an empty
+  query.
+
+- **`CategorySelectionServiceTests` and `CategoriesSelectFlowViewModelTests` could race each other**
+  *(Phase 2.5, found via Copilot review)*: both suites declared `@Suite(.serialized)`, but that only
+  serializes tests *within* a suite, not across suites — both mutated and restored the same real
+  `UserDefaults.standard` keys, so either suite could restore state mid-mutation of the other,
+  producing flaky failures if the runner executed suites concurrently. Made `UserDefaults`
+  injectable on `CategorySelectionService` (`init(defaults: UserDefaults = .standard)`, production
+  call sites unaffected) and rewrote both test files to each use a fresh, uniquely-named
+  `UserDefaults(suiteName:)` domain per test instead of sharing `.standard` — `.serialized` is no
+  longer needed on either suite.
