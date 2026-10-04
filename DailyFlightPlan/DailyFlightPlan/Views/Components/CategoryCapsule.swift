@@ -45,6 +45,28 @@ struct CategoryCapsule: View {
     // MARK: Views
 
     var body: some View {
+        Group {
+            if isSelectable {
+                Button {
+                    withAnimation {
+                        categorySelectionService?.toggle(category)
+                    }
+                } label: {
+                    capsuleLabel
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(category.name)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            } else {
+                capsuleLabel
+            }
+        }
+        .sensoryFeedback(.impact(weight: .light), trigger: isSelected) { _, _ in
+            isSelectable
+        }
+    }
+
+    private var capsuleLabel: some View {
         capsuleContent
             .foregroundStyle(.primary)
             .padding(EdgeInsets(top: 4, leading: 15, bottom: 4, trailing: 15))
@@ -57,9 +79,6 @@ struct CategoryCapsule: View {
                     Capsule(style: .circular)
                         .strokeBorder(borderColor, lineWidth: 1.0)
                 }
-            }
-            .sensoryFeedback(.impact(weight: .light), trigger: isSelected) { _, _ in
-                isSelectable
             }
     }
 
@@ -87,14 +106,6 @@ struct CategoryCapsule: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Delete")
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if isSelectable {
-                withAnimation {
-                    categorySelectionService?.toggle(category)
-                }
             }
         }
     }
