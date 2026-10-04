@@ -26,6 +26,12 @@ struct FilterToolbarButton: View {
     @AppStorage(AppStorageKeys.showRecurring.rawValue)
     private var showRecurring: Bool = true
 
+    @AppStorage(AppStorageKeys.showCalendarEvents.rawValue)
+    private var showCalendarEvents: Bool = true
+
+    @AppStorage(AppStorageKeys.showReminderItems.rawValue)
+    private var showReminderItems: Bool = true
+
     @AppStorage(AppStorageKeys.showCompletedOnly.rawValue)
     private var showCompletedOnly: Bool = false
 
@@ -42,6 +48,7 @@ struct FilterToolbarButton: View {
         switch activeTab {
         case .flightDeck:
             return isGeneralFilterActive || showCompleted || !showRecurring
+                || !showCalendarEvents || !showReminderItems
         case .timeline:
             return isGeneralFilterActive || showCompletedOnly || showMissedOnly
         case .routines, .focus:
