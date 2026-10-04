@@ -377,7 +377,11 @@ implementation notes/deviations are recorded at the end of each.
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
 - **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
-- **Add tagging on import**: Would be helpful to allow tagging items on import as well
+- **Add a flag toggle on import**: The import can't automatically know if this item should be flagged, but make it easy
+- **Add categorization on import**: Would be helpful to allow tagging items on import as well, automatic or not
+- **Remove 'routine' options from import**: Routine import shoud be its own thing, not cluttering a normal day import
+- **Easier way to handle day segments:**: Have segemnts in the import view and allow dragging and dropping (need menu option too for accessibiloty)
+- **Allow editing like a _normal_ list:** Swiping to delete, animating deletions, drag and drop to segments. 
 
 ### Phase 2.7 — Missed Items Review & Pull-Forward
 **Note**: this phase replaces the automatic "Spillover" behavior from Phase 1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
