@@ -25,11 +25,17 @@ class CategorySelectionService {
     /// property happened to change too.
     private var storedFilterMode: CategoryFilterMode
 
-    init() {
-        let stored = UserDefaults.standard.stringArray(forKey: AppStorageKeys.selectedCategoryNames.rawValue) ?? []
+    /// Injectable so tests can pass an isolated `UserDefaults` domain instead of `.standard` —
+    /// otherwise concurrently-run test suites that each mutate/restore the same real keys can
+    /// race each other (one suite's "restore original" landing mid-mutation of another's).
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        let stored = defaults.stringArray(forKey: AppStorageKeys.selectedCategoryNames.rawValue) ?? []
         selectedNames = Set(stored)
 
-        let storedMode = UserDefaults.standard.string(forKey: AppStorageKeys.categoryFilterMode.rawValue)
+        let storedMode = defaults.string(forKey: AppStorageKeys.categoryFilterMode.rawValue)
         storedFilterMode = storedMode.flatMap(CategoryFilterMode.init(rawValue:)) ?? .matchAny
     }
 
@@ -42,7 +48,7 @@ class CategorySelectionService {
         get { storedFilterMode }
         set {
             storedFilterMode = newValue
-            UserDefaults.standard.set(newValue.rawValue, forKey: AppStorageKeys.categoryFilterMode.rawValue)
+            defaults.set(newValue.rawValue, forKey: AppStorageKeys.categoryFilterMode.rawValue)
         }
     }
 
@@ -84,7 +90,7 @@ class CategorySelectionService {
     }
 
     private func persist() {
-        UserDefaults.standard.set(
+        defaults.set(
             Array(selectedNames),
             forKey: AppStorageKeys.selectedCategoryNames.rawValue
         )

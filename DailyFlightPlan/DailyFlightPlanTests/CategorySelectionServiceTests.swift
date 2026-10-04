@@ -7,47 +7,31 @@ import Testing
 import Foundation
 @testable import DailyFlightPlan
 
-/// Every test reads and writes the same real `UserDefaults.standard` keys, so the suite must
-/// run serially — parallel tests would clobber each other's temporary stored value mid-test.
-@Suite(.serialized)
 struct CategorySelectionServiceTests {
 
     private let namesKey = AppStorageKeys.selectedCategoryNames.rawValue
     private let modeKey = AppStorageKeys.categoryFilterMode.rawValue
 
-    /// Temporarily overrides the stored selection (and optionally filter mode) for the duration of
-    /// `perform`, then restores whatever was there before, so these tests don't leak state into
-    /// each other or the app.
-    private func withStoredNames(
-        _ names: [String]?, filterMode: CategoryFilterMode? = nil, perform: () -> Void
+    /// Hands the test a fresh, isolated `UserDefaults` domain (seeded with `names`/`filterMode`),
+    /// cleaned up afterward. Isolated per call rather than shared/restored against
+    /// `UserDefaults.standard`, so this suite can't race `CategoriesSelectFlowViewModelTests` (or
+    /// any other suite) over the same real keys if the test runner executes suites concurrently —
+    /// `.serialized` only serializes tests *within* a suite, not across suites.
+    private func withIsolatedDefaults(
+        names: [String]? = nil, filterMode: CategoryFilterMode? = nil,
+        perform: (UserDefaults) -> Void
     ) {
-        let originalNames = UserDefaults.standard.array(forKey: namesKey)
-        let originalMode = UserDefaults.standard.string(forKey: modeKey)
+        let suiteName = "CategorySelectionServiceTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
 
         if let names {
-            UserDefaults.standard.set(names, forKey: namesKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: namesKey)
+            defaults.set(names, forKey: namesKey)
         }
         if let filterMode {
-            UserDefaults.standard.set(filterMode.rawValue, forKey: modeKey)
-        } else {
-            UserDefaults.standard.removeObject(forKey: modeKey)
+            defaults.set(filterMode.rawValue, forKey: modeKey)
         }
-
-        defer {
-            if let originalNames {
-                UserDefaults.standard.set(originalNames, forKey: namesKey)
-            } else {
-                UserDefaults.standard.removeObject(forKey: namesKey)
-            }
-            if let originalMode {
-                UserDefaults.standard.set(originalMode, forKey: modeKey)
-            } else {
-                UserDefaults.standard.removeObject(forKey: modeKey)
-            }
-        }
-        perform()
+        perform(defaults)
     }
 
     private func item(categories: [PlanCategory]) -> PlanItem {
@@ -62,8 +46,8 @@ struct CategorySelectionServiceTests {
         (stored: [String]?.some(["Home", "Work"]), expected: Set(["Home", "Work"])),
     ])
     func initReadsStoredSelection(stored: [String]?, expected: Set<String>) {
-        withStoredNames(stored) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: stored) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             #expect(service.selectedNames == expected)
         }
     }
@@ -72,8 +56,8 @@ struct CategorySelectionServiceTests {
 
     @Test("hasSelectedCategories is true only when at least one category is selected")
     func hasSelectedCategoriesReflectsSelection() {
-        withStoredNames([]) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: []) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             #expect(!service.hasSelectedCategories)
             service.toggle(PlanCategory(name: "Home"))
             #expect(service.hasSelectedCategories)
@@ -82,8 +66,8 @@ struct CategorySelectionServiceTests {
 
     @Test("isSelected reflects whether a category's name is in the selection")
     func isSelectedReflectsMembership() {
-        withStoredNames(["Home"]) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: ["Home"]) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             #expect(service.isSelected(PlanCategory(name: "Home")))
             #expect(!service.isSelected(PlanCategory(name: "Work")))
         }
@@ -93,27 +77,27 @@ struct CategorySelectionServiceTests {
 
     @Test("toggle adds an unselected category and removes a selected one, persisting the change")
     func toggleAddsAndRemoves() {
-        withStoredNames([]) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: []) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             let home = PlanCategory(name: "Home")
 
             service.toggle(home)
             #expect(service.isSelected(home))
-            #expect(UserDefaults.standard.stringArray(forKey: namesKey) ?? [] == ["Home"])
+            #expect(defaults.stringArray(forKey: namesKey) ?? [] == ["Home"])
 
             service.toggle(home)
             #expect(!service.isSelected(home))
-            #expect((UserDefaults.standard.stringArray(forKey: namesKey) ?? []).isEmpty)
+            #expect((defaults.stringArray(forKey: namesKey) ?? []).isEmpty)
         }
     }
 
     @Test("clearAllSelections empties the selection and persists it")
     func clearAllSelectionsEmptiesSelection() {
-        withStoredNames(["Home", "Work"]) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: ["Home", "Work"]) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             service.clearAllSelections()
             #expect(!service.hasSelectedCategories)
-            #expect((UserDefaults.standard.stringArray(forKey: namesKey) ?? []).isEmpty)
+            #expect((defaults.stringArray(forKey: namesKey) ?? []).isEmpty)
         }
     }
 
@@ -126,8 +110,8 @@ struct CategorySelectionServiceTests {
         (names: ["Home", "Work", "Health"], expected: true),
     ])
     func shouldShowFilterModePickerReflectsSelectionCount(names: [String], expected: Bool) {
-        withStoredNames(names) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: names) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             #expect(service.shouldShowFilterModePicker == expected)
         }
     }
@@ -136,19 +120,19 @@ struct CategorySelectionServiceTests {
 
     @Test("filterMode defaults to matchAny when nothing is stored")
     func filterModeDefaultsToMatchAny() {
-        withStoredNames([], filterMode: nil) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: []) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             #expect(service.filterMode == .matchAny)
         }
     }
 
     @Test("setFilterMode persists the mode so a new service instance reads it back")
     func setFilterModePersists() {
-        withStoredNames([], filterMode: nil) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: []) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             service.setFilterMode(.matchAll)
             #expect(service.filterMode == .matchAll)
-            #expect(CategorySelectionService().filterMode == .matchAll)
+            #expect(CategorySelectionService(defaults: defaults).filterMode == .matchAll)
         }
     }
 
@@ -156,8 +140,8 @@ struct CategorySelectionServiceTests {
 
     @Test("filterItems returns every item unchanged when nothing is selected")
     func filterItemsReturnsAllWhenNoSelection() {
-        withStoredNames([]) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: []) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             let itemWithCategory = item(categories: [PlanCategory(name: "Home")])
             let itemWithout = item(categories: [])
             let result = service.filterItems([itemWithCategory, itemWithout])
@@ -172,8 +156,8 @@ struct CategorySelectionServiceTests {
         (categoryNames: ["Home", "Work"], included: true),
     ])
     func filterItemsMatchAny(categoryNames: [String], included: Bool) {
-        withStoredNames(["Home"], filterMode: .matchAny) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: ["Home"], filterMode: .matchAny) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             let subject = item(categories: categoryNames.map { PlanCategory(name: $0) })
             let result = service.filterItems([subject])
             #expect(result.map(\.uuid).contains(subject.uuid) == included)
@@ -188,8 +172,8 @@ struct CategorySelectionServiceTests {
         (categoryNames: ["Home", "Work", "Health"], included: true),
     ])
     func filterItemsMatchAll(categoryNames: [String], included: Bool) {
-        withStoredNames(["Home", "Work"], filterMode: .matchAll) {
-            let service = CategorySelectionService()
+        withIsolatedDefaults(names: ["Home", "Work"], filterMode: .matchAll) { defaults in
+            let service = CategorySelectionService(defaults: defaults)
             let subject = item(categories: categoryNames.map { PlanCategory(name: $0) })
             let result = service.filterItems([subject])
             #expect(result.map(\.uuid).contains(subject.uuid) == included)
