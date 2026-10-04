@@ -17,6 +17,9 @@ struct RoutineView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.categorySelectionService) private var categorySelectionService: CategorySelectionService?
 
+    @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
+    private var showFlaggedOnly: Bool = false
+
     @State private var itemToEdit: PlanItem?
     @State private var addingRoutine: RoutineAddRequest?
     @State private var isPickingCustomSection = false
@@ -589,11 +592,13 @@ struct RoutineView: View {
         return result
     }
     
-    /// Templates matching the global search text + category selection — used everywhere templates
-    /// are grouped for display. Drag/delete/rename actions still resolve against raw `templates`
-    /// by UUID so they work regardless of the current filter.
+    /// Templates matching the global search text, flagged-only toggle, and category selection —
+    /// used everywhere templates are grouped for display. Drag/delete/rename actions still
+    /// resolve against raw `templates` by UUID so they work regardless of the current filter.
     private var filteredTemplates: [PlanItem] {
-        let matched = templates.matchingSearchText(searchText)
+        let matched = templates
+            .matchingSearchText(searchText)
+            .filter { !showFlaggedOnly || $0.isFlagged }
         return categorySelectionService?.filterItems(matched) ?? matched
     }
 
