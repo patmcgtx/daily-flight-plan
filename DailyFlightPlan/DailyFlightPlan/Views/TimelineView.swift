@@ -44,6 +44,15 @@ struct TimelineView: View {
     private let calendar = Calendar.current
     private var today: Date { calendar.startOfDay(for: .now) }
 
+    /// `searchText` with whitespace trimmed — matches `matchingSearchText(_:)`'s own trimming
+    /// (used by Day/Routine), so whitespace-only input is treated as "no query" everywhere, not
+    /// just where that shared extension is called directly. Without this, entering only spaces
+    /// would leave Day/Routine unfiltered while Timeline switched to an empty search-results
+    /// screen and disabled "Go to Today".
+    private var trimmedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var minLoadedDate: Date {
         calendar.date(byAdding: .day, value: -pastDaysWindow, to: today) ?? today
     }
@@ -87,7 +96,7 @@ struct TimelineView: View {
     /// `allItems` (the day-windowed browsing view) still holds everything matching `isTemplate ==
     /// false` in memory; see the implementation plan for that remaining scaling concern.
     private var searchResults: [PlanItem] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = trimmedSearchText
         guard !query.isEmpty else { return [] }
         // Same future-instance guard as `filteredItems` (line 60), expressed as `date < tomorrow`
         // since #Predicate can't call `calendar.startOfDay` — a plain Date comparison computed
@@ -127,7 +136,7 @@ struct TimelineView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
-                    if searchText.isEmpty {
+                    if trimmedSearchText.isEmpty {
                         ForEach(groupedByDate, id: \.date) { group in
                             Section {
                                 let canAddItems = group.date >= today
@@ -197,7 +206,7 @@ struct TimelineView: View {
                         } label: {
                             Image(systemName: "scope")
                         }
-                        .disabled(!searchText.isEmpty)
+                        .disabled(!trimmedSearchText.isEmpty)
                         .accessibilityLabel("Go to Today")
                     }
                     ToolbarItem(placement: .trailingBar) {
