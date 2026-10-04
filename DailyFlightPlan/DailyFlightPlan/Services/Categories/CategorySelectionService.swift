@@ -19,9 +19,18 @@ class CategorySelectionService {
 
     private(set) var selectedNames: Set<String>
 
+    /// Backing storage for `filterMode`. `@Observable` only tracks stored properties — a computed
+    /// property reading UserDefaults directly on every access wouldn't notify observers when it
+    /// changes, leaving UI like the Match Any/Match All picker stale until some unrelated tracked
+    /// property happened to change too.
+    private var storedFilterMode: CategoryFilterMode
+
     init() {
         let stored = UserDefaults.standard.stringArray(forKey: AppStorageKeys.selectedCategoryNames.rawValue) ?? []
         selectedNames = Set(stored)
+
+        let storedMode = UserDefaults.standard.string(forKey: AppStorageKeys.categoryFilterMode.rawValue)
+        storedFilterMode = storedMode.flatMap(CategoryFilterMode.init(rawValue:)) ?? .matchAny
     }
 
     var hasSelectedCategories: Bool { !selectedNames.isEmpty }
@@ -30,11 +39,9 @@ class CategorySelectionService {
     var shouldShowFilterModePicker: Bool { selectedNames.count >= 2 }
 
     var filterMode: CategoryFilterMode {
-        get {
-            let stored = UserDefaults.standard.string(forKey: AppStorageKeys.categoryFilterMode.rawValue)
-            return stored.flatMap(CategoryFilterMode.init(rawValue:)) ?? .matchAny
-        }
+        get { storedFilterMode }
         set {
+            storedFilterMode = newValue
             UserDefaults.standard.set(newValue.rawValue, forKey: AppStorageKeys.categoryFilterMode.rawValue)
         }
     }
