@@ -42,5 +42,12 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// Category names currently selected for filtering (empty = no filter)
     case selectedCategoryNames
 
+    /// How multiple selected categories combine when filtering (matchAny/matchAll raw value)
+    case categoryFilterMode
+
+    /// Whether to show the Match Any/Match All explanation text under the category filter mode
+    /// picker (dismissible; on by default)
+    case showCategorySelectorExplanation
+
     var id: String { rawValue }
 }
