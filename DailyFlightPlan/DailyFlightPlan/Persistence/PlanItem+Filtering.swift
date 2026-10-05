@@ -4,7 +4,7 @@
 //
 import Foundation
 
-/// Shared filtering predicates used by the global filter sheet across Day/Timeline/Routine.
+/// Shared filtering predicates used across Day/Timeline/Routine.
 /// Pure and stateless — no SwiftData/environment dependency — so it's trivially unit-testable.
 extension Sequence where Element == PlanItem {
 

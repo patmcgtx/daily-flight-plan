@@ -10,7 +10,11 @@ struct TimelineView: View {
     /// Set when embedded inline as a tab; nil means sheet mode (uses environment dismiss).
     var onDismiss: (() -> Void)? = nil
 
-    @Binding var searchText: String
+    /// Timeline-only search (not part of the shared `FilterSheetView`) — a minimal field toggled
+    /// by its own toolbar button, filtering this view in real time as you type.
+    @State private var searchText: String = ""
+    @State private var isShowingSearch = false
+    @FocusState private var isSearchFieldFocused: Bool
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false }, sort: \PlanItem.date)
     private var allItems: [PlanItem]
@@ -188,6 +192,12 @@ struct TimelineView: View {
                 #else
                 .listStyle(.insetGrouped)
                 #endif
+                .scrollDismissesKeyboard(.interactively)
+                .safeAreaInset(edge: .top) {
+                    if isShowingSearch {
+                        InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                    }
+                }
                 .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
                 .sheet(item: $addItemRequest) { request in
                     ItemForm(date: request.date, section: request.section)
@@ -210,7 +220,13 @@ struct TimelineView: View {
                         .accessibilityLabel("Go to Today")
                     }
                     ToolbarItem(placement: .trailingBar) {
-                        FilterToolbarButton(activeTab: .timeline, searchText: $searchText)
+                        SearchToggleButton(
+                            isShowingSearch: $isShowingSearch, searchText: $searchText,
+                            isFocused: $isSearchFieldFocused
+                        )
+                    }
+                    ToolbarItem(placement: .trailingBar) {
+                        FilterToolbarButton(activeTab: .timeline)
                     }
                 }
                 .onAppear {
@@ -402,8 +418,7 @@ private struct TimelineItemRow: View {
 #if DEBUG
 
 #Preview {
-    @Previewable @State var searchText = ""
-    TimelineView(searchText: $searchText)
+    TimelineView()
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }

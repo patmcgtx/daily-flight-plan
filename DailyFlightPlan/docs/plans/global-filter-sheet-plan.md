@@ -233,15 +233,18 @@ primary add action —
 
 What actually shipped, and how it differs from the plan above:
 
-- **`PlanItem+Filtering.swift`**: built as planned — `matchingSearchText(_:)`,
-  `matchingDayStatusFilters(...)`, `matchingTimelineStatusFilters(...)` on
-  `Sequence where Element == PlanItem`. Fully unit-tested in `PlanItemFilteringTests.swift`.
+- **`PlanItem+Filtering.swift`**: built as planned — `matchingDayStatusFilters(...)`,
+  `matchingTimelineStatusFilters(...)` on `Sequence where Element == PlanItem`. (A third function,
+  `matchingSearchText(_:)`, was also built here originally; removed 2026-10-05 along with the
+  General-section search field — see the note below.) Fully unit-tested in
+  `PlanItemFilteringTests.swift`.
 - **`FilterSheetView.swift`**: a `NavigationStack` + `Form` (not `List`) with a "Done" button.
   The Categories section **embeds `CategoriesSelectFlow()` directly** (reused as-is, after
   stripping its old standalone-popover sizing modifiers) rather than reimplementing category
-  selection inline — General section is Search + Categories + Flagged Only; Specific section
-  switches on `activeTab` exactly as planned (Day: Completed/Routines/Calendar/Reminders;
-  Timeline: Completed Only/Missed Only, mutually exclusive; Routine: nothing).
+  selection inline — General section is Categories + Flagged Only (originally also had Search;
+  see below); Specific section switches on `activeTab` exactly as planned (Day: Completed/
+  Routines/Calendar/Reminders; Timeline: Completed Only/Missed Only, mutually exclusive;
+  Routine: nothing).
 - **`FilterToolbarButton.swift`**: the shared toolbar-item component materialized as planned,
   with its own `@AppStorage` reads to compute `isFilterActive` per tab (mirrors the existing
   pattern of each view independently reading the same `@AppStorage` keys).
@@ -254,27 +257,36 @@ What actually shipped, and how it differs from the plan above:
   `.frame(...)` since `FilterSheetView`'s `Form`/`List` content (unlike MapsPlus's plain-stack
   content) has no intrinsic height for the popover sizing system to read. See
   `docs/known-bugs.md`'s Fixed section for the full writeup.
-- **Search integration differed per tab**, based on each view's actual data-access pattern
-  (discovered during implementation, not fully anticipated in the plan):
-  - `FlightPlanView`: `activeItems(for:)` now chains `.matchingDayStatusFilters(...)` →
-    `.matchingSearchText(searchText)` → category filter, as planned.
-  - `TimelineView`: **kept its existing dual-path design** (`filteredItems` for day-windowed
-    browsing, a separate `searchResults` using a fresh `FetchDescriptor` with the text match
-    pushed into the predicate) rather than switching to the in-memory `matchingSearchText`
-    extension — that fetch-based approach is a deliberate memory-scaling choice (per its own
-    doc comment) that the shared extension would have regressed. Only the status-filter portion
-    was deduplicated via `matchingTimelineStatusFilters(...)`, used in both paths. Its old
-    `.searchable()` field and inline filter bar (Flagged/Done/Missed toggles + category capsules)
-    were removed in favor of the shared `searchText` binding and `FilterToolbarButton`.
-  - `RoutineView`: new `filteredTemplates` computed property
-    (`templates.matchingSearchText(searchText)` → category filter) feeds `items(for pattern:)`,
-    so search/category filtering affects what's shown inside each schedule card's segments.
-    Drag/delete/rename actions still resolve against raw `templates` by UUID so they work
-    regardless of the active filter. Schedule card *existence* (`sortedCustomGroups`) stays based
-    on all templates, not the filtered set, so cards don't disappear under an active filter.
-- **`searchText`** lives as `@State` on `DayView`, threaded down as `@Binding` into all three tabs
-  — shared across tabs, not reset when switching.
+- **`RoutineView`**: `filteredTemplates` computed property (category filter over `templates`)
+  feeds `items(for pattern:)`, so category filtering affects what's shown inside each schedule
+  card's segments. Drag/delete/rename actions still resolve against raw `templates` by UUID so
+  they work regardless of the active filter. Schedule card *existence* (`sortedCustomGroups`) stays
+  based on all templates, not the filtered set, so cards don't disappear under an active filter.
 - **`DayView.AppTab`** was de-privatized (dropped `private`) so it could be passed as a parameter.
+- **Search pulled out of the shared sheet entirely, rebuilt per-tab** *(2026-10-05, two passes)*:
+  originally shipped as planned — a General-section `TextField` in `FilterSheetView`, backed by
+  `matchingSearchText(_:)`, shared via a `searchText` `@State` on `DayView` threaded down as a
+  `@Binding` into all three tabs. In practice this felt awkward: search lived inside a popover
+  that disappears on dismiss, mixed with filter toggles that persist. First pass removed the
+  General-section Search field and the shared `searchText` binding entirely, rebuilding it as a
+  dedicated, Timeline-only feature: local `@State searchText`/`isShowingSearch` on `TimelineView`,
+  a `magnifyingglass` toolbar button (becomes `xmark.circle.fill` when active) toggling a minimal
+  `TextField` pinned above the list via `.safeAreaInset(edge: .top)` — no Form/sheet chrome, no
+  Done button, filters in real time. Second pass extracted that button+field pair into shared
+  components (`Views/Components/InlineSearchBar.swift`: `SearchToggleButton`, `InlineSearchField`)
+  and brought the same feature to Day and Routine too — each tab owns its own local
+  `searchText`/`isShowingSearch`/`@FocusState`, not shared across tabs, matching the original
+  per-view-filtering philosophy rather than the removed shared-binding approach.
+  `matchingSearchText(_:)` came back to `PlanItem+Filtering.swift` (with its tests) since all three
+  views need it again: `FlightPlanView.activeItems(for:)` chains it after
+  `matchingDayStatusFilters`; `RoutineView.filteredTemplates` chains it before the category filter;
+  `TimelineView` kept its own dual-path design (`filteredItems` for day-windowed browsing, a
+  separate `FetchDescriptor`-backed `searchResults` for memory-scaling reasons) unchanged by either
+  pass.
+- **Day's "Go to Today" moved into the toolbar** *(2026-10-05)*: was an inline `scope` button next
+  to the date label inside `dayLabel(for:)`, shown only when not on today. Moved to
+  `FlightPlanView`'s trailing `ToolbarItemGroup`, always visible, `.disabled(viewModel.isToday)` —
+  matching `TimelineView`'s toolbar-based "Go to Today", which stayed as reference.
 - Bonus, requested alongside this work: added a "go to today" toolbar button on `TimelineView`
   (scrolls its `ScrollViewReader` back to `today`, disabled while searching) and restyled its
   "Today" section header to match the Day view's red/bold "NOW" treatment (all-caps "TODAY" + red

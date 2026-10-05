@@ -10,7 +10,6 @@ import SwiftUI
 struct FilterToolbarButton: View {
 
     let activeTab: AppTab
-    @Binding var searchText: String
 
     @State private var isShowingFilterSheet = false
 
@@ -39,9 +38,7 @@ struct FilterToolbarButton: View {
     private var showMissedOnly: Bool = false
 
     private var isGeneralFilterActive: Bool {
-        showFlaggedOnly
-            || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || (categorySelectionService?.hasSelectedCategories ?? false)
+        showFlaggedOnly || (categorySelectionService?.hasSelectedCategories ?? false)
     }
 
     private var isFilterActive: Bool {
@@ -71,7 +68,7 @@ struct FilterToolbarButton: View {
             attachmentAnchor: .point(.bottom),
             arrowEdge: .top
         ) {
-            FilterSheetView(activeTab: activeTab, searchText: $searchText)
+            FilterSheetView(activeTab: activeTab)
                 // `Form` (a List under the hood) has no intrinsic content height, unlike
                 // MapsPlus's plain-stack popover content — without an explicit height the
                 // popover collapses to just its nav bar on iOS 27. Bounded, not fixed, so it

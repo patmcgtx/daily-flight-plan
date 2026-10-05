@@ -6,12 +6,12 @@ import SwiftUI
 import SwiftData
 
 /// The global filter sheet, opened from a `FilterToolbarButton` on any tab. Has a General
-/// section (search text, category selection, flagged-only) that applies everywhere, plus a
-/// Specific section whose contents adapt to whichever tab opened it.
+/// section (category selection, flagged-only) that applies everywhere, plus a Specific section
+/// whose contents adapt to whichever tab opened it. Text search lives separately, on Timeline
+/// only — see `TimelineView`'s own search field.
 struct FilterSheetView: View {
 
     let activeTab: AppTab
-    @Binding var searchText: String
 
     @Environment(\.dismiss) private var dismiss
 
@@ -39,13 +39,6 @@ struct FilterSheetView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Search") {
-                    TextField("Search items", text: $searchText)
-                        #if os(iOS)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                }
-
                 Section {
                     CategoriesSelectFlow()
                 }
@@ -116,10 +109,9 @@ struct FilterSheetView: View {
 #if DEBUG
 
 #Preview {
-    @Previewable @State var searchText = ""
     Text("Host")
         .sheet(isPresented: .constant(true)) {
-            FilterSheetView(activeTab: .flightDeck, searchText: $searchText)
+            FilterSheetView(activeTab: .flightDeck)
         }
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
         .injectMockServices()

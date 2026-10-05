@@ -361,17 +361,31 @@ implementation notes/deviations are recorded at the end of each.
 - **Filter button**: a single toolbar `FilterToolbarButton` on each tab (Day/Routine/Timeline),
   not a floating button or `Tab(role: .search)` — opens `FilterSheetView` as a true anchored
   popover on iPhone (see implementation notes for the explicit sizing this needed)
-- **Filter sheet**: a **General** section (search text, category selection via an embedded
+- **Filter sheet**: a **General** section (category selection via an embedded
   `CategoriesSelectFlow`, flagged-only) plus a **Specific** section that adapts to whichever tab
   is active (Day: completed/routines/calendar/reminders; Timeline: completed-only/missed-only;
   Routine: none) — replaces the old per-view filter menus (FlightPlanView's toolbar menu,
   Timeline's inline filter bar) outright
 - **Category editing lives in the same sheet**: the "Edit" button inside the embedded
   `CategoriesSelectFlow` presents the existing `CategoriesEditView` as a sheet
-- **New behavior**: Routine and Timeline both gained category + search filtering for the first
-  time (Routine had none at all before; Timeline had its own separate inline filter bar)
+- **New behavior**: Routine gained category filtering for the first time (it had none before)
 - **Added along the way**: a "go to today" button and red/bold "TODAY" header styling on
   `TimelineView`, matching the Day view's "NOW" treatment
+- **Search moved out of the shared sheet onto each tab individually** *(2026-10-05)*: search
+  originally lived as a General-section text field in `FilterSheetView`, applying to
+  Day/Routine/Timeline alike. Felt awkward sharing a popover that disappears with filter toggles
+  that persist, so it was pulled out entirely and rebuilt as a per-tab feature — a dedicated
+  `magnifyingglass` toolbar button toggles a small `TextField` pinned above the content via
+  `.safeAreaInset(edge: .top)`, filtering in real time with no Form/sheet chrome. Shipped on
+  Timeline first; `SearchToggleButton`/`InlineSearchField` (`Views/Components/InlineSearchBar.swift`)
+  were then extracted and reused to bring the same feature to Day and Routine too, each with its
+  own local search state (not shared across tabs). See `global-filter-sheet-plan.md`'s
+  implementation notes for detail.
+- **Day's "Go to Today" button moved into the toolbar** *(2026-10-05)*: previously an inline
+  `scope` button shown only when not viewing today, positioned next to the date label inside the
+  scrollable content. Moved to `FlightPlanView`'s trailing toolbar, always visible but disabled
+  while already on today — matching `TimelineView`'s existing toolbar placement for the same
+  action.
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.

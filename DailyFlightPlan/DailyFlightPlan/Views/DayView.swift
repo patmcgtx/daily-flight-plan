@@ -39,7 +39,6 @@ struct DayView: View {
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
-    @State private var searchText: String = ""
 
     var body: some View {
         TabView(selection: $activeTab) {
@@ -50,18 +49,17 @@ struct DayView: View {
                     calendarEvents: calendarEvents,
                     reminderItems: reminderItems,
                     isDeletingData: isDeletingData,
-                    searchText: $searchText,
                     onShowSettings: { isShowingSettings = true },
                     onShowImport: { isShowingImport = true }
                 )
             }
 
             Tab("Routine", systemImage: "infinity", value: AppTab.routines) {
-                RoutineView(searchText: $searchText)
+                RoutineView()
             }
 
             Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
-                TimelineView(onDismiss: {}, searchText: $searchText)
+                TimelineView(onDismiss: {})
             }
         }
         .onAppear {

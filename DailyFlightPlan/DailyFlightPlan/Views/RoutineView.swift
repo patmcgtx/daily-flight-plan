@@ -9,8 +9,6 @@ import FoundationModels
 
 struct RoutineView: View {
 
-    @Binding var searchText: String
-
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == true }, sort: \PlanItem.title)
     private var templates: [PlanItem]
 
@@ -19,6 +17,12 @@ struct RoutineView: View {
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
     private var showFlaggedOnly: Bool = false
+
+    /// Routine-only search (not part of the shared `FilterSheetView`) — a minimal field toggled
+    /// by its own toolbar button, filtering templates in real time as you type.
+    @State private var searchText: String = ""
+    @State private var isShowingSearch = false
+    @FocusState private var isSearchFieldFocused: Bool
 
     @State private var itemToEdit: PlanItem?
     @State private var addingRoutine: RoutineAddRequest?
@@ -61,10 +65,22 @@ struct RoutineView: View {
                 }
                 .padding()
             }
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .top) {
+                if isShowingSearch {
+                    InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                }
+            }
             .navigationTitle("Routine")
             .toolbar {
                 ToolbarItem(placement: .trailingBar) {
-                    FilterToolbarButton(activeTab: .routines, searchText: $searchText)
+                    SearchToggleButton(
+                        isShowingSearch: $isShowingSearch, searchText: $searchText,
+                        isFocused: $isSearchFieldFocused
+                    )
+                }
+                ToolbarItem(placement: .trailingBar) {
+                    FilterToolbarButton(activeTab: .routines)
                 }
             }
         }
@@ -592,9 +608,9 @@ struct RoutineView: View {
         return result
     }
     
-    /// Templates matching the global search text, flagged-only toggle, and category selection —
-    /// used everywhere templates are grouped for display. Drag/delete/rename actions still
-    /// resolve against raw `templates` by UUID so they work regardless of the current filter.
+    /// Templates matching the search text, flagged-only toggle, and category selection — used
+    /// everywhere templates are grouped for display. Drag/delete/rename actions still resolve
+    /// against raw `templates` by UUID so they work regardless of the current filter.
     private var filteredTemplates: [PlanItem] {
         let matched = templates
             .matchingSearchText(searchText)
@@ -769,8 +785,7 @@ struct RoutineView: View {
 #if DEBUG
 
 #Preview {
-    @Previewable @State var searchText = ""
-    RoutineView(searchText: $searchText)
+    RoutineView()
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
