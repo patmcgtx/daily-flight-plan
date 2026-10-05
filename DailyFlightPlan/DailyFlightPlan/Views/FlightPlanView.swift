@@ -20,9 +20,6 @@ struct FlightPlanView: View {
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
 
-    @Query(sort: \PlanCategory.name)
-    private var allCategories: [PlanCategory]
-
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
     private var showFlaggedOnly: Bool = false
 
@@ -51,20 +48,30 @@ struct FlightPlanView: View {
     @State private var addingToSection: DaySection? = nil
     @State private var addingItemForDate: Date? = nil
     @State private var isAddingItem = false
-    @State private var showCategorySelector = false
-    @State private var isShowingCategoriesEdit = false
     @State private var expandedSections: Set<DaySection> = []
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
 
+    /// Day-only search (not part of the shared `FilterSheetView`) — a minimal field toggled by
+    /// its own toolbar button, filtering each visible day's items in real time as you type.
+    @State private var searchText: String = ""
+    @State private var isShowingSearch = false
+    @FocusState private var isSearchFieldFocused: Bool
+
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
-            || !(categorySelectionService?.selectedNames.isEmpty ?? true)
+            || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || (categorySelectionService?.hasSelectedCategories ?? false)
     }
 
     var body: some View {
         NavigationStack {
             swipeableContent
+                .safeAreaInset(edge: .top) {
+                    if isShowingSearch {
+                        InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                    }
+                }
                 .inlineNavigationTitle()
                 .toolbar {
                     ToolbarItem(placement: .leadingBar) {
@@ -82,35 +89,20 @@ struct FlightPlanView: View {
                     }
 
                     ToolbarItemGroup(placement: .trailingBar) {
-                        Menu {
-                            Toggle(isOn: $showFlaggedOnly) {
-                                Label("Flagged Only", systemImage: "flag.fill")
-                            }
-                            Toggle(isOn: $showCompleted) {
-                                Label("Show Completed", systemImage: "checkmark")
-                            }
-                            Toggle(isOn: $showRecurring) {
-                                Label("Routines", systemImage: "infinity")
-                            }
-                            Divider()
-                            Toggle(isOn: $showCalendarEvents) {
-                                Label("Calendar Events", systemImage: "calendar")
-                            }
-                            Toggle(isOn: $showReminderItems) {
-                                Label("Reminders", systemImage: "bell")
-                            }
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
                         } label: {
-                            Image(systemName: isFilterActive
-                                ? "line.3.horizontal.decrease.circle.fill"
-                                : "line.3.horizontal.decrease.circle")
-                                .foregroundStyle(isFilterActive ? Color.accentColor : Color.primary)
+                            Image(systemName: "scope")
                         }
-                        .accessibilityLabel("Filters")
+                        .disabled(viewModel.isToday)
+                        .accessibilityLabel("Go to Today")
 
-                        Button { showCategorySelector = true } label: {
-                            Image(systemName: "tag")
-                        }
-                        .accessibilityLabel("Filter by Category")
+                        SearchToggleButton(
+                            isShowingSearch: $isShowingSearch, searchText: $searchText,
+                            isFocused: $isSearchFieldFocused
+                        )
+
+                        FilterToolbarButton(activeTab: .flightDeck)
 
                         Menu {
                             ForEach(DFPTheme.allCases) { option in
@@ -124,14 +116,19 @@ struct FlightPlanView: View {
                         }
                         .accessibilityLabel("Theme")
                     }
-
-                    ToolbarItem(placement: .trailingBar) {
-                        Button { isAddingItem = true } label: {
-                            Image(systemName: "plus")
-                        }
-                        .accessibilityLabel("Add Item")
-                    }
                 }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button { isAddingItem = true } label: {
+                Image(systemName: "plus")
+                    .font(.title2)
+            }
+            .buttonStyle(.glass)
+            .frame(width: 52, height: 52)
+            .clipShape(Circle())
+            .padding(.trailing, 16)
+            .padding(.bottom, 16)
+            .accessibilityLabel("Add Item")
         }
         .environment(\.editItem) { item in itemToEdit = item }
         .sheet(isPresented: $isAddingItem) {
@@ -146,11 +143,6 @@ struct FlightPlanView: View {
             }
         }
         .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
-        .sheet(isPresented: $showCategorySelector) { categorySelectorSheet }
-        .sheet(isPresented: $isShowingCategoriesEdit) {
-            CategoriesEditView(allCategories: allCategories)
-                .environment(\.modelContext, modelContext)
-        }
         .onAppear { initializeExpandedSections() }
         .onChange(of: viewModel.selectedDate) { initializeExpandedSections() }
         .onChange(of: filterKey) { applyFilterToExpandedSections() }
@@ -204,9 +196,13 @@ struct FlightPlanView: View {
         // Side swipe pages are transient previews, so they show plan items only.
         let isSelectedDate = Calendar.current.isDate(date, inSameDayAs: viewModel.selectedDate)
         let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
-        let visibleEvents = (showCalendarEvents && !categoriesActive && isSelectedDate) ? calendarEvents : []
+        let visibleEvents = searchFiltered(events:
+            (showCalendarEvents && !categoriesActive && isSelectedDate) ? calendarEvents : []
+        )
         let rawReminders = (showReminderItems && !categoriesActive && isSelectedDate) ? reminderItems : []
-        let visibleReminders = showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
+        let visibleReminders = searchFiltered(reminders:
+            showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
+        )
 
         ScrollView {
             VStack(spacing: 16) {
@@ -234,6 +230,7 @@ struct FlightPlanView: View {
             .padding(.top, 4)
             .padding(.bottom, 16)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private func progressRow(for date: Date) -> some View {
@@ -263,44 +260,43 @@ struct FlightPlanView: View {
 
     private func dayLabel(for date: Date) -> some View {
         let isToday = Calendar.current.isDateInToday(date)
-        return ZStack {
-            VStack(spacing: 2) {
-                Text(isToday ? "Today" : date.formatted(.dateTime.weekday(.wide)))
-                    .font(.subheadline)
-                    .foregroundStyle(isToday ? Color.accentColor : Color.secondary)
-                Text(date, format: .dateTime.month(.abbreviated).day())
-                    .font(.title2.bold())
-                    .monospacedDigit()
-            }
-
-            if !isToday {
-                HStack {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
-                    } label: {
-                        Image(systemName: "scope")
-                            .font(.title3)
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Go to Today")
-                    Spacer()
-                }
-            }
+        return VStack(spacing: 2) {
+            Text(isToday ? "Today" : date.formatted(.dateTime.weekday(.wide)))
+                .font(.subheadline)
+                .foregroundStyle(isToday ? Color.accentColor : Color.secondary)
+            Text(date, format: .dateTime.month(.abbreviated).day())
+                .font(.title2.bold())
+                .monospacedDigit()
         }
         .padding(.vertical, 8)
     }
 
     private func activeItems(for date: Date) -> [PlanItem] {
         guard !isDeletingData else { return [] }
-        let filtered = allItems.filter {
-            Calendar.current.isDate($0.date, inSameDayAs: date)
-            && (showCompleted || ($0.status != .completed && $0.status != .canceled))
-            && (!showFlaggedOnly || $0.isFlagged)
-            && (showRecurring || !$0.isRecurring)
-        }
+        let sameDay = allItems.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        let filtered = sameDay
+            .matchingDayStatusFilters(
+                showFlaggedOnly: showFlaggedOnly, showCompleted: showCompleted, showRecurring: showRecurring
+            )
+            .matchingSearchText(searchText)
         return categorySelectionService?.filterItems(filtered) ?? filtered
+    }
+
+    /// Search filtering for Calendar events — matches `matchingSearchText(_:)`'s trimming/no-op
+    /// behavior, but `CalendarEvent`/`ReminderItem` aren't `PlanItem`s so that shared extension
+    /// doesn't apply here.
+    private func searchFiltered(events: [CalendarEvent]) -> [CalendarEvent] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return events }
+        return events.filter { $0.title.localizedStandardContains(query) }
+    }
+
+    private func searchFiltered(reminders: [ReminderItem]) -> [ReminderItem] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return reminders }
+        return reminders.filter {
+            $0.title.localizedStandardContains(query) || ($0.notes?.localizedStandardContains(query) ?? false)
+        }
     }
 
     // Unfiltered items for a date — used for raw section counts in the ring.
@@ -316,7 +312,8 @@ struct FlightPlanView: View {
     // onChange can react to any filter change (including category toggles).
     private var filterKey: String {
         let cats = categorySelectionService?.selectedNames.sorted().joined() ?? ""
-        return "\(showFlaggedOnly)-\(showCompleted)-\(showRecurring)-\(cats)"
+        let mode = categorySelectionService?.filterMode.rawValue ?? ""
+        return "\(showFlaggedOnly)-\(showCompleted)-\(showRecurring)-\(searchText)-\(cats)-\(mode)"
     }
 
     private func initializeExpandedSections() {
@@ -329,9 +326,13 @@ struct FlightPlanView: View {
     private func applyFilterToExpandedSections() {
         if isFilterActive {
             let categoriesActive = categorySelectionService?.hasSelectedCategories ?? false
-            let visibleEvents = (showCalendarEvents && !categoriesActive) ? calendarEvents : []
+            let visibleEvents = searchFiltered(events:
+                (showCalendarEvents && !categoriesActive) ? calendarEvents : []
+            )
             let rawReminders = (showReminderItems && !categoriesActive) ? reminderItems : []
-            let visibleReminders = showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
+            let visibleReminders = searchFiltered(reminders:
+                showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
+            )
             expandedSections = Set(DaySection.allCases.filter { section in
                 let items = viewModel.sectionPills(section, from: activeItems(for: viewModel.selectedDate))
                            + viewModel.deadlineRows(section, from: activeItems(for: viewModel.selectedDate))
@@ -871,41 +872,6 @@ struct FlightPlanView: View {
         }
     }
 
-    // MARK: - Category selector sheet
-
-    private var categorySelectorSheet: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Filter by Category")
-                .font(.headline)
-                .padding(.horizontal)
-                .padding(.top)
-            if allCategories.isEmpty {
-                Text("No categories yet.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(allCategories) { category in
-                            CategoryCapsule(category: category)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-            Button("Manage Categories") {
-                showCategorySelector = false
-                isShowingCategoriesEdit = true
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal)
-            .padding(.bottom)
-        }
-        .presentationDetents([.height(160)])
-        .presentationDragIndicator(.visible)
-    }
 }
 
 #if DEBUG

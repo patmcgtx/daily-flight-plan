@@ -354,29 +354,51 @@ disclaimer) — none apply to a feature that no longer exists.
   pass — see Phase release.1 under Version 1.0, which has also had its Comm-specific bullet
   removed now that the tab is gone
 
-### Phase 2.5 — Global Filter Sheet + Category Management
-*Placeholder — not yet implemented. Notes only; design/scope to be fleshed out when this phase is picked up.*
+### ✅ Phase 2.5 — Global Filter Sheet + Category Management
+Full design in `docs/plans/global-filter-sheet-plan.md` and `docs/plans/category-selector-plan.md`;
+implementation notes/deviations are recorded at the end of each.
 
-- **Filter button placement**: a dedicated button in the lower-right, in the spot where a search
-  button tends to live in Liquid Glass apps (trailing edge, near/in the tab bar area) — not
-  folded into an existing toolbar menu
-- **Filter sheet**: tapping it presents a sheet with global filter controls — category, done
-  status, routine/recurring status, and likely the existing Flagged/Calendar/Reminders toggles
-  too; replaces (or absorbs) the current per-view filter menus so filtering is consistent across
-  Day/Routine/Timeline rather than each view having its own
-- **Category editing lives in the same sheet**: an edit-categories entry point (add/rename/delete,
-  plus selecting which categories are active for filtering) rather than a separate screen
-- **Handle categories like MapsPlus**: mirror MapsPlus's category selection/editing UX and
-  interaction patterns (see `CategoryCapsule.swift` / `CategoriesSelectFlow.swift` in
-  `github.com/patmcgtx/mapplus`) rather than inventing a new pattern — reconcile with the existing
-  `CategoriesEditView`/`CategoriesEditViewModel` and `CategorySelectionService`
-- Open question: does this sheet replace the existing per-view filter menus (Day/Timeline) outright,
-  or sit alongside them as a global superset?
+- **Filter button**: a single toolbar `FilterToolbarButton` on each tab (Day/Routine/Timeline),
+  not a floating button or `Tab(role: .search)` — opens `FilterSheetView` as a true anchored
+  popover on iPhone (see implementation notes for the explicit sizing this needed)
+- **Filter sheet**: a **General** section (category selection via an embedded
+  `CategoriesSelectFlow`, flagged-only) plus a **Specific** section that adapts to whichever tab
+  is active (Day: completed/routines/calendar/reminders; Timeline: completed-only/missed-only;
+  Routine: none) — replaces the old per-view filter menus (FlightPlanView's toolbar menu,
+  Timeline's inline filter bar) outright
+- **Category editing lives in the same sheet**: the "Edit" button inside the embedded
+  `CategoriesSelectFlow` presents the existing `CategoriesEditView` as a sheet
+- **New behavior**: Routine gained category filtering for the first time (it had none before)
+- **Added along the way**: a "go to today" button and red/bold "TODAY" header styling on
+  `TimelineView`, matching the Day view's "NOW" treatment
+- **Search moved out of the shared sheet onto each tab individually** *(2026-10-05)*: search
+  originally lived as a General-section text field in `FilterSheetView`, applying to
+  Day/Routine/Timeline alike. Felt awkward sharing a popover that disappears with filter toggles
+  that persist, so it was pulled out entirely and rebuilt as a per-tab feature — a dedicated
+  `magnifyingglass` toolbar button toggles a small `TextField` pinned above the content via
+  `.safeAreaInset(edge: .top)`, filtering in real time with no Form/sheet chrome. Shipped on
+  Timeline first; `SearchToggleButton`/`InlineSearchField` (`Views/Components/InlineSearchBar.swift`)
+  were then extracted and reused to bring the same feature to Day and Routine too, each with its
+  own local search state (not shared across tabs). See `global-filter-sheet-plan.md`'s
+  implementation notes for detail.
+- **Day's "Go to Today" button moved into the toolbar** *(2026-10-05)*: previously an inline
+  `scope` button shown only when not viewing today, positioned next to the date label inside the
+  scrollable content. Moved to `FlightPlanView`'s trailing toolbar, always visible but disabled
+  while already on today — matching `TimelineView`'s existing toolbar placement for the same
+  action.
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
 - **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
-- **Add tagging on import**: Would be helpful to allow tagging items on import as well
+- **Add a flag toggle on import**: The import can't automatically know if this item should be
+  flagged, but make it easy.
+- **Add categorization on import**: Allow tagging items on import, automatically or manually.
+- **Remove 'routine' options from import**: Routine import should be its own flow rather than
+  cluttering a normal day import.
+- **Easier way to handle day segments**: Show segments in the import view and allow dragging and
+  dropping; provide a menu alternative for accessibility.
+- **Allow editing like a _normal_ list**: Support swipe-to-delete, animated deletions, and dragging
+  items between segments.
 
 ### Phase 2.7 — Missed Items Review & Pull-Forward
 **Note**: this phase replaces the automatic "Spillover" behavior from Phase 1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
@@ -527,7 +549,11 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
   paging, custom gesture recognizer) would be more reliable.
 
 ### Phase release.4 — Tech Debt
-- **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see `docs/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since the app hasn't shipped, no CloudKit migration cost to worry about.
+- **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see
+  `docs/plans/routine-template-refactor-plan.md` for the full plan. `PlanItem` currently plays three
+  roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause
+  behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since
+  the app hasn't shipped, no CloudKit migration cost to worry about.
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc

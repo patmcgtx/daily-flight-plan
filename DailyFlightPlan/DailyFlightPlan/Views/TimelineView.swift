@@ -10,9 +10,14 @@ struct TimelineView: View {
     /// Set when embedded inline as a tab; nil means sheet mode (uses environment dismiss).
     var onDismiss: (() -> Void)? = nil
 
+    /// Timeline-only search (not part of the shared `FilterSheetView`) — a minimal field toggled
+    /// by its own toolbar button, filtering this view in real time as you type.
+    @State private var searchText: String = ""
+    @State private var isShowingSearch = false
+    @FocusState private var isSearchFieldFocused: Bool
+
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false }, sort: \PlanItem.date)
     private var allItems: [PlanItem]
-    @Query(sort: \PlanCategory.name) private var allCategories: [PlanCategory]
 
     @Environment(\.dismiss) private var envDismiss
     @Environment(\.categorySelectionService) private var categorySelectionService
@@ -20,7 +25,6 @@ struct TimelineView: View {
 
     @State private var itemToEdit: PlanItem? = nil
     @State private var addItemRequest: AddItemRequest? = nil
-    @State private var searchText: String = ""
 
     private struct AddItemRequest: Identifiable {
         let date: Date
@@ -30,15 +34,6 @@ struct TimelineView: View {
 
     private func handleDismiss() {
         if let onDismiss { onDismiss() } else { envDismiss() }
-    }
-
-    // `.navigationBarDrawer` is a UIKit-only placement and unavailable on macOS.
-    private var searchFieldPlacement: SearchFieldPlacement {
-        #if os(macOS)
-        .automatic
-        #else
-        .navigationBarDrawer(displayMode: .always)
-        #endif
     }
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue) private var showFlaggedOnly: Bool = false
@@ -53,6 +48,15 @@ struct TimelineView: View {
     private let calendar = Calendar.current
     private var today: Date { calendar.startOfDay(for: .now) }
 
+    /// `searchText` with whitespace trimmed — matches `matchingSearchText(_:)`'s own trimming
+    /// (used by Day/Routine), so whitespace-only input is treated as "no query" everywhere, not
+    /// just where that shared extension is called directly. Without this, entering only spaces
+    /// would leave Day/Routine unfiltered while Timeline switched to an empty search-results
+    /// screen and disabled "Go to Today".
+    private var trimmedSearchText: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var minLoadedDate: Date {
         calendar.date(byAdding: .day, value: -pastDaysWindow, to: today) ?? today
     }
@@ -62,17 +66,16 @@ struct TimelineView: View {
     }
 
     private var filteredItems: [PlanItem] {
-        let filtered = allItems.filter { item in
+        let windowed = allItems.filter { item in
             let day = calendar.startOfDay(for: item.date)
             guard day >= minLoadedDate && day <= maxLoadedDate else { return false }
             // Future dates never show routine instances — routines could still change before then.
-            guard day <= today || item.template == nil else { return false }
-            // Isolates rather than reveals: pending-only when off, completed/canceled-only when on.
-            guard (item.status == .completed || item.status == .canceled) == showCompletedOnly else { return false }
-            guard !showFlaggedOnly || item.isFlagged else { return false }
-            guard !showMissedOnly || isMissed(item) else { return false }
-            return true
+            return day <= today || item.template == nil
         }
+        let filtered = windowed.matchingTimelineStatusFilters(
+            showFlaggedOnly: showFlaggedOnly, showCompletedOnly: showCompletedOnly,
+            showMissedOnly: showMissedOnly, isMissed: isMissed
+        )
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
@@ -97,7 +100,7 @@ struct TimelineView: View {
     /// `allItems` (the day-windowed browsing view) still holds everything matching `isTemplate ==
     /// false` in memory; see the implementation plan for that remaining scaling concern.
     private var searchResults: [PlanItem] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = trimmedSearchText
         guard !query.isEmpty else { return [] }
         // Same future-instance guard as `filteredItems` (line 60), expressed as `date < tomorrow`
         // since #Predicate can't call `calendar.startOfDay` — a plain Date comparison computed
@@ -112,11 +115,10 @@ struct TimelineView: View {
         }
         let descriptor = FetchDescriptor<PlanItem>(predicate: predicate, sortBy: [SortDescriptor(\.date)])
         let matched = (try? modelContext.fetch(descriptor)) ?? []
-        let filtered = matched.filter { item in
-            ((item.status == .completed || item.status == .canceled) == showCompletedOnly)
-            && (!showFlaggedOnly || item.isFlagged)
-            && (!showMissedOnly || isMissed(item))
-        }
+        let filtered = matched.matchingTimelineStatusFilters(
+            showFlaggedOnly: showFlaggedOnly, showCompletedOnly: showCompletedOnly,
+            showMissedOnly: showMissedOnly, isMissed: isMissed
+        )
         return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
@@ -138,7 +140,7 @@ struct TimelineView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
-                    if searchText.isEmpty {
+                    if trimmedSearchText.isEmpty {
                         ForEach(groupedByDate, id: \.date) { group in
                             Section {
                                 let canAddItems = group.date >= today
@@ -190,6 +192,12 @@ struct TimelineView: View {
                 #else
                 .listStyle(.insetGrouped)
                 #endif
+                .scrollDismissesKeyboard(.interactively)
+                .safeAreaInset(edge: .top) {
+                    if isShowingSearch {
+                        InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                    }
+                }
                 .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
                 .sheet(item: $addItemRequest) { request in
                     ItemForm(date: request.date, section: request.section)
@@ -202,26 +210,30 @@ struct TimelineView: View {
                             Button("Done") { handleDismiss() }
                         }
                     }
-                }
-                .safeAreaInset(edge: .top) {
-                    filterBar
+                    ToolbarItem(placement: .trailingBar) {
+                        Button {
+                            withAnimation { proxy.scrollTo(today, anchor: .center) }
+                        } label: {
+                            Image(systemName: "scope")
+                        }
+                        .disabled(!trimmedSearchText.isEmpty)
+                        .accessibilityLabel("Go to Today")
+                    }
+                    ToolbarItem(placement: .trailingBar) {
+                        SearchToggleButton(
+                            isShowingSearch: $isShowingSearch, searchText: $searchText,
+                            isFocused: $isSearchFieldFocused
+                        )
+                    }
+                    ToolbarItem(placement: .trailingBar) {
+                        FilterToolbarButton(activeTab: .timeline)
+                    }
                 }
                 .onAppear {
                     proxy.scrollTo(today, anchor: .center)
                 }
             }
         }
-        // Attached to the NavigationStack itself, not nested inside the ScrollViewReader/List
-        // chain — keeps the system search field independent of the List's own top safeAreaInset
-        // (used by filterBar), which otherwise contend for the same "top of list" slot.
-        // Placement is forced to `.navigationBarDrawer(.always)` rather than left `.automatic` —
-        // the automatic resolution (always-visible bar vs. a minimized tap-to-expand button) was
-        // observed to differ between OS builds, leaving the field effectively invisible on some.
-        .searchable(
-            text: $searchText,
-            placement: searchFieldPlacement,
-            prompt: "Search items"
-        )
     }
 
     // MARK: Date header
@@ -232,9 +244,10 @@ struct TimelineView: View {
         let isPast = date < today
         HStack {
             if isToday {
-                Text("Today")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(Color.accentColor)
+                Circle().fill(.red).frame(width: 6, height: 6)
+                Text("TODAY")
+                    .font(.caption.bold())
+                    .foregroundStyle(.red)
                 Text(date, format: .dateTime.month(.abbreviated).day())
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -245,57 +258,6 @@ struct TimelineView: View {
             }
             Spacer()
         }
-    }
-
-    // MARK: Filter bar
-
-    private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterToggle("Flagged", icon: "flag.fill", isActive: showFlaggedOnly) {
-                    showFlaggedOnly.toggle()
-                }
-                filterToggle("Done", icon: "checkmark", isActive: showCompletedOnly) {
-                    // Mutually exclusive with Missed: both isolate to opposite categories (done
-                    // vs. overdue-pending), so both active at once would always show nothing.
-                    if !showCompletedOnly { showMissedOnly = false }
-                    showCompletedOnly.toggle()
-                }
-                filterToggle("Missed", icon: "clock.badge.exclamationmark", isActive: showMissedOnly) {
-                    if !showMissedOnly { showCompletedOnly = false }
-                    showMissedOnly.toggle()
-                }
-                if !allCategories.isEmpty {
-                    Divider().frame(height: 20)
-                    ForEach(allCategories) { category in
-                        CategoryCapsule(category: category)
-                    }
-                }
-            }
-            .padding(.horizontal)
-        }
-        .padding(.vertical, 8)
-        .background(.regularMaterial)
-    }
-
-    private func filterToggle(
-        _ title: String, icon: String, isActive: Bool, action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: icon)
-                .font(.caption.bold())
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .foregroundStyle(isActive ? Color.white : Color.primary)
-        }
-        .background {
-            if isActive {
-                Capsule().fill(Color.accentColor)
-            } else {
-                Capsule().fill(.regularMaterial)
-            }
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: Segment grouping within a day

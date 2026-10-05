@@ -6,7 +6,7 @@ import SwiftUI
 import SwiftData
 import EventKit
 
-private enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
+enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
 
 struct DayView: View {
 

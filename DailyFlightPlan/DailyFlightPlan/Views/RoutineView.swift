@@ -13,6 +13,16 @@ struct RoutineView: View {
     private var templates: [PlanItem]
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.categorySelectionService) private var categorySelectionService: CategorySelectionService?
+
+    @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
+    private var showFlaggedOnly: Bool = false
+
+    /// Routine-only search (not part of the shared `FilterSheetView`) — a minimal field toggled
+    /// by its own toolbar button, filtering templates in real time as you type.
+    @State private var searchText: String = ""
+    @State private var isShowingSearch = false
+    @FocusState private var isSearchFieldFocused: Bool
 
     @State private var itemToEdit: PlanItem?
     @State private var addingRoutine: RoutineAddRequest?
@@ -55,16 +65,38 @@ struct RoutineView: View {
                 }
                 .padding()
             }
+            .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .top) {
+                if isShowingSearch {
+                    InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                }
+            }
             .navigationTitle("Routine")
             .toolbar {
                 ToolbarItem(placement: .trailingBar) {
-                    Button {
-                        isPickingCustomSection = true
-                    } label: {
-                        Label("Add Section", systemImage: "plus.rectangle.portrait")
-                    }
+                    SearchToggleButton(
+                        isShowingSearch: $isShowingSearch, searchText: $searchText,
+                        isFocused: $isSearchFieldFocused
+                    )
+                }
+                ToolbarItem(placement: .trailingBar) {
+                    FilterToolbarButton(activeTab: .routines)
                 }
             }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                isPickingCustomSection = true
+            } label: {
+                Image(systemName: "plus.rectangle.portrait")
+                    .font(.title2)
+            }
+            .buttonStyle(.glass)
+            .frame(width: 52, height: 52)
+            .clipShape(Circle())
+            .padding(.trailing, 16)
+            .padding(.bottom, 16)
+            .accessibilityLabel("Add Section")
         }
         .sheet(item: $itemToEdit) { item in
             ItemForm(item: item)
@@ -576,8 +608,25 @@ struct RoutineView: View {
         return result
     }
     
-    private func items(for pattern: Set<Locale.Weekday>) -> [PlanItem] {
+    /// Templates matching the search text, flagged-only toggle, and category selection — used
+    /// everywhere templates are grouped for display. Drag/delete/rename actions still resolve
+    /// against raw `templates` by UUID so they work regardless of the current filter.
+    private var filteredTemplates: [PlanItem] {
+        let matched = templates
+            .matchingSearchText(searchText)
+            .filter { !showFlaggedOnly || $0.isFlagged }
+        return categorySelectionService?.filterItems(matched) ?? matched
+    }
+
+    /// Raw (unfiltered) templates for a weekday pattern — used by destructive section-level
+    /// operations (`deleteSection`) so deleting a section while a search/flag/category filter is
+    /// active still removes every routine in it, not just the currently-visible subset.
+    private func allItems(for pattern: Set<Locale.Weekday>) -> [PlanItem] {
         templates.filter { Set($0.recurringWeekdays) == pattern }
+    }
+
+    private func items(for pattern: Set<Locale.Weekday>) -> [PlanItem] {
+        filteredTemplates.filter { Set($0.recurringWeekdays) == pattern }
     }
     
     private struct CustomGroup {
@@ -645,7 +694,7 @@ struct RoutineView: View {
     }
     
     private func deleteSection(pattern: Set<Locale.Weekday>) {
-        let templatesToDelete = items(for: pattern)
+        let templatesToDelete = allItems(for: pattern)
         guard !templatesToDelete.isEmpty else { return }
         for template in templatesToDelete {
             deleteTemplate(template, shouldSave: false)
