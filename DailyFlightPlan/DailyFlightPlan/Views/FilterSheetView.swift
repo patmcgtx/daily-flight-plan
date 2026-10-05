@@ -7,8 +7,8 @@ import SwiftData
 
 /// The global filter sheet, opened from a `FilterToolbarButton` on any tab. Has a General
 /// section (category selection, flagged-only) that applies everywhere, plus a Specific section
-/// whose contents adapt to whichever tab opened it. Text search lives separately, on Timeline
-/// only — see `TimelineView`'s own search field.
+/// whose contents adapt to whichever tab opened it. Text search lives separately on each tab via
+/// `InlineSearchField`.
 struct FilterSheetView: View {
 
     let activeTab: AppTab
