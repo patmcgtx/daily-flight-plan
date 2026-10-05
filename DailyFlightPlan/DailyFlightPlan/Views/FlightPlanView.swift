@@ -312,7 +312,8 @@ struct FlightPlanView: View {
     // onChange can react to any filter change (including category toggles).
     private var filterKey: String {
         let cats = categorySelectionService?.selectedNames.sorted().joined() ?? ""
-        return "\(showFlaggedOnly)-\(showCompleted)-\(showRecurring)-\(searchText)-\(cats)"
+        let mode = categorySelectionService?.filterMode.rawValue ?? ""
+        return "\(showFlaggedOnly)-\(showCompleted)-\(showRecurring)-\(searchText)-\(cats)-\(mode)"
     }
 
     private func initializeExpandedSections() {
