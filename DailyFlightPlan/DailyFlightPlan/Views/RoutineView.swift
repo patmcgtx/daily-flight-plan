@@ -618,6 +618,13 @@ struct RoutineView: View {
         return categorySelectionService?.filterItems(matched) ?? matched
     }
 
+    /// Raw (unfiltered) templates for a weekday pattern — used by destructive section-level
+    /// operations (`deleteSection`) so deleting a section while a search/flag/category filter is
+    /// active still removes every routine in it, not just the currently-visible subset.
+    private func allItems(for pattern: Set<Locale.Weekday>) -> [PlanItem] {
+        templates.filter { Set($0.recurringWeekdays) == pattern }
+    }
+
     private func items(for pattern: Set<Locale.Weekday>) -> [PlanItem] {
         filteredTemplates.filter { Set($0.recurringWeekdays) == pattern }
     }
@@ -687,7 +694,7 @@ struct RoutineView: View {
     }
     
     private func deleteSection(pattern: Set<Locale.Weekday>) {
-        let templatesToDelete = items(for: pattern)
+        let templatesToDelete = allItems(for: pattern)
         guard !templatesToDelete.isEmpty else { return }
         for template in templatesToDelete {
             deleteTemplate(template, shouldSave: false)
