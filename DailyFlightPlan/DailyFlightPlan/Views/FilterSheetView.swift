@@ -66,8 +66,6 @@ struct FilterSheetView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 
     @ViewBuilder

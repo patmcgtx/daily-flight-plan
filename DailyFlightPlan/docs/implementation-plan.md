@@ -359,9 +359,8 @@ Full design in `docs/plans/global-filter-sheet-plan.md` and `docs/plans/category
 implementation notes/deviations are recorded at the end of each.
 
 - **Filter button**: a single toolbar `FilterToolbarButton` on each tab (Day/Routine/Timeline),
-  not a floating button or `Tab(role: .search)` — opens `FilterSheetView` as a popover (falls back
-  to a `.presentationDetents` sheet on iPhone; see implementation notes on the compact-adaptation
-  bug)
+  not a floating button or `Tab(role: .search)` — opens `FilterSheetView` as a true anchored
+  popover on iPhone (see implementation notes for the explicit sizing this needed)
 - **Filter sheet**: a **General** section (search text, category selection via an embedded
   `CategoriesSelectFlow`, flagged-only) plus a **Specific** section that adapts to whichever tab
   is active (Day: completed/routines/calendar/reminders; Timeline: completed-only/missed-only;

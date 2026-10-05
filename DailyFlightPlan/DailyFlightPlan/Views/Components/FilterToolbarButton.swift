@@ -66,8 +66,19 @@ struct FilterToolbarButton: View {
                 .foregroundStyle(isFilterActive ? Color.accentColor : Color.primary)
         }
         .accessibilityLabel("Filters")
-        .popover(isPresented: $isShowingFilterSheet) {
+        .popover(
+            isPresented: $isShowingFilterSheet,
+            attachmentAnchor: .point(.bottom),
+            arrowEdge: .top
+        ) {
             FilterSheetView(activeTab: activeTab, searchText: $searchText)
+                // `Form` (a List under the hood) has no intrinsic content height, unlike
+                // MapsPlus's plain-stack popover content — without an explicit height the
+                // popover collapses to just its nav bar on iOS 27. Bounded, not fixed, so it
+                // still shrinks to fit on e.g. landscape/compact-height devices.
+                .frame(minWidth: 300, idealWidth: 400, maxWidth: .infinity,
+                       minHeight: 400, idealHeight: 500, maxHeight: 600)
+                .presentationCompactAdaptation(.popover)
         }
     }
 }

@@ -58,3 +58,19 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
   and untimed) alongside pending ones, but only `PlanItem`s were getting the `(done)` label — a
   finished reminder looked identical to an upcoming one, undermining the fix above. Both reminder
   loops in `generateSummaryIfNeeded` now mark `reminder.isCompleted` the same way.
+
+- **Filter popover rendered full-screen with no dismiss on iPhone** *(Phase 2.5)*:
+  `FilterToolbarButton`'s `.popover(...)` was believed to have a genuine OS-level
+  `.presentationCompactAdaptation(.popover)` bug on this project's iOS 27 beta (see the now-stale
+  `popover-compact-adaptation-bug` memory) and fell back to a `.presentationDetents` sheet instead.
+  Re-examined after the user pointed out MapsPlus achieves a true anchored popover on the same
+  Xcode/iOS version — turned out not to be an OS bug: MapsPlus's working popover passes an explicit
+  `attachmentAnchor`/`arrowEdge` and a `.frame(minWidth:idealWidth:maxWidth:)` on its content,
+  neither of which `FilterToolbarButton` had. Added both, which fixed the full-screen/no-dismiss
+  symptom — but then exposed a second issue: `FilterSheetView`'s content is a `NavigationStack {
+  Form { ... } }`, and unlike MapsPlus's plain-stack content, `Form`/`List` has no intrinsic height
+  for the popover sizing system to read, so the popover collapsed to just its ~68pt nav bar with
+  the width-only frame. Fixed by adding explicit height bounds to the same `.frame(...)` call
+  (`minHeight: 400, idealHeight: 500, maxHeight: 600`). Verified via on-device checks on Day,
+  Timeline, and Routine that the popover now renders at full size with all Form content visible,
+  and that both tap-outside and Done-button dismiss still work.

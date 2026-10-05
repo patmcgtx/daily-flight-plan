@@ -236,9 +236,7 @@ What actually shipped, and how it differs from the plan above:
 - **`PlanItem+Filtering.swift`**: built as planned — `matchingSearchText(_:)`,
   `matchingDayStatusFilters(...)`, `matchingTimelineStatusFilters(...)` on
   `Sequence where Element == PlanItem`. Fully unit-tested in `PlanItemFilteringTests.swift`.
-- **`FilterSheetView.swift`**: a `NavigationStack` + `Form` (not `List`) with a "Done" button —
-  kept the Done button even though it's presented as a popover-that-falls-back-to-a-sheet (see
-  below), since the fallback is a real `.sheet` on iPhone and needs an explicit dismiss affordance.
+- **`FilterSheetView.swift`**: a `NavigationStack` + `Form` (not `List`) with a "Done" button.
   The Categories section **embeds `CategoriesSelectFlow()` directly** (reused as-is, after
   stripping its old standalone-popover sizing modifiers) rather than reimplementing category
   selection inline — General section is Search + Categories + Flagged Only; Specific section
@@ -247,11 +245,15 @@ What actually shipped, and how it differs from the plan above:
 - **`FilterToolbarButton.swift`**: the shared toolbar-item component materialized as planned,
   with its own `@AppStorage` reads to compute `isFilterActive` per tab (mirrors the existing
   pattern of each view independently reading the same `@AppStorage` keys).
-- **Popover → sheet fallback (same issue as `category-selector-plan.md`)**: `.popover(...)`
-  without `.presentationCompactAdaptation(.popover)` was used from the start here (the compact-
-  adaptation bug was already known from the category-selector work), so `FilterToolbarButton`
-  falls back to a `.presentationDetents([.medium, .large])` sheet with a drag indicator on iPhone,
-  same as the category selector. Revisit alongside that fix once the OS stabilizes.
+- **True popover, not a sheet fallback** *(corrected 2026-10-05)*: initially shipped as a plain
+  `.popover(...)` without `.presentationCompactAdaptation(.popover)`, believing that modifier was
+  broken on this project's iOS 27 beta (full-screen, no dismiss). That belief was wrong — the real
+  gap was a missing explicit `attachmentAnchor`/`arrowEdge` plus a `.frame(minWidth:idealWidth:
+  maxWidth:)` on the content, both present in MapsPlus's working reference popover. Adding those
+  fixed it; a follow-up fix added height bounds (`minHeight:idealHeight:maxHeight:`) to the same
+  `.frame(...)` since `FilterSheetView`'s `Form`/`List` content (unlike MapsPlus's plain-stack
+  content) has no intrinsic height for the popover sizing system to read. See
+  `docs/known-bugs.md`'s Fixed section for the full writeup.
 - **Search integration differed per tab**, based on each view's actual data-access pattern
   (discovered during implementation, not fully anticipated in the plan):
   - `FlightPlanView`: `activeItems(for:)` now chains `.matchingDayStatusFilters(...)` →
