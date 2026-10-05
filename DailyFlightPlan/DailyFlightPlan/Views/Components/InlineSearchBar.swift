@@ -50,6 +50,7 @@ struct InlineSearchField: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Clear Search")
             }
         }
         .padding(8)
