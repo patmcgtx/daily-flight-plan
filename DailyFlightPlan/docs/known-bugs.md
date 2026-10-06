@@ -19,6 +19,13 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
 
 - **Crash on delete-all-items**: deleting all items triggers a crash. Not yet root-caused.
 
+- **SwiftData property-set overhead on `PlanItem.status`**: Time Profiler showed `PlanItem.status`'s
+  setter itself (not app code around it) spending real time in SwiftData's generic runtime
+  type-resolution path (`swift_getTypeByMangledNameImpl` and friends) — a known SwiftData
+  characteristic, not something fixable from the call site. Contributed to the completion-tap hang
+  investigated below; the fix there reduced the *compounding* work riding on the same render pass,
+  but this specific cost is a platform floor. Revisit if a future SwiftData/OS release changes this.
+
 ## Fixed
 
 - **Stale Day-view section summary after content changes** *(Phase 1.14)*: the cached AI summary
@@ -74,3 +81,42 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
   (`minHeight: 400, idealHeight: 500, maxHeight: 600`). Verified via on-device checks on Day,
   Timeline, and Routine that the popover now renders at full size with all Form content visible,
   and that both tap-outside and Done-button dismiss still work.
+
+- **Responsiveness sprint (startup freeze, slow item completion, sluggish scroll/search)**: user
+  reported the Day view feeling sluggish on a real iPhone 16 — items took 2-4s to visibly complete,
+  launch froze for several seconds, scrolling lagged, and typing in search felt unresponsive. The
+  simulator couldn't reproduce any of it (CloudKit sync and on-device Apple Intelligence summaries,
+  both likely contributors, are no-ops there), so the user captured a real Time Profiler trace on
+  the device, which located the actual hangs (13 of them, ~8s total) with full call stacks pointing
+  at two concrete, fixable causes — plus one inherent SwiftData cost logged separately in Open.
+  1. `DayView.recurringTemplates.getter` was on-stack during a 1.1s startup hang:
+     `recurringTemplates`/`allItems` were live `@Query`s used *only* for migration/dedup bookkeeping
+     (never rendered), but `DayView.body` paid SwiftData's CoreData `performAndWait`/`valueForKey:`
+     cost for them on every single render, not just when the data changed. Removed both `@Query`s;
+     `migrateOldRecurringItems()` now does its own one-time `context.fetch` (matching the pattern
+     `materializeRecurringInstances` already used). The "a routine template changed" signal that
+     used to ride on `.onChange(of: recurringTemplates.count)` is now an explicit
+     `\.recurringTemplatesChanged` environment closure that `RoutineView` calls directly via
+     `onDismiss` on its two routine-editing sheets.
+  2. `FlightPlanView.sectionCard`/`progressRow` each independently called `activeItems(for:)`/
+     `rawItems(for:)` (full Calendar-filtering passes over every item) despite neither actually
+     depending on `section` — multiplying one expensive operation by ~13x per visible day (3 swipe
+     pages × 6 sections × up to 2 calls, plus `progressRow`). Hoisted both to a single computation
+     per date in `dayContent(for:)`, passed down as parameters. `TimelineView.groupedByDate` had the
+     same shape of bug — a computed property re-filtering/re-grouping from scratch on every access,
+     read up to 4x per visible row during scroll (`ForEach` plus `.count`/`.first`/`.last` in
+     `onAppear`) — fixed by hoisting it to a single `let groups = groupedByDate` per render.
+  Verified via build + a correctness smoke test (adding a routine still immediately materializes
+  today's instance via the new signal) and user-confirmed on-device as "a lot more responsive."
+  `PlanItem.status`'s setter itself still has real SwiftData overhead — see the matching Open
+  entry above; this fix reduced what compounds on top of it, not the floor itself.
+  **Follow-up (found via Copilot review)**: removing the `@Query`-driven trigger also removed the
+  only path that reconciled today's templates after a *CloudKit-delivered* template change — the
+  local sheet-dismissal signal only fires for edits made in this app's own `RoutineView`, and the
+  `scenePhase`-active handler only dedupes, never materializes. A template synced in from another
+  device while the app was already open on today, with no local sheet interaction, would silently
+  never get today's instance. Added a `.onReceive` on
+  `NSPersistentCloudKitContainer.eventChangedNotification`, filtered to successful `.import`
+  events, that reconciles via the same `handleRecurringTemplatesChanged()` — debounced 500ms
+  (`scheduleRecurringTemplatesReconcile()`) since a sync can deliver several import events in quick
+  succession and each one doesn't need its own full reconcile pass.

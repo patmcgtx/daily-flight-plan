@@ -139,9 +139,13 @@ struct TimelineView: View {
     var body: some View {
         NavigationStack {
             ScrollViewReader { proxy in
+                // Computed once per render — `groupedByDate` re-filters/re-groups `allItems` on
+                // every access since Swift computed properties aren't memoized, and this was
+                // being read up to 4x per visible row (ForEach plus .count/.first/.last below).
+                let groups = trimmedSearchText.isEmpty ? groupedByDate : []
                 List {
                     if trimmedSearchText.isEmpty {
-                        ForEach(groupedByDate, id: \.date) { group in
+                        ForEach(groups, id: \.date) { group in
                             Section {
                                 let canAddItems = group.date >= today
                                 if group.items.isEmpty && !canAddItems {
@@ -168,11 +172,11 @@ struct TimelineView: View {
                             .onAppear {
                                 // Guard against a single visible group matching both first and last —
                                 // that's an initial-render artifact, not a real scroll-to-edge event.
-                                guard groupedByDate.count > 1 else { return }
-                                if group.date == groupedByDate.first?.date {
+                                guard groups.count > 1 else { return }
+                                if group.date == groups.first?.date {
                                     pastDaysWindow += 7
                                 }
-                                if group.date == groupedByDate.last?.date {
+                                if group.date == groups.last?.date {
                                     futureDaysWindow += 7
                                 }
                             }

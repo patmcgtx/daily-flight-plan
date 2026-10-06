@@ -119,7 +119,8 @@ import SwiftData
             )
             newItem.categories = selectedCategories
             context.insert(newItem)
-            // Instances for this new template are materialized by DayView on sheet dismissal.
+            // If this new item is a template, `ItemForm` calls `\.recurringTemplatesChanged`
+            // after this save returns, which materializes today's instance for it.
         }
 
         try? context.save()

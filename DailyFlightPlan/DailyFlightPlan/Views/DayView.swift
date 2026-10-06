@@ -5,15 +5,13 @@
 import SwiftUI
 import SwiftData
 import EventKit
+import CoreData
 
 enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
 
 struct DayView: View {
 
     @State private var viewModel = DayViewModel()
-
-    @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false }) private var allItems: [PlanItem]
-    @Query(filter: #Predicate<PlanItem> { $0.isTemplate == true }) private var recurringTemplates: [PlanItem]
 
     @Environment(\.calendarService)
     private var calendarService: CalendarService?
@@ -39,6 +37,7 @@ struct DayView: View {
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
+    @State private var cloudKitReconcileTask: Task<Void, Never>? = nil
 
     var body: some View {
         TabView(selection: $activeTab) {
@@ -81,6 +80,7 @@ struct DayView: View {
         #endif
         .environment(\.editItem) { item in itemToEdit = item }
         .environment(\.importReminderItem) { reminder in importReminder(reminder) }
+        .environment(\.recurringTemplatesChanged) { handleRecurringTemplatesChanged() }
         .task {
             viewModel.startLiveClock()
             ModelContainer.deduplicateItems(in: modelContext)
@@ -98,13 +98,6 @@ struct DayView: View {
             await fetchCalendarEvents()
             await fetchReminderItems()
         }
-        .onChange(of: recurringTemplates.count) { _, _ in
-            ModelContainer.deduplicateItems(in: modelContext)
-            ModelContainer.deduplicateInstances(in: modelContext)
-            if viewModel.isToday {
-                materializeRecurringInstances(for: viewModel.selectedDate)
-            }
-        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 ModelContainer.deduplicateItems(in: modelContext)
@@ -117,6 +110,15 @@ struct DayView: View {
                 await fetchCalendarEvents()
                 await fetchReminderItems()
             }
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
+        ) { note in
+            guard let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
+                    as? NSPersistentCloudKitContainer.Event,
+                  event.type == .import, event.endDate != nil, event.succeeded
+            else { return }
+            scheduleRecurringTemplatesReconcile()
         }
         .sheet(isPresented: $isShowingSettings, onDismiss: {
             guard pendingDeleteItems || pendingDeleteCategories else { return }
@@ -187,13 +189,43 @@ struct DayView: View {
 
     // MARK: Recurring item management
 
+    /// Reacts to a routine template being added or rescheduled — called via
+    /// `\.recurringTemplatesChanged` rather than observing a live `@Query` of all templates,
+    /// which forced DayView's `body` to pay SwiftData/CoreData's per-access fetch-and-fault cost
+    /// on every single render (confirmed via Time Profiler: a 1+ second main-thread hang on launch
+    /// with `DayView.recurringTemplates.getter` on the stack). See known-bugs.md's performance
+    /// sprint writeup.
+    private func handleRecurringTemplatesChanged() {
+        ModelContainer.deduplicateItems(in: modelContext)
+        ModelContainer.deduplicateInstances(in: modelContext)
+        if viewModel.isToday {
+            materializeRecurringInstances(for: viewModel.selectedDate)
+        }
+    }
+
+    /// Coalesces a burst of CloudKit import-completed notifications (a sync can deliver several
+    /// small batches in quick succession) into a single reconcile ~500ms after the last one, so a
+    /// template synced in from another device still gets today's instance materialized even
+    /// without any local sheet interaction to fire `\.recurringTemplatesChanged` directly.
+    private func scheduleRecurringTemplatesReconcile() {
+        cloudKitReconcileTask?.cancel()
+        cloudKitReconcileTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            handleRecurringTemplatesChanged()
+        }
+    }
+
     /// Converts any old-style recurring items (pre-template model) to templates.
     /// Skipped when templates already exist — if templates are present the migration already ran
     /// (or was never needed), and running it again would wrongly promote CloudKit-synced instances
-    /// whose template relationship hasn't resolved yet.
+    /// whose template relationship hasn't resolved yet. Does its own fresh fetch (like
+    /// `materializeRecurringInstances` below) rather than reading a live `@Query`, for the same
+    /// performance reason documented on `handleRecurringTemplatesChanged`.
     private func migrateOldRecurringItems() {
-        guard recurringTemplates.isEmpty else { return }
-        let oldStyle = allItems.filter { !$0.recurringWeekdays.isEmpty && $0.template == nil }
+        let allFetched = (try? modelContext.fetch(FetchDescriptor<PlanItem>())) ?? []
+        guard !allFetched.contains(where: { $0.isTemplate }) else { return }
+        let oldStyle = allFetched.filter { !$0.isTemplate && !$0.recurringWeekdays.isEmpty && $0.template == nil }
         guard !oldStyle.isEmpty else { return }
         for item in oldStyle {
             item.isTemplate = true
