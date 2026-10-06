@@ -142,7 +142,7 @@ struct TimelineView: View {
                 // Computed once per render — `groupedByDate` re-filters/re-groups `allItems` on
                 // every access since Swift computed properties aren't memoized, and this was
                 // being read up to 4x per visible row (ForEach plus .count/.first/.last below).
-                let groups = groupedByDate
+                let groups = trimmedSearchText.isEmpty ? groupedByDate : []
                 List {
                     if trimmedSearchText.isEmpty {
                         ForEach(groups, id: \.date) { group in
