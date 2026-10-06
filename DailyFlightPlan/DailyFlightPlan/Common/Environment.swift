@@ -24,6 +24,11 @@ extension EnvironmentValues {
     /// Invoke to import a Reminders item as a new PlanItem on the currently viewed day.
     @Entry var importReminderItem: ((ReminderItem) -> Void)? = nil
 
+    /// Invoke after a routine template is added or has its schedule edited, so DayView can
+    /// dedupe/materialize today's instances without needing a live `@Query` over all templates
+    /// (expensive to keep subscribed — see the performance sprint notes in known-bugs.md).
+    @Entry var recurringTemplatesChanged: (() -> Void)? = nil
+
     // MARK: Default settings
 
     @Entry var dfpTheme: DFPTheme = .cupertino

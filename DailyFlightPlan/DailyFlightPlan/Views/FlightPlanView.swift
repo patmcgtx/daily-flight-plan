@@ -203,6 +203,13 @@ struct FlightPlanView: View {
         let visibleReminders = searchFiltered(reminders:
             showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
         )
+        // Computed once per date per render — `sectionCard`/`openCard` used to each independently
+        // call `activeItems(for:)`/`rawItems(for:)` (full Calendar-filtering passes over every
+        // item, neither of which actually depends on `section`), multiplying an already-expensive
+        // operation by ~13x per visible day. Confirmed via Time Profiler as a major contributor to
+        // main-thread hangs; see known-bugs.md.
+        let items = activeItems(for: date)
+        let raw = rawItems(for: date)
 
         ScrollView {
             VStack(spacing: 16) {
@@ -210,19 +217,19 @@ struct FlightPlanView: View {
 
                 ForEach(DaySection.allCases) { section in
                     sectionCard(
-                        section, date: date,
+                        section, date: date, items: items, raw: raw,
                         events: viewModel.calendarEventsForSection(section, from: visibleEvents),
                         reminders: viewModel.reminderItemsForSection(section, from: visibleReminders)
                     )
                 }
 
-                let openItems = viewModel.anyTimeItems(from: activeItems(for: date))
+                let openItems = viewModel.anyTimeItems(from: items)
                 let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
                 if !openItems.isEmpty || !anyTimeReminders.isEmpty {
                     openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
                 }
 
-                progressRow(for: date)
+                progressRow(raw)
 
                 Spacer(minLength: 60)
             }
@@ -233,8 +240,7 @@ struct FlightPlanView: View {
         .scrollDismissesKeyboard(.interactively)
     }
 
-    private func progressRow(for date: Date) -> some View {
-        let items = rawItems(for: date)
+    private func progressRow(_ items: [PlanItem]) -> some View {
         let completed = items.filter { $0.status == .completed }.count
         let total = items.count
         let progress = total > 0 ? Double(completed) / Double(total) : 0
@@ -333,9 +339,10 @@ struct FlightPlanView: View {
             let visibleReminders = searchFiltered(reminders:
                 showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
             )
+            let selectedItems = activeItems(for: viewModel.selectedDate)
             expandedSections = Set(DaySection.allCases.filter { section in
-                let items = viewModel.sectionPills(section, from: activeItems(for: viewModel.selectedDate))
-                           + viewModel.deadlineRows(section, from: activeItems(for: viewModel.selectedDate))
+                let items = viewModel.sectionPills(section, from: selectedItems)
+                           + viewModel.deadlineRows(section, from: selectedItems)
                 let events = viewModel.calendarEventsForSection(section, from: visibleEvents)
                 let reminders = viewModel.reminderItemsForSection(section, from: visibleReminders)
                 return !items.isEmpty || !events.isEmpty || !reminders.isEmpty
@@ -361,13 +368,15 @@ struct FlightPlanView: View {
     private func sectionCard(
         _ section: DaySection,
         date: Date,
+        items: [PlanItem],
+        raw: [PlanItem],
         events: [CalendarEvent],
         reminders: [ReminderItem]
     ) -> some View {
-        let pills = viewModel.sectionPills(section, from: activeItems(for: date))
+        let pills = viewModel.sectionPills(section, from: items)
         let regularPills = pills.filter { !$0.isRecurring }
         let routinePills = pills.filter { $0.isRecurring }
-        let deadlines = viewModel.deadlineRows(section, from: activeItems(for: date))
+        let deadlines = viewModel.deadlineRows(section, from: items)
         let allSectionItems = pills + deadlines
         let hasContent = !allSectionItems.isEmpty || !events.isEmpty || !reminders.isEmpty
         let contentSignature = viewModel.contentSignature(items: allSectionItems, events: events, reminders: reminders)
@@ -375,8 +384,7 @@ struct FlightPlanView: View {
         // page; only the selected date should touch the summary cache, which is keyed by
         // section alone — otherwise an offscreen page's content can clobber the visible summary.
         let isSelectedDate = Calendar.current.isDate(date, inSameDayAs: viewModel.selectedDate)
-        let rawAll = viewModel.sectionPills(section, from: rawItems(for: date))
-                   + viewModel.deadlineRows(section, from: rawItems(for: date))
+        let rawAll = viewModel.sectionPills(section, from: raw) + viewModel.deadlineRows(section, from: raw)
         let completed = rawAll.filter { $0.status == .completed }.count
         let total = rawAll.count
         let pct = total > 0 ? Double(completed) / Double(total) : 0
