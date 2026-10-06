@@ -14,7 +14,6 @@ struct RoutineView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.categorySelectionService) private var categorySelectionService: CategorySelectionService?
-    @Environment(\.recurringTemplatesChanged) private var recurringTemplatesChanged
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
     private var showFlaggedOnly: Bool = false
@@ -99,13 +98,13 @@ struct RoutineView: View {
             .padding(.bottom, 16)
             .accessibilityLabel("Add Section")
         }
-        .sheet(item: $itemToEdit, onDismiss: { recurringTemplatesChanged?() }) { item in
+        .sheet(item: $itemToEdit) { item in
             ItemForm(item: item)
         }
         .sheet(isPresented: Binding(
             get: { addingRoutine != nil },
             set: { if !$0 { addingRoutine = nil } }
-        ), onDismiss: { recurringTemplatesChanged?() }) {
+        )) {
             if let request = addingRoutine {
                 ItemForm(templateWeekdays: request.weekdays, section: request.section)
             }

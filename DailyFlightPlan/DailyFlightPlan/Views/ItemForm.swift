@@ -9,6 +9,7 @@ struct ItemForm: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.recurringTemplatesChanged) private var recurringTemplatesChanged
 
     @Query(sort: \PlanCategory.name) private var allCategories: [PlanCategory]
 
@@ -56,6 +57,7 @@ struct ItemForm: View {
             .alert("Stop Repeating?", isPresented: $showDemoteAlert) {
                 Button("Stop Routine", role: .destructive) {
                     viewModel.save(in: modelContext)
+                    recurringTemplatesChanged?()
                     dismiss()
                 }
                 Button("Cancel", role: .cancel) { }
@@ -72,6 +74,7 @@ struct ItemForm: View {
                             showDemoteAlert = true
                         } else {
                             viewModel.save(in: modelContext)
+                            recurringTemplatesChanged?()
                             dismiss()
                         }
                     }
