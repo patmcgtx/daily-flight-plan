@@ -110,3 +110,13 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
   today's instance via the new signal) and user-confirmed on-device as "a lot more responsive."
   `PlanItem.status`'s setter itself still has real SwiftData overhead — see the matching Open
   entry above; this fix reduced what compounds on top of it, not the floor itself.
+  **Follow-up (found via Copilot review)**: removing the `@Query`-driven trigger also removed the
+  only path that reconciled today's templates after a *CloudKit-delivered* template change — the
+  local sheet-dismissal signal only fires for edits made in this app's own `RoutineView`, and the
+  `scenePhase`-active handler only dedupes, never materializes. A template synced in from another
+  device while the app was already open on today, with no local sheet interaction, would silently
+  never get today's instance. Added a `.onReceive` on
+  `NSPersistentCloudKitContainer.eventChangedNotification`, filtered to successful `.import`
+  events, that reconciles via the same `handleRecurringTemplatesChanged()` — debounced 500ms
+  (`scheduleRecurringTemplatesReconcile()`) since a sync can deliver several import events in quick
+  succession and each one doesn't need its own full reconcile pass.

@@ -5,6 +5,7 @@
 import SwiftUI
 import SwiftData
 import EventKit
+import CoreData
 
 enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
 
@@ -36,6 +37,7 @@ struct DayView: View {
     @State private var itemToEdit: PlanItem? = nil
     @State private var calendarEvents: [CalendarEvent] = []
     @State private var reminderItems: [ReminderItem] = []
+    @State private var cloudKitReconcileTask: Task<Void, Never>? = nil
 
     var body: some View {
         TabView(selection: $activeTab) {
@@ -108,6 +110,15 @@ struct DayView: View {
                 await fetchCalendarEvents()
                 await fetchReminderItems()
             }
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)
+        ) { note in
+            guard let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
+                    as? NSPersistentCloudKitContainer.Event,
+                  event.type == .import, event.endDate != nil, event.succeeded
+            else { return }
+            scheduleRecurringTemplatesReconcile()
         }
         .sheet(isPresented: $isShowingSettings, onDismiss: {
             guard pendingDeleteItems || pendingDeleteCategories else { return }
@@ -189,6 +200,19 @@ struct DayView: View {
         ModelContainer.deduplicateInstances(in: modelContext)
         if viewModel.isToday {
             materializeRecurringInstances(for: viewModel.selectedDate)
+        }
+    }
+
+    /// Coalesces a burst of CloudKit import-completed notifications (a sync can deliver several
+    /// small batches in quick succession) into a single reconcile ~500ms after the last one, so a
+    /// template synced in from another device still gets today's instance materialized even
+    /// without any local sheet interaction to fire `\.recurringTemplatesChanged` directly.
+    private func scheduleRecurringTemplatesReconcile() {
+        cloudKitReconcileTask?.cancel()
+        cloudKitReconcileTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            handleRecurringTemplatesChanged()
         }
     }
 
