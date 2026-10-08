@@ -409,6 +409,48 @@ implementation notes/deviations are recorded at the end of each.
 - Pulling an item forward sets `date = today`; clear any stale `deadline` the same way spillover used to (becomes an "any time" item unless the user re-times it)
 - Surface a lightweight indicator (badge on the Day tab, or a banner in Flight Plan view) when missed items exist, so the review flow is discoverable without being forced
 - Consider whether this should also run automatically prompt-on-launch after a detected gap (e.g. "You were away N days — review N missed items?") vs. purely user-initiated via a toolbar button
+- **Naming idea (not decided)**: "Lost Luggage" — pairs with the Share Extension backlog's
+  working name "New Luggage" (Phase 2.8) under the flight/luggage metaphor: items that didn't
+  make it onto the plane on time, found and reviewed later.
+
+### Phase 2.8 — Share Extension Import ("New Luggage"?)
+Lets other apps hand text/markdown straight to Daily Flight Plan via the iOS share sheet, without
+leaving the source app. Builds on Markdown Import (Phase 1.21) rather than duplicating it.
+
+- **Share Extension target** (`ShareImport`, `com.apple.dt.unit.shareextensionios` template,
+  embedded in the main app): a `SLComposeServiceViewController` prefills its text view from the
+  shared `NSExtensionItem` (attributed content text, `public.plain-text`/`public.text`/file-URL
+  attachments — reads markdown file contents directly — or a shared URL's `absoluteString`).
+  `NSExtensionActivationRule` restricts activation to attachments conforming to `public.text` or
+  `public.url`.
+- **No on-device AI or CloudKit in the extension, by design**: share extensions have a tight,
+  undocumented memory ceiling and Apple doesn't document FoundationModels support inside
+  extensions — loading the model there risked the extension being jetsam-killed. Instead, posting
+  just saves a `PendingImport` (raw text + timestamp) to a local-only SwiftData store in an App
+  Group container (`group.com.patmcg.DailyFlightPlan`) shared with the main app, and completes the
+  extension request immediately.
+- **`PendingImport` model + `ModelContainer.pendingImportsContainer()`**: deliberately separate
+  from the CloudKit-synced `PlanItem`/`PlanCategory` container — this backlog is transient,
+  device-local staging data, not something that needs to sync. Each target (app + extension)
+  compiles its own copy of the tiny model/container files (no shared framework) so both processes
+  can open the same App Group SQLite file directly, with no CloudKit round-trip needed to see a
+  same-device import immediately.
+- **Backlog banner** (`PendingImportBannerHost`/`PendingImportBanner`): shown at the top of
+  `FlightPlanView` whenever the backlog is non-empty ("N items shared from another app — Review").
+  Owns its own `ModelContainer` scope via `.modelContainer(_:)` on a subtree, independent of the
+  app's main container.
+- **Review reuses `MarkdownImportView` as-is**: new `initialText`/`onImported` params prefill the
+  paste step with the joined backlog text (skipping the clipboard prefill) and clear the backlog
+  after a successful "Add" — same AI parse (FoundationModels, with the existing regex fallback)
+  and review UI as manual Markdown Import, just a different entry point and no memory constraints
+  since it runs in the main app.
+- **Known limitation, not yet resolved**: the app target supports macOS (Phase 1.18) in addition
+  to iOS, but `ShareImport` is iOS-only — embedding it unconditionally broke the macOS build
+  ("contains embedded content built for iOS, which is not allowed"). Fix is a one-time manual step
+  in Xcode (Target `DailyFlightPlan` → Build Phases → Embed Foundation Extensions →
+  `ShareImport.appex` → Platforms… → restrict to iOS/iPadOS), since no available tooling could set
+  a build-phase platform filter programmatically. Until that's done, build/run for iOS; avoid
+  building the "My Mac" destination.
 
 ---
 
@@ -491,6 +533,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - **Day tab** (Flight Plan view): general UX audit and fix
 - **Routine tab**: general UX audit and fix *(originally tracked in Phase 2.1)*
 - **Timeline tab** (Nav Log): general UX audit and fix
+- **iPhone Duo**: test and support iPhone Duo
 - **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
 - **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 2.2)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase release.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
 

@@ -9,9 +9,17 @@
 /* Begin PBXBuildFile section */
 		6949596F302996B200889101 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6949596E302996B200889101 /* CloudKit.framework */; };
 		69917BBD301E444B00109086 /* Flow in Frameworks */ = {isa = PBXBuildFile; productRef = 69917BBC301E444B00109086 /* Flow */; };
+		69A6B3FC3075BA6300B5320F /* ShareImport.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 69A6B3F23075BA6300B5320F /* ShareImport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		69A6B3FA3075BA6300B5320F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 69B470873013A306005A13D5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 69A6B3F13075BA6300B5320F;
+			remoteInfo = ShareImport;
+		};
 		69B470A13013A307005A13D5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 69B470873013A306005A13D5 /* Project object */;
@@ -28,14 +36,36 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		69A6B3FD3075BA6300B5320F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				69A6B3FC3075BA6300B5320F /* ShareImport.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		6949596E302996B200889101 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
+		69A6B3F23075BA6300B5320F /* ShareImport.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareImport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		69B4708F3013A306005A13D5 /* DailyFlightPlan.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyFlightPlan.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		69B470A03013A307005A13D5 /* DailyFlightPlanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFlightPlanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		69B470AA3013A307005A13D5 /* DailyFlightPlanUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFlightPlanUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		69A6B4013075BA6300B5320F /* Exceptions for "ShareImport" folder in "ShareImport" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 69A6B3F13075BA6300B5320F /* ShareImport */;
+		};
 		69B470B23013A307005A13D5 /* Exceptions for "DailyFlightPlan" folder in "DailyFlightPlan" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -46,6 +76,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		69A6B3F33075BA6300B5320F /* ShareImport */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				69A6B4013075BA6300B5320F /* Exceptions for "ShareImport" folder in "ShareImport" target */,
+			);
+			path = ShareImport;
+			sourceTree = "<group>";
+		};
 		69B470913013A306005A13D5 /* DailyFlightPlan */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -67,6 +105,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		69A6B3EF3075BA6300B5320F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		69B4708C3013A306005A13D5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -107,6 +152,7 @@
 				69B470913013A306005A13D5 /* DailyFlightPlan */,
 				69B470A33013A307005A13D5 /* DailyFlightPlanTests */,
 				69B470AD3013A307005A13D5 /* DailyFlightPlanUITests */,
+				69A6B3F33075BA6300B5320F /* ShareImport */,
 				6949596D302996B200889101 /* Frameworks */,
 				69B470903013A306005A13D5 /* Products */,
 			);
@@ -118,6 +164,7 @@
 				69B4708F3013A306005A13D5 /* DailyFlightPlan.app */,
 				69B470A03013A307005A13D5 /* DailyFlightPlanTests.xctest */,
 				69B470AA3013A307005A13D5 /* DailyFlightPlanUITests.xctest */,
+				69A6B3F23075BA6300B5320F /* ShareImport.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -125,6 +172,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		69A6B3F13075BA6300B5320F /* ShareImport */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 69A6B4003075BA6300B5320F /* Build configuration list for PBXNativeTarget "ShareImport" */;
+			buildPhases = (
+				69A6B3EE3075BA6300B5320F /* Sources */,
+				69A6B3EF3075BA6300B5320F /* Frameworks */,
+				69A6B3F03075BA6300B5320F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				69A6B3F33075BA6300B5320F /* ShareImport */,
+			);
+			name = ShareImport;
+			packageProductDependencies = (
+			);
+			productName = ShareImport;
+			productReference = 69A6B3F23075BA6300B5320F /* ShareImport.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		69B4708E3013A306005A13D5 /* DailyFlightPlan */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 69B470B33013A307005A13D5 /* Build configuration list for PBXNativeTarget "DailyFlightPlan" */;
@@ -132,10 +201,12 @@
 				69B4708B3013A306005A13D5 /* Sources */,
 				69B4708C3013A306005A13D5 /* Frameworks */,
 				69B4708D3013A306005A13D5 /* Resources */,
+				69A6B3FD3075BA6300B5320F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				69A6B3FB3075BA6300B5320F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				69B470913013A306005A13D5 /* DailyFlightPlan */,
@@ -201,9 +272,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2660;
+				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2660;
 				TargetAttributes = {
+					69A6B3F13075BA6300B5320F = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					69B4708E3013A306005A13D5 = {
 						CreatedOnToolsVersion = 26.6;
 					};
@@ -237,11 +311,19 @@
 				69B4708E3013A306005A13D5 /* DailyFlightPlan */,
 				69B4709F3013A307005A13D5 /* DailyFlightPlanTests */,
 				69B470A93013A307005A13D5 /* DailyFlightPlanUITests */,
+				69A6B3F13075BA6300B5320F /* ShareImport */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		69A6B3F03075BA6300B5320F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		69B4708D3013A306005A13D5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -266,6 +348,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		69A6B3EE3075BA6300B5320F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		69B4708B3013A306005A13D5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -290,6 +379,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		69A6B3FB3075BA6300B5320F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 69A6B3F13075BA6300B5320F /* ShareImport */;
+			targetProxy = 69A6B3FA3075BA6300B5320F /* PBXContainerItemProxy */;
+		};
 		69B470A23013A307005A13D5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 69B4708E3013A306005A13D5 /* DailyFlightPlan */;
@@ -303,6 +397,71 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		69A6B3FE3075BA6300B5320F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareImport/ShareImport.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 597RXYKB68;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareImport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareImport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.patmcg.DailyFlightPlan.ShareImport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		69A6B3FF3075BA6300B5320F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareImport/ShareImport.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 597RXYKB68;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareImport/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareImport;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.patmcg.DailyFlightPlan.ShareImport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		69B470B43013A307005A13D5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -622,6 +781,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		69A6B4003075BA6300B5320F /* Build configuration list for PBXNativeTarget "ShareImport" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				69A6B3FE3075BA6300B5320F /* Debug */,
+				69A6B3FF3075BA6300B5320F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		69B4708A3013A306005A13D5 /* Build configuration list for PBXProject "DailyFlightPlan" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

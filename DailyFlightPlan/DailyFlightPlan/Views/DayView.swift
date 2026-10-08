@@ -9,6 +9,14 @@ import CoreData
 
 enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
 
+/// A review session launched from the Share Extension's backlog banner — carries the joined
+/// backlog text and the action that clears it once the user commits the reviewed items.
+private struct BacklogImport: Identifiable {
+    let id = UUID()
+    let text: String
+    let clear: () -> Void
+}
+
 struct DayView: View {
 
     @State private var viewModel = DayViewModel()
@@ -31,6 +39,7 @@ struct DayView: View {
     @State private var activeTab: AppTab = .focus
     @State private var isShowingSettings = false
     @State private var isShowingImport = false
+    @State private var backlogImport: BacklogImport? = nil
     @State private var pendingDeleteItems = false
     @State private var pendingDeleteCategories = false
     @State private var isDeletingData = false
@@ -49,7 +58,8 @@ struct DayView: View {
                     reminderItems: reminderItems,
                     isDeletingData: isDeletingData,
                     onShowSettings: { isShowingSettings = true },
-                    onShowImport: { isShowingImport = true }
+                    onShowImport: { isShowingImport = true },
+                    onReviewBacklog: { text, clear in backlogImport = BacklogImport(text: text, clear: clear) }
                 )
             }
 
@@ -152,6 +162,15 @@ struct DayView: View {
             if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
         }) {
             MarkdownImportView(selectedDate: viewModel.selectedDate)
+        }
+        .sheet(item: $backlogImport, onDismiss: {
+            if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }
+        }) { backlog in
+            MarkdownImportView(
+                selectedDate: viewModel.selectedDate,
+                initialText: backlog.text,
+                onImported: backlog.clear
+            )
         }
         .sheet(item: $itemToEdit, onDismiss: {
             if viewModel.isToday { materializeRecurringInstances(for: viewModel.selectedDate) }

@@ -6,6 +6,30 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
 
 ## Open
 
+- **ShareImport extension never appears in the system share sheet on a real device** (Phase 2.8):
+  built and embedded correctly (confirmed via `BuildProject` for the iOS destination, and visually
+  in Xcode's Build Phases/Signing panes), but does not show up in Favorites or "More" when sharing
+  text from Notes or a URL from Safari on a real iPhone — tried across: fixing the
+  `NSExtensionActivationRule` (switched from a custom `SUBQUERY` predicate to the simpler
+  `NSExtensionActivationSupportsText`/`SupportsWebURLWithMaxCount`/`SupportsFileWithMaxCount` boolean
+  keys), aligning `IPHONEOS_DEPLOYMENT_TARGET` to 26.2 to match the main app (was defaulting to
+  27.0), restarting the device, running the `ShareImport` scheme directly to force registration,
+  and a full delete + clean + rebuild + reinstall. Ruled out: device-wide restriction (other apps'
+  share extensions work fine on the same phone); "Code Sign On Copy" (not a configurable toggle in
+  this Xcode version for `.appex` embeds — handled automatically). Not yet tried: confirming it
+  works in the iOS Simulator at all (never actually verified — would isolate whether this is a
+  code-signing/provisioning issue specific to real devices, or a structural problem present
+  everywhere); checking the device's console log (Xcode → Window → Devices and Simulators, or
+  Console.app connected to the device) while attempting the share action, filtered for "pluginkit"
+  or the extension's bundle ID (`com.patmcg.DailyFlightPlan.ShareImport`), for an actual rejection
+  reason instead of silent non-appearance; creating a second, totally unmodified/default Share
+  Extension target in the same project to see if *that* registers on-device, isolating "something
+  about our customization" from "something about this project/device's extension plumbing
+  generally"; checking the Apple Developer account for pending agreements or an App Group
+  conflict that wouldn't surface as a local Xcode error; trying a second real device (iPad) to
+  see if the same install there also fails to register the extension, isolating "this specific
+  iPhone" from "any real device."
+
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added
   to the Day-view section-summary prompt (`DayViewModel.generateSummaryIfNeeded`, Phase 1.14), the
   on-device model sometimes describes a still-*open* item as completed (the inverse of the original

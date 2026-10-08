@@ -14,6 +14,10 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.patmcg.DailyFlightPlan</string>
+	</array>
 	<key>com.apple.security.personal-information.calendars</key>
 	<true/>
 	<key>com.apple.security.personal-information.reminders-data</key>

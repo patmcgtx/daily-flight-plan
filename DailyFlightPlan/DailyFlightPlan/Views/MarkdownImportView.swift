@@ -175,6 +175,12 @@ struct MarkdownImportView: View {
 
     var selectedDate: Date
 
+    /// Pre-fills the paste screen (e.g. from the Share Extension's backlog) instead of the
+    /// clipboard. When set, `onImported` is called after a successful Add so the caller can
+    /// clear whatever produced this text.
+    var initialText: String? = nil
+    var onImported: (() -> Void)? = nil
+
     @State private var viewModel = MarkdownImportViewModel()
     @State private var isShowingHelp = false
     @Environment(\.modelContext) private var modelContext
@@ -205,6 +211,7 @@ struct MarkdownImportView: View {
                     if viewModel.isParsed {
                         Button("Add \(viewModel.proposedItems.count)") {
                             viewModel.commit(to: modelContext, on: selectedDate)
+                            onImported?()
                             dismiss()
                         }
                         .disabled(viewModel.proposedItems.isEmpty)
@@ -242,7 +249,13 @@ struct MarkdownImportView: View {
                 Text(viewModel.errorMessage ?? "")
             }
         }
-        .onAppear { viewModel.prepopulateFromClipboard() }
+        .onAppear {
+            if let initialText, !initialText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                viewModel.rawText = initialText
+            } else {
+                viewModel.prepopulateFromClipboard()
+            }
+        }
         #if os(macOS)
         .frame(minWidth: 500, minHeight: 440)
         #endif

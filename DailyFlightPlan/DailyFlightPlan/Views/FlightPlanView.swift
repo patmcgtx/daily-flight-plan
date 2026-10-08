@@ -16,6 +16,7 @@ struct FlightPlanView: View {
     var isDeletingData: Bool = false
     let onShowSettings: () -> Void
     let onShowImport: () -> Void
+    let onReviewBacklog: (_ text: String, _ clear: @escaping () -> Void) -> Void
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
@@ -68,8 +69,11 @@ struct FlightPlanView: View {
         NavigationStack {
             swipeableContent
                 .safeAreaInset(edge: .top) {
-                    if isShowingSearch {
-                        InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                    VStack(spacing: 0) {
+                        PendingImportBannerHost(onReview: onReviewBacklog)
+                        if isShowingSearch {
+                            InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                        }
                     }
                 }
                 .inlineNavigationTitle()
@@ -885,7 +889,7 @@ struct FlightPlanView: View {
 #if DEBUG
 
 #Preview {
-    FlightPlanView(viewModel: DayViewModel(), onShowSettings: {}, onShowImport: {})
+    FlightPlanView(viewModel: DayViewModel(), onShowSettings: {}, onShowImport: {}, onReviewBacklog: { _, _ in })
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }
