@@ -22,35 +22,41 @@ The app has three tabs, in this order: **Day**, **Routine**, **Timeline**.
   Instances are independent — completing/canceling/editing one doesn't affect the template or
   other days.
 
-### Item visual treatment (consistent across tabs)
-- **Pending item**: circle checkbox (tap to complete), primary-color title.
-- **Completed item**: filled checkmark, strikethrough, secondary-color title.
-- **Canceled item**: X-circle, strikethrough, secondary-color title.
-- **Flagged**: red/orange filled flag icon.
-- **Has notes**: small "note.text" icon.
-- **Recurring**: small infinity (∞) icon badge.
-- **Missed** (deadline or section window passed while still pending): red
-  "clock.badge.exclamationmark" icon, strikethrough time.
-- Two layout types: a **pill** (compact, horizontal-flow, used for day-section/any-time items —
-  rounded capsule, `.regularMaterial` background) and a **full-width row** (used for deadline
-  items, calendar events, reminders — includes a leading 3pt colored accent bar for calendar/
-  reminder rows).
-- **Calendar events** and **Reminders** rows are read-only/external: italic title, leading colored
-  bar matching the source calendar/list color, "arrow.up.right.square" external-link icon, tap
-  opens the system Calendar/Reminders app. Reminders additionally offer "Import as Task" via
-  context menu, which copies the reminder into the app as a one-off item.
+### Item visual treatment
+Visuals vary by tab and row type; status icons and badges are not shared across all item rows.
+- **Day task pills**: pending items show a hollow circle; completed and canceled items have no
+  status icon. Non-pending titles are struck through and secondary-colored. Notes show a
+  "note.text" icon, and flagged items show a red filled flag. Routine pills are grouped under an
+  infinity label instead of showing a second infinity badge.
+- **Day deadline rows**: show an outlined circle with a checkmark inside when completed; completed
+  titles are struck through and secondary-colored. Flagged items show an orange filled flag.
+  These rows do not show notes or recurring badges, and cancellation has no distinct visual state.
+- **Routine templates**: timed rows and untimed pills have no completion-status control. Both show
+  an orange filled flag when flagged and a "note.text" icon when notes exist.
+- **Timeline rows**: pending items show a hollow circle, completed items a filled checkmark-circle,
+  and canceled items an unfilled X-circle. Completed and canceled titles are struck through;
+  canceled titles are secondary-colored. Flagged items show a red filled flag and items with notes
+  show a "note.text" icon. Recurring items have no badge.
+- **Calendar events** and **Reminders** use full-width external rows: italic title, leading 3pt
+  colored bar matching the source calendar/list color, and an "arrow.up.right.square" icon.
+  Tapping opens the system Calendar/Reminders app. Reminders additionally offer "Import as Task"
+  via context menu, which copies the reminder into the app as a one-off item.
+- The item-pill component has an optional missed-state treatment, but active Day pills are not
+  passed that state and Timeline rows do not display a missed indicator.
 
-### Item interactions (consistent across tabs)
-- **Tap** a pill/row → opens the edit sheet (Item Form) for that item.
-- **Tap checkbox** → toggles pending ⇄ completed (does nothing once canceled).
-- **Long-press (context menu)** → "Cancel Item" (destructive) and, for non-recurring items only,
-  "Defer to Tomorrow" (shifts date + deadline by one day).
-- **Swipe gesture on full-width deadline rows** (Day tab only): drag left past a threshold
-  cancels the item (red "Cancel" hint fades in); drag right past a threshold defers it to tomorrow
-  (green "Defer" hint), with a flick-away animation. Not available for recurring items (no defer).
-- **Drag-and-drop**: pills/rows can be dragged onto any other section card (Day tab) or
-  weekday-pattern/segment card (Routine tab) to reassign the item's day section (and clear any
-  deadline); the drop target highlights with an accent-colored border while dragging.
+### Item interactions
+- **Day task pills**: tap to edit; the pending circle marks the item complete. Their context menu
+  offers "Cancel Item" and, for non-recurring items only, "Defer to Tomorrow" (shifts the date and
+  deadline by one day).
+- **Day deadline rows**: the circle control toggles pending/completed; the context menu offers
+  Edit and Cancel. They do not have an active swipe-to-cancel/defer gesture.
+- **Routine templates**: tap to edit; the context menu offers Edit and Delete.
+- **Timeline rows**: tap the title to edit; the checkbox toggles pending/completed and does nothing
+  once canceled. The context menu offers Edit and Cancel.
+- **Drag-and-drop**: Day pills can be dragged onto another section card to reassign the item's day
+  section (and clear any deadline). Routine templates can be dragged between segments or schedule
+  cards to reassign the day section or weekday pattern. Drop targets highlight with an
+  accent-colored border while dragging.
 
 ### Add/Edit item sheet ("Item Form")
 Presented for creating a new item, creating a new routine, or editing an existing item/template.
@@ -148,8 +154,7 @@ The primary, default-landing tab. Airplane icon.
   cards, scrolls with the page.
 - Same pill layout for untimed items plus any-time reminders; "+ Add item" link; also a drop
   target.
-- Items that were due earlier and missed effectively surface here with the "missed" visual
-  treatment (red overdue indicator) once their time has passed.
+- Overdue deadline items do not currently surface in this card or receive a missed-state visual.
 
 ### Progress ring
 - Small 26×26 ring per section (in its header) and one larger one in the page-level progress row;
