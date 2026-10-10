@@ -265,7 +265,7 @@ struct PaperPlanView: View {
             Text(isToday ? "Today" : date.formatted(.dateTime.weekday(.wide)))
                 .font(PaperPlanStyle.mono(.subheadline, weight: .semibold))
                 .textCase(.uppercase)
-                .foregroundStyle(isToday ? PaperPlanStyle.ink : PaperPlanStyle.muted)
+                .foregroundStyle(isToday ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.muted)
                 .padding(.horizontal, isToday ? 6 : 0)
                 .padding(.vertical, isToday ? 2 : 0)
                 .background(isToday ? PaperPlanStyle.highlighter : Color.clear)
@@ -785,7 +785,11 @@ struct PaperPlanView: View {
                 .font(PaperPlanStyle.mono(.subheadline, weight: .semibold))
                 .textCase(.uppercase)
                 .lineLimit(1)
-                .foregroundStyle(item.status == .pending ? PaperPlanStyle.ink : PaperPlanStyle.muted)
+                .foregroundStyle(
+                    item.isFlagged
+                        ? PaperPlanStyle.inkOnHighlighter
+                        : (item.status == .pending ? PaperPlanStyle.ink : PaperPlanStyle.muted)
+                )
                 .strikethrough(item.status != .pending, color: PaperPlanStyle.muted)
                 .padding(.horizontal, item.isFlagged ? 3 : 0)
                 .background(item.isFlagged ? PaperPlanStyle.highlighter.opacity(0.8) : Color.clear)
@@ -857,7 +861,11 @@ struct PaperPlanView: View {
                     .font(PaperPlanStyle.mono(.body, weight: .semibold))
                     .textCase(.uppercase)
                     .strikethrough(item.status == .completed)
-                    .foregroundStyle(item.status == .completed ? PaperPlanStyle.muted : PaperPlanStyle.ink)
+                    .foregroundStyle(
+                        item.isFlagged
+                            ? PaperPlanStyle.inkOnHighlighter
+                            : (item.status == .completed ? PaperPlanStyle.muted : PaperPlanStyle.ink)
+                    )
                     .padding(.horizontal, item.isFlagged ? 3 : 0)
                     .background(item.isFlagged ? PaperPlanStyle.highlighter.opacity(0.8) : Color.clear)
                 if let dl = item.deadline {
