@@ -19,8 +19,40 @@ enum PaperPlanStyle {
     static let routeBlue = Color(red: 0x51 / 255, green: 0x69 / 255, blue: 0x9A / 255)
     static let shadow = Color.black.opacity(0.18)
 
+    /// IBM Plex Mono, bundled under Theming/Fonts and registered via Info.plist's `UIAppFonts`.
+    /// Each static weight ships as its own PostScript name (not a single weight-linked family),
+    /// so the lookup is by exact weight rather than applying `.weight()` to one base font.
+    /// Falls back to the system monospaced design for any weight we didn't bundle.
     static func mono(_ style: Font.TextStyle, weight: Font.Weight = .regular) -> Font {
-        .system(style, design: .monospaced).weight(weight)
+        let size = pointSize(for: style)
+        switch weight {
+        case .bold:
+            return .custom("IBMPlexMono-Bold", size: size, relativeTo: style)
+        case .semibold:
+            return .custom("IBMPlexMono-SmBld", size: size, relativeTo: style)
+        case .regular:
+            return .custom("IBMPlexMono", size: size, relativeTo: style)
+        default:
+            return .system(style, design: .monospaced).weight(weight)
+        }
+    }
+
+    /// Standard iOS Dynamic Type point sizes at the default (Large) content size category —
+    /// `Font.custom(_:size:relativeTo:)` needs an explicit base size to scale from.
+    private static func pointSize(for style: Font.TextStyle) -> CGFloat {
+        switch style {
+        case .largeTitle: return 34
+        case .title: return 28
+        case .title2: return 22
+        case .title3: return 20
+        case .headline, .body: return 17
+        case .callout: return 16
+        case .subheadline: return 15
+        case .footnote: return 13
+        case .caption: return 12
+        case .caption2: return 11
+        default: return 17
+        }
     }
 }
 
