@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import CoreData
 
-enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
+enum AppTab: Hashable { case focus, flightDeck, timeline, routines, paperPlan }
 
 struct DayView: View {
 
@@ -60,18 +60,30 @@ struct DayView: View {
             Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
+
+            Tab("Paper", systemImage: "doc.text", value: AppTab.paperPlan) {
+                PaperPlanView(
+                    viewModel: viewModel,
+                    calendarEvents: calendarEvents,
+                    reminderItems: reminderItems,
+                    isDeletingData: isDeletingData,
+                    onShowSettings: { isShowingSettings = true },
+                    onShowImport: { isShowingImport = true }
+                )
+            }
         }
         .onAppear {
             if activeTab == .focus { activeTab = .flightDeck }
         }
         #if os(macOS)
         .overlay(alignment: .topLeading) {
-            // Hidden buttons so Cmd+1–3 switch tabs on macOS.
+            // Hidden buttons so Cmd+1–4 switch tabs on macOS.
             // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
             VStack {
                 Button("") { activeTab = .flightDeck }.keyboardShortcut("1", modifiers: .command)
                 Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
                 Button("") { activeTab = .timeline }.keyboardShortcut("3", modifiers: .command)
+                Button("") { activeTab = .paperPlan }.keyboardShortcut("4", modifiers: .command)
             }
             .opacity(0)
             .frame(width: 0, height: 0)
