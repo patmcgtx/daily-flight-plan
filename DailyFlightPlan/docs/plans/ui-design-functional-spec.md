@@ -156,7 +156,7 @@ The primary, default-landing tab. Airplane icon.
   fill color sweeps red → yellow → green as completion ratio increases; green + "All done!" text
   when 100%.
 
-## Tab 2: Routine (or an name related to regular airplane maintenance)
+## Tab 2: Routine (or a name related to regular airplane maintenance)
 
 Manages recurring habit templates. Infinity icon.
 
