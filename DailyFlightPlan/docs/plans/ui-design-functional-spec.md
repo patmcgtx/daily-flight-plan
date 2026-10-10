@@ -17,8 +17,8 @@ The app has three tabs, in this order: **Day**, **Routine**, **Timeline**.
   Bedtime (10 PM–midnight).
 - An item with no deadline and no day section is "Open" (any-time).
 - **Recurring items ("routines")** are stored as a template; a per-day instance is created
-  automatically for today only. Future days show a ghosted (dimmed, non-interactive) preview of
-  what the template would produce; past days show the real historical instance for that day.
+  automatically for today only. Past days show any historical instances that were created for
+  them; future days currently show only one-off items.
   Instances are independent — completing/canceling/editing one doesn't affect the template or
   other days.
 
