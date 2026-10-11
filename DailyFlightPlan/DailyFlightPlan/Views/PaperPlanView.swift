@@ -334,30 +334,68 @@ struct PaperPlanView: View {
             return "Plan active"
         }()
 
-        return HStack(spacing: 16) {
-            paperProgressBox(completed: completed, total: total, pct: pct)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Flight Status")
-                    .font(PaperPlanStyle.mono(.caption, weight: .bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(PaperPlanStyle.muted)
-                Text(statusText)
-                    .font(PaperPlanStyle.mono(.body, weight: .bold))
-                    .foregroundStyle(PaperPlanStyle.ink)
-                if let nextUp = nextUpTime(items, referenceDate: date) {
-                    Text("Next up at \(nextUp)")
-                        .font(PaperPlanStyle.mono(.caption))
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 16) {
+                paperProgressBox(completed: completed, total: total, pct: pct)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Flight Status")
+                        .font(PaperPlanStyle.mono(.caption, weight: .bold))
+                        .textCase(.uppercase)
                         .foregroundStyle(PaperPlanStyle.muted)
+                    Text(statusText)
+                        .font(PaperPlanStyle.mono(.body, weight: .bold))
+                        .foregroundStyle(PaperPlanStyle.ink)
+                    if let nextUp = nextUpTime(items, referenceDate: date) {
+                        Text("Next up at \(nextUp)")
+                            .font(PaperPlanStyle.mono(.caption))
+                            .foregroundStyle(PaperPlanStyle.muted)
+                    }
                 }
+                Spacer()
             }
-            Spacer()
+            .padding(14)
+
+            Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+
+            routeIntentionsLine(items)
+                .padding(14)
         }
-        .padding(14)
         .background(PaperPlanStyle.surface)
         .overlay(Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1.5))
         .background {
             Rectangle().fill(PaperPlanStyle.shadow).offset(x: 3, y: 4)
         }
+    }
+
+    /// "06 ROUTE / INTENTIONS" from the mockup's flight-plan masthead, repurposed as a quick
+    /// glance at the day's sections — each section name bolds once every item assigned to it
+    /// (pills and deadline rows alike) is completed.
+    private func routeIntentionsLine(_ raw: [PlanItem]) -> some View {
+        let sections = DaySection.allCases
+        let line = sections.enumerated().reduce(Text("")) { partial, entry in
+            let (index, section) = entry
+            let sectionItems = viewModel.sectionPills(section, from: raw) + viewModel.deadlineRows(section, from: raw)
+            let isComplete = !sectionItems.isEmpty && sectionItems.allSatisfy { $0.status == .completed }
+
+            let segment = Text(section.displayName.uppercased())
+                .font(PaperPlanStyle.mono(.caption2, weight: isComplete ? .bold : .regular))
+                .foregroundColor(isComplete ? PaperPlanStyle.ink : PaperPlanStyle.muted)
+
+            guard index > 0 else { return partial + segment }
+            let arrow = Text(" \u{2192} ")
+                .font(PaperPlanStyle.mono(.caption2))
+                .foregroundColor(PaperPlanStyle.muted)
+            return partial + arrow + segment
+        }
+
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("Route / Intentions")
+                .font(PaperPlanStyle.mono(.caption2, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(PaperPlanStyle.muted)
+            line
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func paperProgressBox(completed: Int, total: Int, pct: Double) -> some View {
