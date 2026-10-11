@@ -39,8 +39,8 @@ I turned a Day One routine I'd refined for years into a native iOS app: a Figma 
 <td align="center" valign="bottom" width="50%"><img src="DailyFlightPlan/docs/images/fp1.jpeg" width="380" alt="The FAA International Flight Plan form that inspired the app"></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><sub><b>The first shot</b><br>My annotated Figma sketch</sub></td>
-<td align="center" valign="top" width="50%"><sub><b>The visual inspiration</b><br>An FAA flight plan form</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>Concept</b><br>First-shot sketch, in Figma</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>Concept</b><br>Visual inspiration: an FAA flight plan form</sub></td>
 </tr>
 </table>
 
