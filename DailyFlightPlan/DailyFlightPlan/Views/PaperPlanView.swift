@@ -211,6 +211,8 @@ struct PaperPlanView: View {
 
                 flightStatusCard(raw, date: date)
 
+                briefingRow(raw, date: date)
+
                 ForEach(DaySection.allCases) { section in
                     sectionCard(
                         section, date: date, items: items, raw: raw,
@@ -391,6 +393,62 @@ struct PaperPlanView: View {
         let pool = upcoming.isEmpty ? pendingWithDeadline : upcoming
         guard let next = pool.min(by: { $0.deadline! < $1.deadline! })?.deadline else { return nil }
         return next.formatted(.dateTime.hour().minute())
+    }
+
+    /// A thin rule-bordered strip echoing the mockup's weather/time/priorities "briefing" row —
+    /// weather is skipped (no data source for it) in favor of the current time of day. Both the
+    /// clock and the countdown tick every second via `TimelineView` rather than the shared
+    /// `DayViewModel` clock, which only updates per-minute for the rest of the app.
+    private func briefingRow(_ items: [PlanItem], date: Date) -> some View {
+        let isToday = Calendar.current.isDateInToday(date)
+        let priorityCount = items.filter { $0.isFlagged && $0.status == .pending }.count
+
+        return HStack(spacing: 14) {
+            if isToday {
+                SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { context in
+                    HStack(spacing: 14) {
+                        briefingItem(icon: "clock", text: context.date.formatted(.dateTime.hour().minute()))
+                        Rectangle()
+                            .fill(PaperPlanStyle.border.opacity(0.4))
+                            .frame(width: 1, height: 14)
+                        briefingItem(icon: "hourglass", text: remainingLabel(from: context.date))
+                    }
+                }
+                Rectangle()
+                    .fill(PaperPlanStyle.border.opacity(0.4))
+                    .frame(width: 1, height: 14)
+            }
+            briefingItem(
+                icon: "sparkles",
+                text: "\(priorityCount) \(priorityCount == 1 ? "priority" : "priorities")"
+            )
+            Spacer()
+        }
+        .padding(.vertical, 10)
+        .overlay(alignment: .top) {
+            Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+        }
+    }
+
+    private func briefingItem(icon: String, text: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(PaperPlanStyle.ink)
+            Text(text)
+                .font(PaperPlanStyle.mono(.caption))
+                .foregroundStyle(PaperPlanStyle.muted)
+        }
+    }
+
+    private func remainingLabel(from now: Date) -> String {
+        let calendar = Calendar.current
+        let startOfNextDay = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        let seconds = max(0, Int(startOfNextDay.timeIntervalSince(now)))
+        return "\(seconds / 3600)h \(seconds % 3600 / 60)m remaining"
     }
 
     private func activeItems(for date: Date) -> [PlanItem] {
