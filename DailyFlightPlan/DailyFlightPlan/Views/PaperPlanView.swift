@@ -661,7 +661,8 @@ struct PaperPlanView: View {
                         section: section,
                         completed: completed, total: total,
                         isCurrent: isCurrent, allDone: allDone,
-                        hasOverdue: hasOverdue, hasFlagged: rawAll.contains { $0.isFlagged }
+                        hasOverdue: hasOverdue,
+                        hasFlagged: rawAll.contains { $0.isFlagged && $0.status == .pending }
                     )
                 }
                 .buttonStyle(.plain)
