@@ -45,7 +45,6 @@ struct PaperPlanView: View {
 
     @Environment(\.modelContext) private var modelContext
 
-    @State private var pageIndex: Int = 1
     @State private var itemToEdit: PlanItem?
     @State private var addingToSection: DaySection? = nil
     @State private var addingItemForDate: Date? = nil
@@ -66,8 +65,10 @@ struct PaperPlanView: View {
 
     var body: some View {
         NavigationStack {
-            swipeableContent
-                .background(PaperPlanStyle.background)
+            dayContent(for: viewModel.selectedDate)
+                .background {
+                    PaperPlanStyle.background.ignoresSafeArea()
+                }
                 .safeAreaInset(edge: .top) {
                     if isShowingSearch {
                         InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
@@ -118,6 +119,7 @@ struct PaperPlanView: View {
                         .accessibilityLabel("Theme")
                     }
                 }
+                .toolbarBackgroundVisibility(.hidden, for: .navigationBar, .tabBar)
         }
         .tint(PaperPlanStyle.ink)
         .overlay(alignment: .bottomTrailing) {
@@ -151,45 +153,15 @@ struct PaperPlanView: View {
         .onChange(of: filterKey) { applyFilterToExpandedSections() }
     }
 
-    // MARK: - Swipe navigation
-
-    @ViewBuilder
-    private var swipeableContent: some View {
-#if os(iOS)
-        TabView(selection: $pageIndex) {
-            dayContent(for: date(offset: -1)).tag(0)
-            dayContent(for: viewModel.selectedDate).tag(1)
-            dayContent(for: date(offset: 1)).tag(2)
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .onChange(of: pageIndex) { _, newValue in
-            guard newValue != 1 else { return }
-            if newValue == 0 { viewModel.goToYesterday() } else { viewModel.goToTomorrow() }
-            var tx = Transaction()
-            tx.disablesAnimations = true
-            withTransaction(tx) { pageIndex = 1 }
-        }
-#else
-        dayContent(for: viewModel.selectedDate)
-            .gesture(
-                DragGesture(minimumDistance: 40)
-                    .onEnded { value in
-                        guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                        if value.translation.width < 0 {
-                            withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToTomorrow() }
-                        } else {
-                            withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToYesterday() }
-                        }
-                    }
-            )
-#endif
-    }
-
-    private func date(offset days: Int) -> Date {
-        Calendar.current.date(byAdding: .day, value: days, to: viewModel.selectedDate) ?? viewModel.selectedDate
-    }
-
     // MARK: - Day content
+
+    // Day navigation here is via the arrow buttons in `dayLabel`, not swipe — a single
+    // ScrollView (not `TabView(.page)`) is used instead of FlightPlanView's 3-page pager so the
+    // system can unambiguously track scroll position for Liquid Glass bar transparency/blur. A
+    // `TabView(.page)` wrapping multiple ScrollViews confuses that heuristic (see
+    // UIViewController's `setContentScrollView(_:for:)` docs), which is what caused the glass
+    // bars to show a static backdrop color instead of the day's content scrolling, blurred,
+    // behind them.
 
     @ViewBuilder
     private func dayContent(for date: Date) -> some View {
@@ -227,8 +199,6 @@ struct PaperPlanView: View {
                     openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
                 }
 
-                progressRow(raw)
-
                 Spacer(minLength: 60)
             }
             .padding(.horizontal, 16)
@@ -236,31 +206,9 @@ struct PaperPlanView: View {
             .padding(.bottom, 16)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(PaperPlanStyle.background)
-    }
-
-    private func progressRow(_ items: [PlanItem]) -> some View {
-        let completed = items.filter { $0.status == .completed }.count
-        let total = items.count
-        let progress = total > 0 ? Double(completed) / Double(total) : 0
-        return HStack(spacing: 12) {
-            ProgressRingView(progress: progress, completed: completed, total: total)
-            if total == 0 {
-                Text("No items planned")
-                    .font(PaperPlanStyle.mono(.subheadline))
-                    .foregroundStyle(PaperPlanStyle.muted)
-            } else if completed == total {
-                Text("All done!")
-                    .font(PaperPlanStyle.mono(.subheadline, weight: .bold))
-                    .foregroundStyle(.green)
-            } else {
-                Text("\(completed) of \(total) complete")
-                    .font(PaperPlanStyle.mono(.subheadline))
-                    .foregroundStyle(PaperPlanStyle.muted)
-            }
-            Spacer()
+        .background {
+            PaperPlanStyle.background.ignoresSafeArea()
         }
-        .padding(.horizontal, 4)
     }
 
     private func dayLabel(for date: Date) -> some View {
@@ -442,6 +390,7 @@ struct PaperPlanView: View {
         let priorityCount = items.filter { $0.isFlagged && $0.status == .pending }.count
 
         return HStack(spacing: 14) {
+            Spacer()
             if isToday {
                 SwiftUI.TimelineView(.periodic(from: .now, by: 1)) { context in
                     HStack(spacing: 14) {
