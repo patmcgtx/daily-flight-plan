@@ -410,6 +410,51 @@ implementation notes/deviations are recorded at the end of each.
 - Surface a lightweight indicator (badge on the Day tab, or a banner in Flight Plan view) when missed items exist, so the review flow is discoverable without being forced
 - Consider whether this should also run automatically prompt-on-launch after a detected gap (e.g. "You were away N days — review N missed items?") vs. purely user-initiated via a toolbar button
 
+### ✅ Phase 2.8 — Paper Plan View (replaces Day tab)
+Started as a design-sprint experiment (visual-style-only, same `DayViewModel`/functionality as the
+Day tab) and ended up good enough to keep as the app's primary view, retiring the Day tab.
+
+- **New `PaperPlanView.swift`** — a "filed flight plan" paper aesthetic: monospaced type (IBM
+  Plex Mono, bundled under `Theming/Fonts/` and registered via `Info.plist`'s `UIAppFonts`), flat
+  black borders with hard (non-blurred) offset shadows instead of rounded/blurred cards, a
+  cream/tan background. Tokens live in `Theming/PaperPlanStyle.swift`, separate from `DFPTheme`
+  since this is a fixed look for one tab, not a user-selectable app-wide theme.
+- **Dark mode ("Paper Night")**: all `PaperPlanStyle` colors are adaptive (`UIColor`/`NSColor`
+  dynamic providers), switching to a near-black background, dark slate card surfaces, and light
+  borders/text automatically with the system appearance.
+- **Day tab retired, not deleted**: `FlightPlanView` and its `Tab("Day", …)` entry are commented
+  out in `DayView.swift` (not removed) in case of revival. The renamed **Flight** tab (formerly
+  "Paper") moved to the first position; tab order is now Flight / Routine / Timeline. macOS
+  shortcuts renumbered (`Cmd+1` Flight, `Cmd+2` Routine, `Cmd+3` Timeline).
+- **Day navigation via buttons, not swipe**: `FlightPlanView`'s 3-page `TabView(.page)` pager
+  (yesterday/today/tomorrow) was dropped in favor of a single `ScrollView` plus explicit `←`/`→`
+  arrow buttons flanking the date heading. Root cause: a paging `TabView` wrapping multiple
+  `ScrollView`s confuses iOS's heuristic for which scroll view to track for Liquid Glass bar
+  transparency/blur (see `UIViewController.setContentScrollView(_:for:)` docs) — with only one
+  unambiguous `ScrollView` in the hierarchy, the system correctly tracks scroll position and the
+  toolbar/tab bar render as proper transparent glass with real content blurring behind them,
+  instead of a static backdrop color. Trade-off: day-switching is now a release-triggered
+  transition, not true finger-tracking paging.
+- **Yellow highlighter instead of a flag icon**: flagged items show a highlighter-yellow
+  rectangle behind the title text rather than a flag glyph; same treatment used for the "Today"
+  badge and the active day-section's name in its header.
+- **Flight Status card**: a bordered box below the date heading with a square proportional
+  progress indicator (`completed/total`), a status line ("Plan active" / "All done!" / "No items
+  planned"), a mock flight number (`DFP` + date in `YYYYMMDD`), a "Next up at HH:MM" line, and a
+  "Route / Intentions" line listing all six day sections in order, bolding each one once every
+  item assigned to it is completed.
+- **Briefing row**: a thin rule-bordered strip below the Flight Status card with the live time of
+  day, a live countdown to midnight, and a count of outstanding flagged items — the first two tick
+  every second via `SwiftUI.TimelineView(.periodic(from:by:))` rather than the shared
+  `DayViewModel` clock (which only updates per-minute for the rest of the app).
+- **`DayViewModel` additions** (extracted from view-local logic so they're covered by unit
+  tests): `nextUpcomingDeadline(from:referenceDate:)` and `outstandingFlaggedCount(from:)`, both
+  exercised by new cases in `DayViewModelTests.swift`.
+- **Deviation**: an earlier "same basic layout, just change colors/fonts/borders" constraint from
+  partway through the sprint was superseded by later explicit requests to restyle the day header,
+  add the Flight Status/briefing/Route rows, and drop swipe navigation — the view ended up a
+  genuine redesign, not a reskin.
+
 ---
 
 ## Version 0.3 — Settings & Device Expansion
@@ -538,15 +583,6 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - Fix all runtime warnings.
 - Confirm cross-device syncing is working as expected and bug-free
 - **Timeline browsing view still loads everything in memory** *(moved here from Phase 2.2)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
-- **Smooth Day Swipe Navigation (Pager)** *(moved here from Phase 2.5)*: the Flight Plan view's
-  swipe pager (Phase 1.19) uses a 3-page `TabView(.page)` infinite-reset pattern (yesterday /
-  today / tomorrow, silently snapping back to center after each swipe), but swipe responsiveness
-  is poor — gestures feel laggy or unresponsive in practice. Diagnose and fix the gesture
-  responsiveness (the infinite-reset approach itself may need to be replaced or tuned so swiping
-  between days feels fast and fluid with no perceptible lag or snap-back artifacts); macOS's
-  `DragGesture` fallback should feel equally responsive. Consider whether the infinite-reset
-  pattern is the right approach or whether a different paging strategy (e.g. `ScrollView` with
-  paging, custom gesture recognizer) would be more reliable.
 
 ### Phase release.4 — Tech Debt
 - **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see
