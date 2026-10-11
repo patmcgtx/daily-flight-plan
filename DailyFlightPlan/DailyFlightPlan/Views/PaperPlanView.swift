@@ -972,6 +972,11 @@ struct PaperPlanView: View {
         }
         .onTapGesture { itemToEdit = item }
         .contextMenu {
+            Button {
+                item.isFlagged.toggle()
+            } label: {
+                Label(item.isFlagged ? "Remove Flag" : "Flag Item", systemImage: item.isFlagged ? "flag.slash" : "flag")
+            }
             Button(role: .destructive) {
                 withAnimation { item.status = .canceled }
             } label: {
@@ -1047,6 +1052,12 @@ struct PaperPlanView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button { itemToEdit = item } label: { Label("Edit", systemImage: "pencil") }
+            Button {
+                item.isFlagged.toggle()
+                try? modelContext.save()
+            } label: {
+                Label(item.isFlagged ? "Remove Flag" : "Flag Item", systemImage: item.isFlagged ? "flag.slash" : "flag")
+            }
             Divider()
             Button(role: .destructive) {
                 item.status = .canceled
