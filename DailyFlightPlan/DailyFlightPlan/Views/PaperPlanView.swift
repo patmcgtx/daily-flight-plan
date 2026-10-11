@@ -320,7 +320,10 @@ struct PaperPlanView: View {
     /// (pills and deadline rows alike) is completed.
     private func routeIntentionsLine(_ raw: [PlanItem]) -> some View {
         let sections = DaySection.allCases
-        let line = sections.enumerated().reduce(Text("")) { partial, entry in
+        let label = Text("ROUTE / INTENTIONS:  ")
+            .font(PaperPlanStyle.mono(.caption2, weight: .bold))
+            .foregroundColor(PaperPlanStyle.muted)
+        let line = sections.enumerated().reduce(label) { partial, entry in
             let (index, section) = entry
             let sectionItems = viewModel.sectionPills(section, from: raw) + viewModel.deadlineRows(section, from: raw)
             let isComplete = !sectionItems.isEmpty && sectionItems.allSatisfy { $0.status == .completed }
@@ -336,14 +339,8 @@ struct PaperPlanView: View {
             return partial + arrow + segment
         }
 
-        return VStack(alignment: .leading, spacing: 4) {
-            Text("Route / Intentions")
-                .font(PaperPlanStyle.mono(.caption2, weight: .bold))
-                .textCase(.uppercase)
-                .foregroundStyle(PaperPlanStyle.muted)
-            line
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        return line
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func paperProgressBox(completed: Int, total: Int, pct: Double) -> some View {
