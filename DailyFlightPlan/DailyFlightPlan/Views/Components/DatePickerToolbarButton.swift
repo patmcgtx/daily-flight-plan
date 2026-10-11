@@ -27,7 +27,7 @@ struct DatePickerToolbarButton: View {
         // iOS keeps the popover, which presents correctly anchored to the button.
         #if os(macOS)
         .sheet(isPresented: $isShowingDatePicker) {
-            popoverContent
+            macSheetContent
         }
         #else
         .popover(
@@ -35,23 +35,16 @@ struct DatePickerToolbarButton: View {
             attachmentAnchor: .point(.bottom),
             arrowEdge: .top
         ) {
-            popoverContent
+            iOSPopoverContent
         }
         #endif
     }
 
-    private var popoverContent: some View {
+    /// The "Today" row + calendar grid shared by both platforms. Sized by the caller — macOS's
+    /// native graphical `DatePicker` is a small, fixed-size widget (nothing like iOS's style,
+    /// which fills whatever width it's given), so the two platforms need very different frames.
+    private var pickerCore: some View {
         VStack(spacing: 0) {
-            #if os(macOS)
-            // Sheets don't dismiss by clicking outside the way popovers do, so macOS needs an
-            // explicit close affordance.
-            HStack {
-                Spacer()
-                Button("Close") { isShowingDatePicker = false }
-            }
-            .padding([.top, .trailing])
-            #endif
-
             Button {
                 onSelectToday()
                 isShowingDatePicker = false
@@ -80,7 +73,29 @@ struct DatePickerToolbarButton: View {
             .padding(.horizontal)
             .padding(.bottom)
         }
-        .frame(minWidth: 320, idealWidth: 340, maxWidth: .infinity, minHeight: 420, idealHeight: 440, maxHeight: 480)
-        .presentationCompactAdaptation(.popover)
     }
+
+    #if os(macOS)
+    /// Sheets don't dismiss by clicking outside the way popovers do, so this gets a proper
+    /// toolbar close button instead of the floating one tried earlier — and a frame sized to
+    /// the native calendar widget's actual (small) footprint, not iOS's much larger one, so the
+    /// sheet doesn't end up mostly empty space around a tiny control.
+    private var macSheetContent: some View {
+        NavigationStack {
+            pickerCore
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Close") { isShowingDatePicker = false }
+                    }
+                }
+        }
+        .frame(width: 300)
+    }
+    #else
+    private var iOSPopoverContent: some View {
+        pickerCore
+            .frame(minWidth: 320, idealWidth: 340, maxWidth: .infinity, minHeight: 420, idealHeight: 440, maxHeight: 480)
+            .presentationCompactAdaptation(.popover)
+    }
+    #endif
 }

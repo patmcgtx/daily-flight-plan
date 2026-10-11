@@ -19,6 +19,15 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
 
 - **Crash on delete-all-items**: deleting all items triggers a crash. Not yet root-caused.
 
+- **Flight tab's date-picker sheet looks undersized on macOS**: `DatePickerToolbarButton`
+  presents via `.sheet` on macOS (`.popover` attached to a toolbar button there never opens at
+  all — a separate issue, worked around by branching to `.sheet`), with the content frame fixed
+  to `width: 300` and no height constraint so the sheet sizes to the native graphical
+  `DatePicker`'s small native footprint. Still looks noticeably smaller/plainer than the iOS
+  popover version even after that sizing pass — functional (Today + calendar grid + Close button
+  all work), just visually imperfect. Not pursued further since it's a minor, low-traffic
+  surface; revisit if it bugs someone enough to be worth another pass.
+
 - **SwiftData property-set overhead on `PlanItem.status`**: Time Profiler showed `PlanItem.status`'s
   setter itself (not app code around it) spending real time in SwiftData's generic runtime
   type-resolution path (`swift_getTypeByMangledNameImpl` and friends) — a known SwiftData
