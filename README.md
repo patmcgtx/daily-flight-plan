@@ -2,6 +2,12 @@
 
 A daily planning and execution app for iOS, inspired by an airplane flight plan checklist. Today is your trip; this is your checklist.
 
+<p align="center">
+  <img src="DailyFlightPlan/screenshots/main-light.png" alt="Daily Flight Plan, light mode" width="45%">
+  &nbsp;&nbsp;
+  <img src="DailyFlightPlan/screenshots/main-dark.png" alt="Daily Flight Plan, dark mode" width="45%">
+</p>
+
 > "While we delay, life hurries past."
 > — Seneca
 
