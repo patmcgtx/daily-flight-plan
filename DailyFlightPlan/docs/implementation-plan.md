@@ -591,6 +591,11 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
   behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since
   the app hasn't shipped, no CloudKit migration cost to worry about.
 - Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
+- **Check whether the retired Day tab is still unused; if so, delete it**: `FlightPlanView.swift`
+  and its commented-out `Tab("Day", …)` entry in `DayView.swift` (see Phase 2.8) were kept around
+  after the Paper Plan view replaced it, in case it was worth reviving. If nobody's gone back to
+  it by now, remove `FlightPlanView.swift` and the commented-out tab entry outright instead of
+  carrying dead code forward.
 - Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
 - Architecture review & refactor
