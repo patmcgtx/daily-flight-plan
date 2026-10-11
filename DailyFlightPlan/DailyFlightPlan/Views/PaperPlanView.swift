@@ -974,6 +974,7 @@ struct PaperPlanView: View {
         .contextMenu {
             Button {
                 item.isFlagged.toggle()
+                try? modelContext.save()
             } label: {
                 Label(item.isFlagged ? "Remove Flag" : "Flag Item", systemImage: item.isFlagged ? "flag.slash" : "flag")
             }
