@@ -230,6 +230,86 @@ struct DayViewModelTests {
         #expect(result.map(\.uuid).contains(subject.uuid) == included)
     }
 
+    // MARK: nextUpcomingDeadline
+
+    @Test("nextUpcomingDeadline returns the earliest pending deadline still ahead of currentTime when the reference date is today")
+    func nextUpcomingDeadlinePrefersUpcomingToday() {
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
+        let past = item(deadline: currentTime.addingTimeInterval(-3600))
+        let soon = item(deadline: currentTime.addingTimeInterval(1800))
+        let later = item(deadline: currentTime.addingTimeInterval(3600))
+        let result = viewModel.nextUpcomingDeadline(
+            from: [past, later, soon], referenceDate: Calendar.current.startOfDay(for: .now)
+        )
+        #expect(result == soon.deadline)
+    }
+
+    @Test("nextUpcomingDeadline falls back to the day's earliest deadline once every pending deadline for today has already passed")
+    func nextUpcomingDeadlineFallsBackWhenAllPassed() {
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
+        let earlier = item(deadline: currentTime.addingTimeInterval(-7200))
+        let later = item(deadline: currentTime.addingTimeInterval(-3600))
+        let result = viewModel.nextUpcomingDeadline(
+            from: [later, earlier], referenceDate: Calendar.current.startOfDay(for: .now)
+        )
+        #expect(result == earlier.deadline)
+    }
+
+    @Test("nextUpcomingDeadline ignores completed and canceled items")
+    func nextUpcomingDeadlineIgnoresNonPendingItems() {
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
+        let completed = item(deadline: currentTime.addingTimeInterval(1800), status: .completed)
+        let canceled = item(deadline: currentTime.addingTimeInterval(1800), status: .canceled)
+        let pending = item(deadline: currentTime.addingTimeInterval(3600), status: .pending)
+        let result = viewModel.nextUpcomingDeadline(
+            from: [completed, canceled, pending], referenceDate: Calendar.current.startOfDay(for: .now)
+        )
+        #expect(result == pending.deadline)
+    }
+
+    @Test("nextUpcomingDeadline returns nil when there are no pending items with a deadline")
+    func nextUpcomingDeadlineNilWhenNoCandidates() {
+        let viewModel = DayViewModel()
+        let noDeadline = item(deadline: nil)
+        let completed = item(deadline: .now.addingTimeInterval(3600), status: .completed)
+        let result = viewModel.nextUpcomingDeadline(from: [noDeadline, completed], referenceDate: .now)
+        #expect(result == nil)
+    }
+
+    @Test("nextUpcomingDeadline uses the earliest deadline directly, ignoring currentTime, when the reference date is not today")
+    func nextUpcomingDeadlineIgnoresCurrentTimeWhenNotToday() {
+        let currentTime = fixedTime(hour: 12, minute: 0)
+        let viewModel = DayViewModel(currentTime: currentTime)
+        let earlier = item(deadline: currentTime.addingTimeInterval(-7200))
+        let later = item(deadline: currentTime.addingTimeInterval(-3600))
+        let pastReferenceDate = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
+        let result = viewModel.nextUpcomingDeadline(from: [later, earlier], referenceDate: pastReferenceDate)
+        #expect(result == earlier.deadline)
+    }
+
+    // MARK: outstandingFlaggedCount
+
+    @Test("outstandingFlaggedCount counts only pending items that are flagged", arguments: [
+        (isFlagged: true, status: ItemStatus.pending, counted: true),
+        (isFlagged: false, status: ItemStatus.pending, counted: false),
+        (isFlagged: true, status: ItemStatus.completed, counted: false),
+        (isFlagged: true, status: ItemStatus.canceled, counted: false),
+    ])
+    func outstandingFlaggedCount(isFlagged: Bool, status: ItemStatus, counted: Bool) {
+        let viewModel = DayViewModel()
+        let subject = PlanItem(title: "Item", isFlagged: isFlagged, status: status)
+        #expect(viewModel.outstandingFlaggedCount(from: [subject]) == (counted ? 1 : 0))
+    }
+
+    @Test("outstandingFlaggedCount is zero for an empty list")
+    func outstandingFlaggedCountEmpty() {
+        let viewModel = DayViewModel()
+        #expect(viewModel.outstandingFlaggedCount(from: []) == 0)
+    }
+
     // MARK: sectionPills
 
     @Test("sectionPills includes only items assigned to the given section", arguments: DaySection.allCases)

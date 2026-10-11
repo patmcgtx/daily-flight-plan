@@ -376,13 +376,8 @@ struct PaperPlanView: View {
     /// ahead of the live clock when viewing today, falling back to the day's earliest deadline
     /// otherwise (e.g. a past day, or a today whose remaining deadlines have all slipped by).
     private func nextUpTime(_ items: [PlanItem], referenceDate: Date) -> String? {
-        let pendingWithDeadline = items.filter { $0.status == .pending && $0.deadline != nil }
-        guard !pendingWithDeadline.isEmpty else { return nil }
-        let isToday = Calendar.current.isDateInToday(referenceDate)
-        let upcoming = isToday ? pendingWithDeadline.filter { $0.deadline! >= viewModel.currentTime } : pendingWithDeadline
-        let pool = upcoming.isEmpty ? pendingWithDeadline : upcoming
-        guard let next = pool.min(by: { $0.deadline! < $1.deadline! })?.deadline else { return nil }
-        return next.formatted(.dateTime.hour().minute())
+        viewModel.nextUpcomingDeadline(from: items, referenceDate: referenceDate)?
+            .formatted(.dateTime.hour().minute())
     }
 
     /// A thin rule-bordered strip echoing the mockup's weather/time/priorities "briefing" row —
@@ -391,7 +386,7 @@ struct PaperPlanView: View {
     /// `DayViewModel` clock, which only updates per-minute for the rest of the app.
     private func briefingRow(_ items: [PlanItem], date: Date) -> some View {
         let isToday = Calendar.current.isDateInToday(date)
-        let priorityCount = items.filter { $0.isFlagged && $0.status == .pending }.count
+        let priorityCount = viewModel.outstandingFlaggedCount(from: items)
 
         return HStack(spacing: 14) {
             Spacer()
