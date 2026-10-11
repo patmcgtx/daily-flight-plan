@@ -283,7 +283,7 @@ struct PaperPlanView: View {
             HStack(spacing: 16) {
                 paperProgressBox(completed: completed, total: total, pct: pct)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Flight Status - \(flightNumber(for: date))")
+                    Text("Flight \(flightNumber(for: date))")
                         .font(PaperPlanStyle.mono(.caption, weight: .bold))
                         .textCase(.uppercase)
                         .foregroundStyle(PaperPlanStyle.muted)
@@ -312,12 +312,12 @@ struct PaperPlanView: View {
         }
     }
 
-    /// "06 ROUTE / INTENTIONS" from the mockup's flight-plan masthead, repurposed as a quick
+    /// "06 ROUTE" from the mockup's flight-plan masthead, repurposed as a quick
     /// glance at the day's sections — each section name bolds once every item assigned to it
     /// (pills and deadline rows alike) is completed.
     private func routeIntentionsLine(_ raw: [PlanItem]) -> some View {
         let sections = DaySection.allCases
-        let label = Text("ROUTE / INTENTIONS:  ")
+        let label = Text("ROUTE:  ")
             .font(PaperPlanStyle.mono(.caption2, weight: .bold))
             .foregroundColor(PaperPlanStyle.muted)
         let line = sections.enumerated().reduce(label) { partial, entry in
