@@ -656,7 +656,7 @@ struct PaperPlanView: View {
                         section: section,
                         completed: completed, total: total,
                         isCurrent: isCurrent, allDone: allDone,
-                        hasOverdue: hasOverdue
+                        hasOverdue: hasOverdue, hasFlagged: rawAll.contains { $0.isFlagged }
                     )
                 }
                 .buttonStyle(.plain)
@@ -839,7 +839,8 @@ struct PaperPlanView: View {
         total: Int,
         isCurrent: Bool,
         allDone: Bool,
-        hasOverdue: Bool = false
+        hasOverdue: Bool = false,
+        hasFlagged: Bool = false
     ) -> some View {
         let summary = viewModel.sectionSummaries[section]
         let isLoading = viewModel.loadingSummarySections.contains(section)
@@ -895,7 +896,13 @@ struct PaperPlanView: View {
             if total > 0 {
                 Text(allDone ? "✓ \(completed)/\(total)" : hasOverdue ? "! \(completed)/\(total)" : "\(completed)/\(total)")
                     .font(PaperPlanStyle.mono(.caption2, weight: .bold))
-                    .foregroundStyle(allDone ? .green : hasOverdue ? Color.orange : PaperPlanStyle.muted)
+                    .foregroundStyle(
+                        hasFlagged
+                            ? PaperPlanStyle.inkOnHighlighter
+                            : (allDone ? .green : hasOverdue ? Color.orange : PaperPlanStyle.muted)
+                    )
+                    .padding(.horizontal, hasFlagged ? 4 : 0)
+                    .background(hasFlagged ? PaperPlanStyle.highlighter : Color.clear)
             }
         }
         .padding(16)
