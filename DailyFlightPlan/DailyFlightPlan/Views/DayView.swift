@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import CoreData
 
-enum AppTab: Hashable { case focus, flightDeck, timeline, routines }
+enum AppTab: Hashable { case focus, flightDeck, timeline, routines, paperPlan }
 
 struct DayView: View {
 
@@ -42,8 +42,8 @@ struct DayView: View {
     var body: some View {
         TabView(selection: $activeTab) {
 
-            Tab("Day", systemImage: "airplane", value: AppTab.flightDeck) {
-                FlightPlanView(
+            Tab("Flight", systemImage: "airplane", value: AppTab.paperPlan) {
+                PaperPlanView(
                     viewModel: viewModel,
                     calendarEvents: calendarEvents,
                     reminderItems: reminderItems,
@@ -60,16 +60,29 @@ struct DayView: View {
             Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
+
+            // Day tab (FlightPlanView) retired in favor of the "Flight" (Paper) tab above, but
+            // left here commented out rather than deleted in case it's worth reviving.
+            // Tab("Day", systemImage: "airplane", value: AppTab.flightDeck) {
+            //     FlightPlanView(
+            //         viewModel: viewModel,
+            //         calendarEvents: calendarEvents,
+            //         reminderItems: reminderItems,
+            //         isDeletingData: isDeletingData,
+            //         onShowSettings: { isShowingSettings = true },
+            //         onShowImport: { isShowingImport = true }
+            //     )
+            // }
         }
         .onAppear {
-            if activeTab == .focus { activeTab = .flightDeck }
+            if activeTab == .focus { activeTab = .paperPlan }
         }
         #if os(macOS)
         .overlay(alignment: .topLeading) {
             // Hidden buttons so Cmd+1–3 switch tabs on macOS.
             // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
             VStack {
-                Button("") { activeTab = .flightDeck }.keyboardShortcut("1", modifiers: .command)
+                Button("") { activeTab = .paperPlan }.keyboardShortcut("1", modifiers: .command)
                 Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
                 Button("") { activeTab = .timeline }.keyboardShortcut("3", modifiers: .command)
             }

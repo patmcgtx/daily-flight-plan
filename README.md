@@ -44,6 +44,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - **SwiftData** — local persistence (iCloud sync planned)
 - **EventKit** — Calendar and Reminders integration
 - **SwiftUI-Flow** (`HFlow`) — horizontal wrapping flow layouts for item pills
+- **IBM Plex Mono** — bundled custom font for the Flight tab's filed-flight-plan paper aesthetic
 - **`@Observable @MainActor` ViewModels** — no Combine
 - **Protocol-based services** injected via `@Environment` + `@Entry`
 
@@ -51,15 +52,24 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 
 **Three tabs:**
 
-- **Day** — primary day view (Flight Plan) with swipe-between-days pager
-  - Swipe left/right to navigate days (iOS: `TabView(.page)` pager; macOS: drag gesture)
-  - "Today" label in accent color; `scope` go-to-today button on non-today dates
+- **Flight** — primary day view, styled like a filed paper flight plan (monospaced type, flat
+  black borders, hard offset shadows, cream background; adapts to a dark "Paper Night" palette)
+  - Day navigation via `←`/`→` buttons flanking the date heading (not swipe — a single `ScrollView`
+    is used instead of a paging `TabView` so Liquid Glass bar transparency/blur tracks correctly)
+  - "Today" label on a yellow highlighter badge; flagged items get the same highlighter treatment
+    behind their title instead of a flag icon
+  - Flight Status card: square `completed/total` progress indicator, status line, mock flight
+    number (`DFP` + date), "Next up at HH:MM", and a Route/Intentions line listing all six day
+    sections, bolding each once fully complete
+  - Briefing row: live clock, live countdown to midnight, and outstanding-flagged-item count
   - Collapsible section cards with per-section progress ring (`completed/total`, filter-independent)
   - `HFlow` pills for non-deadline items (regular items and routine items on separate rows); timed rows for deadline items
   - Notes indicator icon on pills when notes are populated
   - Calendar events and Reminders shown inline in expanded section cards
   - Drag-and-drop items between section cards; drop on Open card to clear section assignment
   - Filter-driven expand/collapse: active filters auto-expand sections with matches
+  - The original "Day" tab (`FlightPlanView`, swipe-pager-based) is retired in favor of this view —
+    commented out, not deleted, in `DayView.swift` in case it's worth reviving
 
 - **Routine** — recurring habit template management
   - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
@@ -75,7 +85,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Shows all plan items across all dates with a filter bar
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
-**macOS keyboard shortcuts:** `Cmd+1` Day · `Cmd+2` Routine · `Cmd+3` Log
+**macOS keyboard shortcuts:** `Cmd+1` Flight · `Cmd+2` Routine · `Cmd+3` Timeline
 
 **Shared across tabs:**
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
@@ -85,7 +95,9 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - Filter menu: flagged, done, calendar, reminders, routines, and category filters
 - **Markdown / text import**: paste any text (e.g. a Things export) → Foundation Models parses titles, sections, and recurring schedules → review list with swipe-to-delete → commit or cancel
 - Category management (add, rename, delete)
-- Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo)
+- Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo) — currently dormant: its toolbar menu lived
+  only on the now-retired Day tab; `DFPTheme`/`ThemeViewModifier` are still wired up for when a
+  switcher is reintroduced somewhere
 - Calendar events from EventKit shown inline, with calendar color indicator
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
 - **Fresh start each day**: no automatic carry-forward — pending items stay on their original date unless you move them yourself; a dedicated missed-items review flow is planned (see Phase 2.7)
@@ -103,17 +115,21 @@ DailyFlightPlan/
 │   ├── Calendar/        — CalendarService protocol + EventKit + mock
 │   ├── Reminders/       — RemindersService protocol + EventKit + mock
 │   └── Categories/      — CategorySelectionService
-├── Theming/             — DFPTheme enum, ThemeViewModifier
+├── Theming/
+│   ├── DFPTheme.swift        — theme enum + ThemeViewModifier (dormant — see Theme switcher note above)
+│   ├── PaperPlanStyle.swift  — color/font tokens for the Flight tab's paper look
+│   └── Fonts/                — bundled IBM Plex Mono (.ttf), registered via Info.plist UIAppFonts
 └── Views/
     ├── Components/      — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
     │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/     — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
-    ├── FlightPlanView.swift   — Flight Plan tab (primary day view, swipe pager)
+    ├── PaperPlanView.swift    — Flight tab (primary day view, paper-plan styling)
+    ├── FlightPlanView.swift   — retired Day tab (swipe pager); commented out in DayView, kept for reference
     ├── RoutineView.swift      — Routine tab (recurring habit template management)
     ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)
-    ├── TimelineView.swift     — Nav Log tab
+    ├── TimelineView.swift     — Timeline tab
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```
@@ -133,6 +149,7 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | 2.5 | Global filter sheet + category management (placeholder, not yet implemented) |
 | 2.6 | Import UX refinements (flag duplicates, notes, tagging) |
 | 2.7 | Missed items review & pull-forward |
+| 2.8 | ✅ Paper Plan view — replaces Day tab as the primary view |
 
 **Version 0.3** expands device support and adds missing features:
 

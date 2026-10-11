@@ -293,6 +293,24 @@ func startLiveClock() {
         items.filter { $0.daySection == nil && $0.deadline == nil }
     }
 
+    /// The earliest upcoming deadline among pending items for a given date — preferring ones
+    /// still ahead of `currentTime` when `referenceDate` is today, falling back to the day's
+    /// earliest deadline otherwise (e.g. a past day, or a today whose remaining deadlines have
+    /// all slipped by).
+    func nextUpcomingDeadline(from items: [PlanItem], referenceDate: Date) -> Date? {
+        let pendingWithDeadline = items.filter { $0.status == .pending && $0.deadline != nil }
+        guard !pendingWithDeadline.isEmpty else { return nil }
+        let isReferenceToday = Calendar.current.isDateInToday(referenceDate)
+        let upcoming = isReferenceToday ? pendingWithDeadline.filter { $0.deadline! >= currentTime } : pendingWithDeadline
+        let pool = upcoming.isEmpty ? pendingWithDeadline : upcoming
+        return pool.min(by: { $0.deadline! < $1.deadline! })?.deadline
+    }
+
+    /// Count of pending items flagged as a priority.
+    func outstandingFlaggedCount(from items: [PlanItem]) -> Int {
+        items.filter { $0.isFlagged && $0.status == .pending }.count
+    }
+
     // MARK: Auto-collapse and AI summaries
 
     /// Collapse all inactive sections when viewing today. No-op on past/future dates.

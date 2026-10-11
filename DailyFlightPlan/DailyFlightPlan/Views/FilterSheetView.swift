@@ -100,7 +100,7 @@ struct FilterSheetView: View {
                     Label("Missed Only", systemImage: "clock.badge.exclamationmark")
                 }
             }
-        case .routines, .focus:
+        case .routines, .focus, .paperPlan:
             EmptyView()
         }
     }

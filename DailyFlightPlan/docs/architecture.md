@@ -13,17 +13,26 @@ DailyFlightPlan/
 │   ├── Calendar/     — CalendarService protocol + EventKit implementation + mock (#if DEBUG)
 │   ├── Reminders/    — RemindersService protocol + EventKit implementation + mock (#if DEBUG)
 │   └── Categories/   — CategorySelectionService (UserDefaults-backed; category filter state not synced)
-├── Theming/          — DFPTheme enum + ThemeViewModifier (adapted from MapsPlus)
+├── Theming/
+│   ├── DFPTheme.swift        — theme enum + ThemeViewModifier (adapted from MapsPlus); dormant,
+│   │                           see "Flight tab" below
+│   ├── PaperPlanStyle.swift  — color/font tokens for the Flight tab's filed-flight-plan look;
+│   │                           deliberately separate from DFPTheme since it's a fixed look for
+│   │                           one tab, not a user-selectable app-wide theme
+│   └── Fonts/                — bundled IBM Plex Mono (.ttf, 3 weights), registered via
+│                               Info.plist's UIAppFonts
 └── Views/
     ├── Components/   — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
     │                   ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/  — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
-    ├── FlightPlanView.swift   — Flight Plan tab (struct FlightPlanView): primary day view, swipe pager
+    ├── PaperPlanView.swift    — Flight tab (struct PaperPlanView): primary day view, paper-plan styling
+    ├── FlightPlanView.swift   — retired Day tab (struct FlightPlanView): swipe pager; `Tab(…)` entry
+    │                           commented out in DayView.swift, kept for reference/possible revival
     ├── RoutineView.swift      — Routine tab: manage recurring habit templates; grouped by weekday pattern and day segment
     ├── MarkdownImportView.swift — Paste-to-import sheet: TextEditor → Foundation Models parse → review list → commit
     ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
-    ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
+    ├── TimelineView.swift     — Timeline tab: chronological multi-day interactive list
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```
@@ -109,19 +118,62 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 ## UI: "Structured Flight Plan"
 
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
-- **Day** (`airplane`) — primary day view (Flight Plan); swipe pager between days; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
-- **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all start expanded; collapsed shows name + item count). Within each card, items are subdivided by day segment (Morning, Midday, …), and each segment is itself a collapsible card matching `FlightPlanView`'s section-card styling (`.background` fill, 0.5pt border, title enlarges to `.headline` when expanded, item-count badge, `+ Add item` button pre-wired to that weekday pattern + segment via a combined `ItemForm(templateWeekdays:section:)` initializer); untimed items flow as `HFlow` pills, timed items get full-width deadline rows. Collapsed segment headers show a one-line AI summary (Foundation Models `LanguageModelSession`, same pattern as the Day view) with a deterministic title/time-based fallback when the on-device model is unavailable (e.g. Simulator) or fails. Tap any item to edit, long-press for Edit/Delete context menu; drag items between schedule cards to reassign weekday pattern; add/delete custom weekday sections.
-- **Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
-- Tab order in the UI is Day / Routine / Log (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log on macOS)
+- **Flight** (`airplane`) — primary day view, styled as a filed paper flight plan (`PaperPlanView.swift`); button-based day navigation; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
+- **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all start expanded; collapsed shows name + item count). Within each card, items are subdivided by day segment (Morning, Midday, …), and each segment is itself a collapsible card matching the Flight tab's section-card styling (`.background` fill, 0.5pt border, title enlarges to `.headline` when expanded, item-count badge, `+ Add item` button pre-wired to that weekday pattern + segment via a combined `ItemForm(templateWeekdays:section:)` initializer); untimed items flow as `HFlow` pills, timed items get full-width deadline rows. Collapsed segment headers show a one-line AI summary (Foundation Models `LanguageModelSession`, same pattern as the Flight view) with a deterministic title/time-based fallback when the on-device model is unavailable (e.g. Simulator) or fails. Tap any item to edit, long-press for Edit/Delete context menu; drag items between schedule cards to reassign weekday pattern; add/delete custom weekday sections.
+- **Timeline** (`checklist`) — chronological multi-day list of all plan items; fully interactive
+- Tab order in the UI is Flight / Routine / Timeline (`Cmd+1` Flight, `Cmd+2` Routine, `Cmd+3` Timeline on macOS)
+- The original **Day** tab (`airplane`, `FlightPlanView.swift`, swipe-pager-based) is retired —
+  its `Tab(…)` entry is commented out in `DayView.swift`, not deleted, in case it's worth reviving
 
-**Navigation bar toolbar (Flight Plan tab, inside `NavigationStack`):**
-- Leading: `⚙` Settings button
-- Trailing: `ToolbarItemGroup` — filter menu (`line.3.horizontal.decrease.circle`) with Flagged/Done/Routines/Calendar/Reminders toggles; category button (`tag`); theme menu — system groups into a single Liquid Glass capsule on iOS 26
-- Trailing: `+` Add Item button (separate from the group)
+**Navigation bar toolbar (Flight tab, inside `NavigationStack`):**
+- Leading: `⚙` Settings button, `arrow.down.doc` Import button
+- Trailing: `ToolbarItemGroup` — `scope` go-to-today button; search toggle; filter menu
+  (`line.3.horizontal.decrease.circle`) with Flagged/Done/Routines/Calendar/Reminders toggles —
+  system groups into a single Liquid Glass capsule on iOS 26
+- Trailing: `+` Add Item button (separate from the group, bottom-trailing overlay)
+- `.toolbarBackgroundVisibility(.hidden, for: .navigationBar, .tabBar)` (iOS only) forces both
+  bars fully transparent — see the Flight tab's Liquid Glass note below for why this is explicit
+  rather than left to the system's automatic heuristic
 
 All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`, `showRecurring`) is saved to `@AppStorage` and shared across all tabs. The filter icon fills/accents when any filter is active.
 
-**Flight Plan tab (`FlightPlanView.swift`):**
+**Flight tab (`PaperPlanView.swift`) — current primary view:**
+- **Paper styling**: monospaced type (IBM Plex Mono, bundled in `Theming/Fonts/`), flat black
+  borders with hard (non-blurred) offset shadows instead of rounded/blurred cards, cream
+  background; tokens in `Theming/PaperPlanStyle.swift`. Dark mode ("Paper Night") via adaptive
+  `UIColor`/`NSColor` providers — near-black background, dark slate cards, light borders/text.
+- **Day navigation**: `←`/`→` buttons flanking the date heading, calling
+  `viewModel.goToYesterday()`/`goToTomorrow()` directly — no swipe gesture. A single `ScrollView`
+  is used (not a paging `TabView`) specifically so the system can unambiguously track scroll
+  position for Liquid Glass bar transparency/blur; a `TabView(.page)` wrapping multiple
+  `ScrollView`s (as `FlightPlanView`'s pager does) confuses that heuristic — see
+  `UIViewController.setContentScrollView(_:for:)` — causing the nav/tab bars to show a static
+  backdrop color instead of real content scrolling, blurred, behind them.
+- **Date header**: "Today"/"Tomorrow"/"Yesterday" label above the weekday name — "Today" on a
+  yellow highlighter badge, the other two in plain muted text. Below the weekday: a mock flight
+  number (`DFP` + date as `YYYYMMDD`) and the short-form date.
+- **Flight Status card**: square `completed/total` progress indicator (proportional black fill);
+  status line ("Plan active" / "All done!" / "No items planned"); "Next up at HH:MM" (earliest
+  upcoming pending deadline); a "Route / Intentions" line listing all six day sections in order,
+  each bolded once every item assigned to it is completed.
+- **Briefing row**: live clock, live countdown to midnight, and outstanding-flagged-item count,
+  separated by thin vertical dividers between a top/bottom rule. The clock and countdown tick
+  every second via `SwiftUI.TimelineView(.periodic(from:by:))` — disambiguated as `SwiftUI.TimelineView`
+  since the app already has its own `TimelineView` for the Timeline tab — rather than the shared
+  `DayViewModel` clock, which only updates per-minute for the rest of the app.
+- **Section cards**: flat `Rectangle` (no corner radius) per day section, black/gray border, hard
+  offset shadow. The active section's name (not the whole header) gets the yellow highlighter
+  treatment instead of a tinted background.
+- **Flagged items**: a yellow highlighter rectangle behind the title text, replacing the flag
+  icon used elsewhere in the app.
+- **`DayViewModel` additions backing this tab**: `nextUpcomingDeadline(from:referenceDate:)` and
+  `outstandingFlaggedCount(from:)` — extracted from view-local logic so they're covered by unit
+  tests (`DayViewModelTests.swift`) rather than living only in the view.
+- Otherwise shares `FlightPlanView`'s functional shape: same `DayViewModel`, same `@Query`,
+  same filter/search/drag-and-drop/AI-summary behavior, same sheets (`ItemForm`, `SettingsView`,
+  `MarkdownImportView`).
+
+**Retired Day tab (`FlightPlanView.swift`) — kept for reference, not currently shown:**
 - **Day pager**: `TabView(.page)` with 3 pages (yesterday / today / tomorrow) on iOS; infinite-reset pattern silently snaps back to center page after each swipe. `DragGesture` fallback on macOS.
 - **Date header**: "Today" label in accent color when on today; weekday label otherwise. `scope` go-to-today button at the leading edge when not on today.
 - **Section cards**: one `RoundedRectangle(cornerRadius: 18)` card per day section. Collapsed (header + count) / expanded (full content). Tap anywhere in the header to toggle. Current section highlighted with accent border.
@@ -138,7 +190,7 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
 - **Filter-driven expand/collapse**: when a filter is active, sections with matching items/events/reminders expand; empty sections collapse. User can manually override afterward.
 - **`+ Add item`** inside each section card header links to `ItemForm(date:section:)`.
 
-**Nav Log tab:** Embedded as a tab. Shows all plan items grouped by date with a filter bar and today indicator. Items are fully interactive in-place: checkbox completes, tap opens edit form, long-press shows Edit/Cancel context menu. Filters (flagged, done, category) are shared state via `@AppStorage`.
+**Timeline tab:** Embedded as a tab. Shows all plan items grouped by date with a filter bar and today indicator. Items are fully interactive in-place: checkbox completes, tap opens edit form, long-press shows Edit/Cancel context menu. Filters (flagged, done, category) are shared state via `@AppStorage`.
 
 **Cards tab (commented out):** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches Flight Plan. AI summaries generated on `.onAppear`. `+ Add item` inside expanded card content.
 

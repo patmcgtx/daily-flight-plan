@@ -48,7 +48,7 @@ struct FilterToolbarButton: View {
                 || !showCalendarEvents || !showReminderItems
         case .timeline:
             return isGeneralFilterActive || showCompletedOnly || showMissedOnly
-        case .routines, .focus:
+        case .routines, .focus, .paperPlan:
             return isGeneralFilterActive
         }
     }
