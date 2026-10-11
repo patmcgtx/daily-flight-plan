@@ -50,8 +50,8 @@ I turned a Day One routine I'd refined for years into a native iOS app: a Figma 
 <td align="center" valign="bottom" width="50%"><img src="DailyFlightPlan/docs/images/main-dark.png" width="240" alt="The shipped Flight view in dark mode, Paper Night"></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="50%"><sub><b>The app</b><br>Flight view, light</sub></td>
-<td align="center" valign="top" width="50%"><sub><b>The app</b><br>Flight view, "Paper Night"</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>Final product</b><br>Flight view, light</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>Final product</b><br>Flight view, "Paper Night"</sub></td>
 </tr>
 </table>
 
