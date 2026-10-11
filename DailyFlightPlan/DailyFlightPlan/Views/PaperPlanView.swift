@@ -209,6 +209,8 @@ struct PaperPlanView: View {
             VStack(spacing: 16) {
                 dayLabel(for: date)
 
+                flightStatusCard(raw, date: date)
+
                 ForEach(DaySection.allCases) { section in
                     sectionCard(
                         section, date: date, items: items, raw: raw,
@@ -260,6 +262,35 @@ struct PaperPlanView: View {
     }
 
     private func dayLabel(for date: Date) -> some View {
+        HStack(spacing: 12) {
+            dayArrowButton(systemImage: "chevron.left") {
+                withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToYesterday() }
+            }
+            dayLabelText(for: date)
+                .frame(maxWidth: .infinity)
+            dayArrowButton(systemImage: "chevron.right") {
+                withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToTomorrow() }
+            }
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func dayArrowButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(PaperPlanStyle.ink)
+                .frame(width: 40, height: 40)
+        }
+        .buttonStyle(.plain)
+        .background(PaperPlanStyle.surface)
+        .overlay(Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1.5))
+        .background {
+            Rectangle().fill(PaperPlanStyle.shadow).offset(x: 2, y: 3)
+        }
+    }
+
+    private func dayLabelText(for date: Date) -> some View {
         let isToday = Calendar.current.isDateInToday(date)
         let isTomorrow = Calendar.current.isDateInTomorrow(date)
         let isYesterday = Calendar.current.isDateInYesterday(date)
@@ -289,7 +320,77 @@ struct PaperPlanView: View {
                 .textCase(.uppercase)
                 .foregroundStyle(PaperPlanStyle.muted)
         }
-        .padding(.vertical, 8)
+    }
+
+    private func flightStatusCard(_ items: [PlanItem], date: Date) -> some View {
+        let completed = items.filter { $0.status == .completed }.count
+        let total = items.count
+        let pct = total > 0 ? Double(completed) / Double(total) : 0
+        let statusText: String = {
+            if total == 0 { return "No items planned" }
+            if completed == total { return "All done!" }
+            return "Plan active"
+        }()
+
+        return HStack(spacing: 16) {
+            paperProgressBox(completed: completed, total: total, pct: pct)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Flight Status")
+                    .font(PaperPlanStyle.mono(.caption, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(PaperPlanStyle.muted)
+                Text(statusText)
+                    .font(PaperPlanStyle.mono(.body, weight: .bold))
+                    .foregroundStyle(PaperPlanStyle.ink)
+                if let nextUp = nextUpTime(items, referenceDate: date) {
+                    Text("Next up at \(nextUp)")
+                        .font(PaperPlanStyle.mono(.caption))
+                        .foregroundStyle(PaperPlanStyle.muted)
+                }
+            }
+            Spacer()
+        }
+        .padding(14)
+        .background(PaperPlanStyle.surface)
+        .overlay(Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1.5))
+        .background {
+            Rectangle().fill(PaperPlanStyle.shadow).offset(x: 3, y: 4)
+        }
+    }
+
+    private func paperProgressBox(completed: Int, total: Int, pct: Double) -> some View {
+        let size: CGFloat = 60
+        return ZStack {
+            HStack(spacing: 0) {
+                Rectangle().fill(PaperPlanStyle.ink).frame(width: size * pct)
+                Rectangle().fill(PaperPlanStyle.border.opacity(0.25)).frame(width: size * (1 - pct))
+            }
+            .frame(width: size, height: size)
+            Rectangle().fill(PaperPlanStyle.surface).frame(width: size - 10, height: size - 10)
+            Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1).frame(width: size, height: size)
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text("\(completed)")
+                    .font(PaperPlanStyle.mono(.title3, weight: .bold))
+                    .foregroundStyle(PaperPlanStyle.ink)
+                Text("/\(total)")
+                    .font(PaperPlanStyle.mono(.caption2))
+                    .foregroundStyle(PaperPlanStyle.muted)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    /// The earliest upcoming deadline among this date's pending items — preferring ones still
+    /// ahead of the live clock when viewing today, falling back to the day's earliest deadline
+    /// otherwise (e.g. a past day, or a today whose remaining deadlines have all slipped by).
+    private func nextUpTime(_ items: [PlanItem], referenceDate: Date) -> String? {
+        let pendingWithDeadline = items.filter { $0.status == .pending && $0.deadline != nil }
+        guard !pendingWithDeadline.isEmpty else { return nil }
+        let isToday = Calendar.current.isDateInToday(referenceDate)
+        let upcoming = isToday ? pendingWithDeadline.filter { $0.deadline! >= viewModel.currentTime } : pendingWithDeadline
+        let pool = upcoming.isEmpty ? pendingWithDeadline : upcoming
+        guard let next = pool.min(by: { $0.deadline! < $1.deadline! })?.deadline else { return nil }
+        return next.formatted(.dateTime.hour().minute())
     }
 
     private func activeItems(for date: Date) -> [PlanItem] {
