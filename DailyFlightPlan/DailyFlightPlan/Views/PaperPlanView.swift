@@ -261,17 +261,33 @@ struct PaperPlanView: View {
 
     private func dayLabel(for date: Date) -> some View {
         let isToday = Calendar.current.isDateInToday(date)
-        return VStack(spacing: 2) {
-            Text(isToday ? "Today" : date.formatted(.dateTime.weekday(.wide)))
-                .font(PaperPlanStyle.mono(.subheadline, weight: .semibold))
+        let isTomorrow = Calendar.current.isDateInTomorrow(date)
+        let isYesterday = Calendar.current.isDateInYesterday(date)
+        return VStack(spacing: 4) {
+            if isToday {
+                Text("Today")
+                    .font(PaperPlanStyle.mono(.caption, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(PaperPlanStyle.inkOnHighlighter)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(PaperPlanStyle.highlighter)
+            } else if isTomorrow || isYesterday {
+                Text(isTomorrow ? "Tomorrow" : "Yesterday")
+                    .font(PaperPlanStyle.mono(.caption, weight: .bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(PaperPlanStyle.muted)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+            }
+            Text(date.formatted(.dateTime.weekday(.wide)))
+                .font(PaperPlanStyle.mono(.largeTitle, weight: .bold))
                 .textCase(.uppercase)
-                .foregroundStyle(isToday ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.muted)
-                .padding(.horizontal, isToday ? 6 : 0)
-                .padding(.vertical, isToday ? 2 : 0)
-                .background(isToday ? PaperPlanStyle.highlighter : Color.clear)
-            Text(date, format: .dateTime.month(.abbreviated).day())
-                .font(PaperPlanStyle.mono(.title2, weight: .bold))
                 .foregroundStyle(PaperPlanStyle.ink)
+            Text(date.formatted(.dateTime.month(.wide).day()))
+                .font(PaperPlanStyle.mono(.subheadline))
+                .textCase(.uppercase)
+                .foregroundStyle(PaperPlanStyle.muted)
         }
         .padding(.vertical, 8)
     }
@@ -638,7 +654,9 @@ struct PaperPlanView: View {
                     Text(title)
                         .font(PaperPlanStyle.mono(.title2, weight: .bold))
                         .textCase(.uppercase)
-                        .foregroundStyle(isCurrent ? PaperPlanStyle.ink : PaperPlanStyle.ink.opacity(0.85))
+                        .foregroundStyle(isCurrent ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.ink.opacity(0.85))
+                        .padding(.horizontal, isCurrent ? 4 : 0)
+                        .background(isCurrent ? PaperPlanStyle.highlighter : Color.clear)
                     Spacer()
                 }
 
@@ -678,7 +696,6 @@ struct PaperPlanView: View {
             .frame(width: 56, height: 56)
         }
         .padding(16)
-        .background(isCurrent ? PaperPlanStyle.highlighter.opacity(0.25) : Color.clear)
         .contentShape(Rectangle())
     }
 
@@ -699,7 +716,9 @@ struct PaperPlanView: View {
                     Text(section.displayName)
                         .font(PaperPlanStyle.mono(.headline, weight: .bold))
                         .textCase(.uppercase)
-                        .foregroundStyle(PaperPlanStyle.ink)
+                        .foregroundStyle(isCurrent ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.ink)
+                        .padding(.horizontal, isCurrent ? 4 : 0)
+                        .background(isCurrent ? PaperPlanStyle.highlighter : Color.clear)
                     Text("·")
                         .font(PaperPlanStyle.mono(.caption))
                         .foregroundStyle(PaperPlanStyle.muted)
@@ -746,7 +765,6 @@ struct PaperPlanView: View {
             }
         }
         .padding(16)
-        .background(isCurrent ? PaperPlanStyle.highlighter.opacity(0.25) : Color.clear)
         .contentShape(Rectangle())
         .frame(maxWidth: .infinity)
     }
