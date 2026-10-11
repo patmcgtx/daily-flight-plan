@@ -74,7 +74,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 ## Tech stack
 
 - **SwiftUI + Liquid Glass** — primary UI framework with iOS 26 glass effects
-- **SwiftData** — local persistence (iCloud sync planned)
+- **SwiftData + CloudKit** — persistence with iCloud sync through a private CloudKit database
 - **EventKit** — Calendar and Reminders integration
 - **SwiftUI-Flow** (`HFlow`) — horizontal wrapping flow layouts for item pills
 - **IBM Plex Mono** — bundled custom font for the Flight tab's filed-flight-plan paper aesthetic
