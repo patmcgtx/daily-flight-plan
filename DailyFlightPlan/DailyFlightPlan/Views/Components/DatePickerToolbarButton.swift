@@ -22,6 +22,14 @@ struct DatePickerToolbarButton: View {
             Image(systemName: "calendar")
         }
         .accessibilityLabel("Choose Date")
+        // `.popover` attached to a toolbar button is unreliable on macOS (NSToolbarItem-backed
+        // buttons sometimes never present it at all) — a sheet is the robust equivalent there.
+        // iOS keeps the popover, which presents correctly anchored to the button.
+        #if os(macOS)
+        .sheet(isPresented: $isShowingDatePicker) {
+            popoverContent
+        }
+        #else
         .popover(
             isPresented: $isShowingDatePicker,
             attachmentAnchor: .point(.bottom),
@@ -29,10 +37,21 @@ struct DatePickerToolbarButton: View {
         ) {
             popoverContent
         }
+        #endif
     }
 
     private var popoverContent: some View {
         VStack(spacing: 0) {
+            #if os(macOS)
+            // Sheets don't dismiss by clicking outside the way popovers do, so macOS needs an
+            // explicit close affordance.
+            HStack {
+                Spacer()
+                Button("Close") { isShowingDatePicker = false }
+            }
+            .padding([.top, .trailing])
+            #endif
+
             Button {
                 onSelectToday()
                 isShowingDatePicker = false
