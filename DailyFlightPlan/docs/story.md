@@ -4,16 +4,23 @@ This project is a small case study in taking an idea from a napkin to a working 
 
 <table>
 <tr>
-<td align="center" valign="bottom" width="25%"><img src="daily-flight-plan-figma.png" width="200" alt="My annotated Figma mock of the day view"></td>
-<td align="center" valign="bottom" width="25%"><img src="images/fp1.jpeg" width="200" alt="The FAA International Flight Plan form that inspired the app"></td>
-<td align="center" valign="bottom" width="25%"><img src="images/main-light.png" width="200" alt="The shipped Flight view in light mode"></td>
-<td align="center" valign="bottom" width="25%"><img src="images/main-dark.png" width="200" alt="The shipped Flight view in dark mode, Paper Night"></td>
+<td align="center" valign="bottom" width="50%"><img src="daily-flight-plan-figma.png" width="380" alt="My annotated Figma mock of the day view"></td>
+<td align="center" valign="bottom" width="50%"><img src="images/fp1.jpeg" width="380" alt="The FAA International Flight Plan form that inspired the app"></td>
 </tr>
 <tr>
-<td align="center" valign="top" width="25%"><sub><b>The first shot</b><br>My annotated Figma sketch</sub></td>
-<td align="center" valign="top" width="25%"><sub><b>The visual inspiration</b><br>An FAA flight plan form</sub></td>
-<td align="center" valign="top" width="25%"><sub><b>The app</b><br>Flight view, light</sub></td>
-<td align="center" valign="top" width="25%"><sub><b>The app</b><br>Flight view, "Paper Night"</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>The first shot</b><br>My annotated Figma sketch</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>The visual inspiration</b><br>An FAA flight plan form</sub></td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td align="center" valign="bottom" width="50%"><img src="images/main-light.png" width="240" alt="The shipped Flight view in light mode"></td>
+<td align="center" valign="bottom" width="50%"><img src="images/main-dark.png" width="240" alt="The shipped Flight view in dark mode, Paper Night"></td>
+</tr>
+<tr>
+<td align="center" valign="top" width="50%"><sub><b>The app</b><br>Flight view, light</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>The app</b><br>Flight view, "Paper Night"</sub></td>
 </tr>
 </table>
 
