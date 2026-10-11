@@ -302,7 +302,7 @@ struct PaperPlanView: View {
 
             Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
 
-            routeIntentionsLine(items)
+            routeIntentionsLine()
                 .padding(14)
         }
         .background(PaperPlanStyle.surface)
@@ -313,21 +313,20 @@ struct PaperPlanView: View {
     }
 
     /// "06 ROUTE" from the mockup's flight-plan masthead, repurposed as a quick
-    /// glance at the day's sections — each section name bolds once every item assigned to it
-    /// (pills and deadline rows alike) is completed.
-    private func routeIntentionsLine(_ raw: [PlanItem]) -> some View {
+    /// glance at the day's sections — the current section (if viewing today) bolds; the rest
+    /// stay plain.
+    private func routeIntentionsLine() -> some View {
         let sections = DaySection.allCases
         let label = Text("ROUTE:  ")
             .font(PaperPlanStyle.mono(.caption2, weight: .bold))
             .foregroundColor(PaperPlanStyle.muted)
         let line = sections.enumerated().reduce(label) { partial, entry in
             let (index, section) = entry
-            let sectionItems = viewModel.sectionPills(section, from: raw) + viewModel.deadlineRows(section, from: raw)
-            let isComplete = !sectionItems.isEmpty && sectionItems.allSatisfy { $0.status == .completed }
+            let isCurrent = section == viewModel.currentSection
 
             let segment = Text(section.displayName.uppercased())
-                .font(PaperPlanStyle.mono(.caption2, weight: isComplete ? .bold : .regular))
-                .foregroundColor(isComplete ? PaperPlanStyle.ink : PaperPlanStyle.muted)
+                .font(PaperPlanStyle.mono(.caption2, weight: isCurrent ? .bold : .regular))
+                .foregroundColor(isCurrent ? PaperPlanStyle.ink : PaperPlanStyle.muted)
 
             guard index > 0 else { return partial + segment }
             let arrow = Text(" \u{2192} ")
