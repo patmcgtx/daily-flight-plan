@@ -8,9 +8,9 @@ A daily planning and execution app for iOS, inspired by an airplane flight plan 
 See this app's [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
 
 <p align="center">
-  <img src="DailyFlightPlan/docs/images/main-light.png" alt="Daily Flight Plan, light mode" width="260">
+  <img src="DailyFlightPlan/docs/images/main-light-framed.png" alt="Daily Flight Plan, light mode" width="280">
   &nbsp;&nbsp;
-  <img src="DailyFlightPlan/docs/images/main-dark.png" alt="Daily Flight Plan, dark mode (Paper Night)" width="260">
+  <img src="DailyFlightPlan/docs/images/main-dark-framed.png" alt="Daily Flight Plan, dark mode (Paper Night)" width="280">
 </p>
 
 ## Goals
