@@ -91,13 +91,18 @@ struct PaperPlanView: View {
                     }
 
                     ToolbarItemGroup(placement: .trailingBar) {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
-                        } label: {
-                            Image(systemName: "scope")
-                        }
-                        .disabled(viewModel.isToday)
-                        .accessibilityLabel("Go to Today")
+                        DatePickerToolbarButton(
+                            selectedDate: Binding(
+                                get: { viewModel.selectedDate },
+                                set: { newDate in
+                                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.navigate(to: newDate) }
+                                }
+                            ),
+                            isToday: viewModel.isToday,
+                            onSelectToday: {
+                                withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
+                            }
+                        )
 
                         SearchToggleButton(
                             isShowingSearch: $isShowingSearch, searchText: $searchText,
