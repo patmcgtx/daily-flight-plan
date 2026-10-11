@@ -57,6 +57,8 @@ struct PaperPlanView: View {
     @State private var isShowingSearch = false
     @FocusState private var isSearchFieldFocused: Bool
 
+    @State private var isShowingDatePicker = false
+
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
             || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -92,12 +94,18 @@ struct PaperPlanView: View {
 
                     ToolbarItemGroup(placement: .trailingBar) {
                         Button {
-                            withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
+                            isShowingDatePicker = true
                         } label: {
-                            Image(systemName: "scope")
+                            Image(systemName: "calendar")
                         }
-                        .disabled(viewModel.isToday)
-                        .accessibilityLabel("Go to Today")
+                        .accessibilityLabel("Choose Date")
+                        .popover(
+                            isPresented: $isShowingDatePicker,
+                            attachmentAnchor: .point(.bottom),
+                            arrowEdge: .top
+                        ) {
+                            datePickerPopover
+                        }
 
                         SearchToggleButton(
                             isShowingSearch: $isShowingSearch, searchText: $searchText,
@@ -141,6 +149,40 @@ struct PaperPlanView: View {
         .onAppear { initializeExpandedSections() }
         .onChange(of: viewModel.selectedDate) { initializeExpandedSections() }
         .onChange(of: filterKey) { applyFilterToExpandedSections() }
+    }
+
+    private var datePickerPopover: some View {
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
+                isShowingDatePicker = false
+            } label: {
+                Label("Today", systemImage: "scope")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .disabled(viewModel.isToday)
+            .padding()
+
+            Divider()
+
+            DatePicker(
+                "Date",
+                selection: Binding(
+                    get: { viewModel.selectedDate },
+                    set: { newDate in
+                        withAnimation(.easeInOut(duration: 0.3)) { viewModel.navigate(to: newDate) }
+                        isShowingDatePicker = false
+                    }
+                ),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .labelsHidden()
+            .padding(.horizontal)
+            .padding(.bottom)
+        }
+        .frame(minWidth: 320, idealWidth: 340, maxWidth: .infinity, minHeight: 420, idealHeight: 440, maxHeight: 480)
+        .presentationCompactAdaptation(.popover)
     }
 
     // MARK: - Day content
