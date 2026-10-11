@@ -932,6 +932,7 @@ struct PaperPlanView: View {
                         .font(.subheadline)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Complete \(item.title)")
             }
 
             Text(item.title)
@@ -1008,6 +1009,9 @@ struct PaperPlanView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(
+                item.status == .completed ? "Mark \(item.title) as not complete" : "Complete \(item.title)"
+            )
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
