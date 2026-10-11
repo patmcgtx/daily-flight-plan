@@ -2,17 +2,16 @@
 
 A daily planning and execution app for iOS, inspired by an airplane flight plan checklist. Today is your trip; this is your checklist.
 
-<p align="center">
-  <img src="DailyFlightPlan/screenshots/main-light.png" alt="Daily Flight Plan, light mode" width="45%">
-  &nbsp;&nbsp;
-  <img src="DailyFlightPlan/screenshots/main-dark.png" alt="Daily Flight Plan, dark mode" width="45%">
-</p>
-
 > "While we delay, life hurries past."
 > — Seneca
 
 See this app's [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
 
+<p align="center">
+  <img src="DailyFlightPlan/docs/images/main-light-framed.png" alt="Daily Flight Plan, light mode" width="280">
+  &nbsp;&nbsp;
+  <img src="DailyFlightPlan/docs/images/main-dark-framed.png" alt="Daily Flight Plan, dark mode (Paper Night)" width="280">
+</p>
 
 ## Goals
 
@@ -30,15 +29,43 @@ Daily Flight Plan is about execution, not planning. It's a lightweight layer on 
 
 **Version 1.0 target:** A polished, public-release app with full fit/finish, accessibility, and beta testing complete. The 0.x series builds toward it: core functionality (0.1), UX polish (0.2), settings + device expansion (0.3), and in-app purchases (0.4). Watch and Siri come later (Version 3.0).
 
-## The original idea
+## From idea to app
 
-I took an app idea in my mind, sketched it out in Figma, broke that into a detailed requirements spec, and fed that to a Claude agent to make an architecture and a plan.
+I turned a Day One routine I'd refined for years into a native iOS app: a Figma sketch, an AI-assisted build with a Claude agent, and a redesign inspired by the FAA flight plan. Here's the path.
 
-- [`docs/project-spec-prompt.md`](DailyFlightPlan/docs/project-spec-prompt.md) — original feature and UX specs
-- [`docs/architecture.md`](DailyFlightPlan/docs/architecture.md) — folder structure, data models, services, UI direction
-- [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) — phased build plan and progress
+<table>
+<tr>
+<td align="center" valign="bottom" width="50%"><img src="DailyFlightPlan/docs/daily-flight-plan-figma.png" width="380" alt="My annotated Figma mock of the day view"></td>
+<td align="center" valign="bottom" width="50%"><img src="DailyFlightPlan/docs/images/fp1.jpeg" width="380" alt="The FAA International Flight Plan form that inspired the app"></td>
+</tr>
+<tr>
+<td align="center" valign="top" width="50%"><sub><b>Concept</b><br>First-shot sketch, in Figma</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>Concept</b><br>Visual inspiration: an FAA flight plan form</sub></td>
+</tr>
+</table>
 
-![Initial "back of a napkin" Figma sketch](DailyFlightPlan/docs/daily-flight-plan-figma.png)
+<table>
+<tr>
+<td align="center" valign="bottom" width="50%"><img src="DailyFlightPlan/docs/images/main-light.png" width="240" alt="The shipped Flight view in light mode"></td>
+<td align="center" valign="bottom" width="50%"><img src="DailyFlightPlan/docs/images/main-dark.png" width="240" alt="The shipped Flight view in dark mode, Paper Night"></td>
+</tr>
+<tr>
+<td align="center" valign="top" width="50%"><sub><b>Final product</b><br>Flight view, light</sub></td>
+<td align="center" valign="top" width="50%"><sub><b>Final product</b><br>Flight view, "Paper Night"</sub></td>
+</tr>
+</table>
+
+**1. The problem.** Years of planner apps, and lists that ballooned to 50 to 70 items a day. It was demotivating, and my routines never meshed with my real to-dos.
+
+**2. The workaround.** A Day One template I also called "Daily Flight Plan", organized by part of the day. I refined it for years, but even as a journal document it got too large and messy. The app is the better version.
+
+**3. The first shot.** A feature spec and a back-of-napkin sketch in Figma, with no AI, built around one goal: continually narrow to what you need to know right now.
+
+**4. Going AI-forward.** I chose to build with AI. A Claude agent proposed the architecture and a phased plan, and we built it in twenty-plus phases. The product calls stayed mine: no automatic carry-forward by design, so a day never inherits a backlog, a separate Routine layer, and cutting a buggy chat tab.
+
+**5. The flight plan.** Looking for a stronger visual style, I found it in the real FAA flight plan. After another Figma pass with its AI "Make" feature, I redesigned the main screen as a filed paper plan: monospaced type, hard borders, a yellow highlighter and a dark "Paper Night" mode.
+
+**[Read the full story](DailyFlightPlan/docs/story.md)**, or browse the paper trail: the [original spec](DailyFlightPlan/docs/project-spec-prompt.md), [architecture](DailyFlightPlan/docs/architecture.md) and [implementation plan](DailyFlightPlan/docs/implementation-plan.md).
 
 ## Concept
 
@@ -47,7 +74,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 ## Tech stack
 
 - **SwiftUI + Liquid Glass** — primary UI framework with iOS 26 glass effects
-- **SwiftData** — local persistence (iCloud sync planned)
+- **SwiftData + CloudKit** — persistence with iCloud sync through a private CloudKit database
 - **EventKit** — Calendar and Reminders integration
 - **SwiftUI-Flow** (`HFlow`) — horizontal wrapping flow layouts for item pills
 - **IBM Plex Mono** — bundled custom font for the Flight tab's filed-flight-plan paper aesthetic
