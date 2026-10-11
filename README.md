@@ -7,10 +7,10 @@ A daily planning and execution app for iOS, inspired by an airplane flight plan 
 
 See this app's [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
 
-
 <p align="center">
-  <img src="DailyFlightPlan/docs/images/main-light.png" alt="Daily Flight Plan, light mode" width="120">
+  <img src="DailyFlightPlan/docs/images/main-light.png" alt="Daily Flight Plan, light mode" width="260">
   &nbsp;&nbsp;
+  <img src="DailyFlightPlan/docs/images/main-dark.png" alt="Daily Flight Plan, dark mode (Paper Night)" width="260">
 </p>
 
 ## Goals
@@ -29,15 +29,52 @@ Daily Flight Plan is about execution, not planning. It's a lightweight layer on 
 
 **Version 1.0 target:** A polished, public-release app with full fit/finish, accessibility, and beta testing complete. The 0.x series builds toward it: core functionality (0.1), UX polish (0.2), settings + device expansion (0.3), and in-app purchases (0.4). Watch and Siri come later (Version 3.0).
 
-## The original idea
+## From idea to app
 
-I took an app idea in my mind, sketched it out in Figma, broke that into a detailed requirements spec, and fed that to a Claude agent to make an architecture and a plan.
+This project is a small case study in taking an idea from a napkin to a working app, as the product owner, the designer and the developer, with an AI agent as a collaborator.
 
-- [`docs/project-spec-prompt.md`](DailyFlightPlan/docs/project-spec-prompt.md) — original feature and UX specs
-- [`docs/architecture.md`](DailyFlightPlan/docs/architecture.md) — folder structure, data models, services, UI direction
-- [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) — phased build plan and progress
+**1. The spark: a real flight plan.** I wanted a day to feel like a trip with a destination, and a checklist you actually run. The inspiration was the FAA flight plan form, a dense, structured, no-nonsense page that pilots fill out before they go anywhere.
 
-![Initial "back of a napkin" Figma sketch](DailyFlightPlan/docs/daily-flight-plan-figma.png)
+**2. The sketch: a Figma mock, no AI.** I mocked up the day view myself and annotated the behavior: collapsible time blocks, a "now" bar, calendar events inline, items with deadlines, and an "any time" area where unfinished items fall. The style was rough, but the interaction model was already there.
+
+**3. The spec: from mock to written requirements.** I turned the mock into a detailed feature spec, plus technical constraints: reuse the architecture from my other app, [Map Plus](https://github.com/patmcgtx/mapplus), use SwiftData, and generate mock services and previews as we go.
+
+**4. The plan: a Claude agent as architect.** I handed the spec to a Claude agent to propose an architecture and a phased implementation plan. I reviewed and steered it, and it became the living plan the whole build followed.
+
+**5. The build: small phases, constant review.** The app grew through more than twenty phases, each one tested by actually using it, and I kept changing my mind as I did. Along the way I:
+- tried several alternative views (Cards, Nav Log, a grid), keeping only what earned its place
+- added features the mock never had: recurring routines, iCloud sync, Mac support, and a paste-to-import flow powered by on-device Apple Foundation Models
+- **removed** a chat-style quick-entry tab I'd built, because it was buggy and the import flow already did its job better
+
+**6. The redesign: the paper flight plan comes back.** Late in the build I returned to the original inspiration. I redesigned the main screen as a filed paper flight plan: monospaced type, flat black borders with hard shadows, a yellow highlighter for what matters, and a dark "Paper Night" mode. It started as a design experiment and was good enough to replace the main view.
+
+<table>
+<tr>
+<td align="center" valign="top" width="25%">
+<img src="DailyFlightPlan/docs/images/fp1.jpeg" width="200" alt="The FAA International Flight Plan form that inspired the app"><br>
+<sub><b>The inspiration</b><br>An FAA flight plan form</sub>
+</td>
+<td align="center" valign="top" width="25%">
+<img src="DailyFlightPlan/docs/daily-flight-plan-figma.png" width="200" alt="My annotated Figma mock of the day view"><br>
+<sub><b>The sketch</b><br>My annotated Figma mock</sub>
+</td>
+<td align="center" valign="top" width="25%">
+<img src="DailyFlightPlan/docs/images/main-light.png" width="200" alt="The shipped Flight view in light mode"><br>
+<sub><b>The app</b><br>Flight view, light</sub>
+</td>
+<td align="center" valign="top" width="25%">
+<img src="DailyFlightPlan/docs/images/main-dark.png" width="200" alt="The shipped Flight view in dark mode, Paper Night"><br>
+<sub><b>The app</b><br>Flight view, "Paper Night"</sub>
+</td>
+</tr>
+</table>
+
+**What stayed from the mock:** time-of-day sections, the "now" marker, inline calendar events, recurring and flagged items, a progress indicator, and the "today is a trip" idea. **What changed:** nearly everything about how it looks and feels, and a lot of what it can do.
+
+Read the paper trail:
+- [`docs/project-spec-prompt.md`](DailyFlightPlan/docs/project-spec-prompt.md): the original feature and UX spec
+- [`docs/architecture.md`](DailyFlightPlan/docs/architecture.md): folder structure, data models, services, UI direction
+- [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md): the phased plan and progress
 
 ## Concept
 
