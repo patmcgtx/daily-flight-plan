@@ -105,18 +105,6 @@ struct PaperPlanView: View {
                         )
 
                         FilterToolbarButton(activeTab: .flightDeck)
-
-//                        Menu {
-//                            ForEach(DFPTheme.allCases) { option in
-//                                Button { theme = option } label: {
-//                                    Label(option.localizedName, systemImage: option.menuIconName)
-//                                }
-//                            }
-//                        } label: {
-//                            Image(systemName: theme.menuIconName)
-//                                .foregroundStyle(theme == .cupertino ? PaperPlanStyle.ink : Color.accentColor)
-//                        }
-//                        .accessibilityLabel("Theme")
                     }
                 }
                 #if os(iOS)
