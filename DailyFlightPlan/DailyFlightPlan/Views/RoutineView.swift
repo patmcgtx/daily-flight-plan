@@ -26,6 +26,7 @@ struct RoutineView: View {
 
     @State private var itemToEdit: PlanItem?
     @State private var addingRoutine: RoutineAddRequest?
+    @State private var isShowingExport = false
     @State private var isPickingCustomSection = false
     @State private var pendingWeekdays: Set<Locale.Weekday>?
     @State private var sectionToDelete: (title: String, pattern: Set<Locale.Weekday>)?
@@ -82,6 +83,14 @@ struct RoutineView: View {
                 ToolbarItem(placement: .trailingBar) {
                     FilterToolbarButton(activeTab: .routines)
                 }
+                ToolbarItem(placement: .trailingBar) {
+                    Button {
+                        isShowingExport = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .accessibilityLabel("Export Routines")
+                }
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -100,6 +109,9 @@ struct RoutineView: View {
         }
         .sheet(item: $itemToEdit) { item in
             ItemForm(item: item)
+        }
+        .sheet(isPresented: $isShowingExport) {
+            MarkdownExportView(title: "Export Routine", markdown: exportMarkdown())
         }
         .sheet(isPresented: Binding(
             get: { addingRoutine != nil },
@@ -663,6 +675,75 @@ struct RoutineView: View {
             .joined(separator: " · ")
     }
     
+    // MARK: - Markdown export
+
+    /// All routine items (ignoring the current search/flag/category filters), grouped by
+    /// schedule — same grouping and ordering as the schedule cards on screen — with each
+    /// schedule's items further grouped into day-segment subsections, and rendered as Markdown.
+    private func exportMarkdown() -> String {
+        let sections: [(name: String, pattern: Set<Locale.Weekday>)] =
+            [("Every Day", Self.everyDay), ("Weekdays", Self.weekdays), ("Weekends", Self.weekends)]
+            + sortedCustomGroups.map { ($0.name, $0.pattern) }
+
+        let body = sections.compactMap { section -> String? in
+            let segmentBlocks = exportSegmentBlocks(for: allItems(for: section.pattern))
+            guard !segmentBlocks.isEmpty else { return nil }
+            return "## \(section.name)\n\n\(segmentBlocks.joined(separator: "\n\n"))"
+        }.joined(separator: "\n\n")
+
+        let generatedAt = Date.now.formatted(.dateTime.month().day().year().hour().minute())
+        let header = "# Routine Export\nGenerated \(generatedAt)"
+        return "\(header)\n\n\(body.isEmpty ? "_No routine items yet._" : body)\n"
+    }
+
+    /// Groups `items` by day segment (First Thing → Bedtime, then Open), sorted within each
+    /// segment by deadline time then title, and renders each segment as its own `###` subsection.
+    private func exportSegmentBlocks(for items: [PlanItem]) -> [String] {
+        func effectiveSection(_ item: PlanItem) -> DaySection? {
+            item.daySection ?? item.deadline.flatMap { DaySection.containing($0) }
+        }
+
+        var grouped: [DaySection?: [PlanItem]] = [:]
+        for item in items {
+            grouped[effectiveSection(item), default: []].append(item)
+        }
+        for key in grouped.keys {
+            grouped[key]?.sort { a, b in
+                switch (a.deadline, b.deadline) {
+                case let (.some(da), .some(db)): return da < db
+                case (.some, .none): return true
+                case (.none, .some): return false
+                case (.none, .none): return a.title.localizedCompare(b.title) == .orderedAscending
+                }
+            }
+        }
+
+        var blocks = DaySection.allCases.compactMap { section -> String? in
+            guard let sectionItems = grouped[section], !sectionItems.isEmpty else { return nil }
+            return "### \(section.displayName)\n\n\(sectionItems.map(exportBlock).joined(separator: "\n\n"))"
+        }
+        if let openItems = grouped[nil], !openItems.isEmpty {
+            blocks.append("### Open\n\n\(openItems.map(exportBlock).joined(separator: "\n\n"))")
+        }
+        return blocks
+    }
+
+    private func exportBlock(for item: PlanItem) -> String {
+        let categoryNames = (item.categories ?? [])
+            .map(\.name)
+            .sorted { $0.localizedCompare($1) == .orderedAscending }
+
+        var lines = [
+            "#### \(item.title)",
+            "- Flagged: \(item.isFlagged ? "Yes" : "No")",
+            "- Categories: \(categoryNames.isEmpty ? "None" : categoryNames.joined(separator: ", "))"
+        ]
+        if !item.notes.isEmpty {
+            lines.append("- Notes: \(item.notes)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
     @discardableResult
     private func reassign(uuidString: String, to pattern: Set<Locale.Weekday>) -> Bool {
         guard let uuid = UUID(uuidString: uuidString),

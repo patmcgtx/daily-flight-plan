@@ -495,6 +495,18 @@ A general look at sharing across the app, rather than one-off share buttons per 
 - Decide on output format(s): plain text summary, Markdown, something richer (PDF? image?) — consider round-tripping with Markdown Import (Phase 1.21) for a plain-text/Markdown format, since that's already a supported input format
 - Standard `ShareLink` throughout rather than bespoke share-sheet plumbing per view
 - See also the "Web links" item in Phase 3.3 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
+- ✅ *(implemented ahead of this phase being fully scoped)* Routine-tab export: a toolbar button
+  renders every routine item (title, flagged status, days of week, notes, segment, categories) as
+  Markdown, grouped by schedule the same way the schedule cards are, in a sheet with a Copy button
+  and a `ShareLink` backed by a temp `.md` file (covers AirDrop/Messages/Save to Files/etc.).
+  Round-trips with Markdown Import's `DaySection` naming. Other scopes (Timeline day, single item,
+  date range, search results) are still open.
+- ✅ *(implemented ahead of this phase being fully scoped)* Day (Paper Plan) export: the same
+  toolbar button/sheet pattern as the Routine export above, but for the currently selected day's
+  items — grouped by day section instead of weekday pattern (a single day has no weekday
+  grouping), and including each item's completion status (pending/completed/canceled) alongside
+  flagged status, segment, categories, and notes. Shared the sheet UI by generalizing
+  `RoutineExportView` into `MarkdownExportView(title:markdown:)`.
 
 ### Phase 3.6 — Projects support
 - Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.
