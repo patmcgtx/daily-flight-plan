@@ -289,7 +289,11 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
 
 ## Version 0.2 — UX Refinements (not release-ready)
 
-Improves existing features based on real use. No new capabilities — better UX on the four main views that need the most work.
+Improves existing features based on real use. No new capabilities — better UX on the four main
+views that need the most work. **One narrow exception**: Phase 2.6's AI quick-add bullet adds a
+small new entry point (single-item creation via on-device Foundation Models), carved out
+explicitly because it's small enough in scope and risk to ship alongside import refinements rather
+than waiting for a dedicated Version 0.3 feature phase — see that bullet for why.
 
 ### ✅ Phase 2.1 — Routine View Refinements
 - **Segment cards match Day view visual language**: within each schedule card, day-segment groups (Morning, Midday, etc.) are now their own collapsible `RoundedRectangle(cornerRadius: 14)` cards with `.background(.background)` fill, matching `FlightPlanView`'s section cards; header shows segment name + time range + item-count badge; title enlarges (`.headline` vs. `.subheadline.bold()`) when expanded
@@ -336,6 +340,13 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
 - **Progress gauges?** Add an item progress vs time of day gauge, plus basic items complete vs. total items, and maybe a third?
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
+- **Day intention note**: a short freeform text field on the Day view for what the user wants to
+  get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
+  tracked separately under Phase release.2 (now cross-referenced there, not duplicated); pulled
+  forward here since it's a small, self-contained addition.
+- **Cross-segment "completed so far" summary**: a day-wide rollup of everything completed across
+  all segments today, not just each section's own `completed/total` count — ties into the
+  "Reward when completing everything for today" idea above.
 - Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 
@@ -399,6 +410,18 @@ implementation notes/deviations are recorded at the end of each.
   dropping; provide a menu alternative for accessibility.
 - **Allow editing like a _normal_ list**: Support swipe-to-delete, animated deletions, and dragging
   items between segments.
+- **Single-item AI quick-add** *(the one new-capability exception to this version's scope — see
+  the Version 0.2 header note)*: a button on the Day view that takes free text and uses on-device
+  Foundation Models to create one `PlanItem` — title/notes/date/deadlineTime/daySection/
+  isRecurring/recurringWeekdays/isFlagged, reusing the `@Generable` struct shape originally
+  sketched for Phase 1.22's chat tab. Grouped here with the rest of Import UX rather than its own
+  phase since it's really the single-item, no-paste-needed sibling of Markdown Import's
+  multi-item paste-and-review flow — same underlying mechanism, smaller surface.
+  **Why this doesn't repeat Phase 2.4's removal**: Phase 2.4 removed the Comm tab because the
+  *chat interface itself* — streaming responses, conversation state, tool-calling plumbing — was
+  buggy and not worth the upkeep, not because on-device structured item creation was a bad idea.
+  This keeps only that second part: one button, one text field, one `@Generable` call, no
+  conversation, no tab, no streaming.
 
 ### Phase 2.7 — Missed Items Review & Pull-Forward
 **Note**: this phase replaces the automatic "Spillover" behavior from Phase 1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
@@ -500,13 +523,24 @@ A general look at sharing across the app, rather than one-off share buttons per 
   `Weekends`/custom, same as the schedule cards), then by day segment as a `###` subsection
   (`First Thing`…`Bedtime`, then `Open`) — with each item listing flagged status, categories, and
   notes. (Days-of-week and segment are conveyed by the nested headers, not repeated per item.)
-  Segment names match the strings `DaySection(importing:)` recognizes in Markdown Import, but this
-  is naming compatibility, not a round-trip: `MarkdownImportViewModel.ProposedItem` only carries
-  title/section/recurrence/weekdays (flagged status, categories, and notes aren't read back in),
-  and its fallback parser (used when Foundation Models is unavailable) would treat every nonempty
+  **Round-trip import is not supported**: `MarkdownImportViewModel` cannot reconstruct the
+  exported schedule/segment structure or all item metadata. `ProposedItem` only carries
+  title/section/recurrence/weekdays (flagged status, categories, and notes aren't read back), and
+  its fallback parser (used when Foundation Models is unavailable) would treat every nonempty
   export line — headings and `- ` metadata alike — as its own item rather than reconstructing the
   original ones. Other scopes (Timeline day, single item, date range, search results) are still
   open.
+- **Routine Markdown import** *(not yet implemented)*: a dedicated import flow for the Routine
+  tab. The current Markdown Import (Phase 1.21) has no parser capable of reconstructing
+  `RoutineMarkdownExporter`'s output — it has no concept of the nested `##` schedule / `###`
+  segment headers, and its fallback parser would read each `#### Title` heading and each
+  `- Flagged:`/`- Categories:`/`- Notes:` metadata line as its own separate item rather than
+  folding them into one template. This needs new parsing logic (AI-assisted and/or structural,
+  keyed off the heading levels) that reconstructs one template per `####` block — its weekday
+  pattern from the enclosing `##` schedule name, its day segment from the enclosing `###` name,
+  and its flagged/categories/notes fields from that block's `- ` lines — not just a reuse of the
+  existing title-only fallback parser. Also gives Routine the paste-to-import flow that Phase 2.6
+  already flagged belongs on its own, separate from the Day view's import.
 - ✅ *(implemented ahead of this phase being fully scoped)* Day (Paper Plan) export: the same
   pattern as the Routine export above, but for the currently selected day's items — grouped by day
   section only (a single day has no weekday grouping) — including each item's completion status
@@ -565,13 +599,23 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - **Timeline tab** (Nav Log): general UX audit and fix
 - **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
 - **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 2.2)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase release.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
+- **Per-filter "only" option**: generalize the Timeline Missed/Flagged isolate-style toggles (see
+  Phase 2.2) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders,
+  category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting
+  to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
+  specifically need this most, then decide how general to make the underlying mechanism.
 
 ### Phase release.2 — Fit and Finish
 - Address findings from Phase 1.14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Categories rework?** Make the categories selector work just like MapsPlus? It's really nice in MapsPlus.
-- **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
-- **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
+- **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft
+  Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of
+  Flight" (work day / weekend / vacation?) fields. (The "Today's Destination" / day-intention
+  field originally scoped here has moved to Phase 2.3 — see "Day intention note" there; this
+  bullet now covers only Aircraft Identification, Flight Rules, and Type of Flight.)
+- **Note**: the "Day note area" freeform-intention-field item originally tracked here has moved to
+  Phase 2.3 ("Day intention note") — same idea, consolidated into one roadmap entry rather than two.
 - Get a nice AI summary of the day once it's complete, in the day view, as a sort of reward
 - Are we hiding day segments that have passed?
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
