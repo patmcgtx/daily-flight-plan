@@ -19,6 +19,17 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
 
 - **Crash on delete-all-items**: deleting all items triggers a crash. Not yet root-caused.
 
+- **Deep links to Reminders/Calendar reportedly broken**: user-reported, not yet reproduced. Need
+  specifics before investigating — which deep link (the `x-apple-reminderkit://` row action from
+  Phase 1.19, or the `calshow:` tap from Phase 1.7), which OS/device, and what actually happens
+  when tapped (nothing, wrong app, wrong item, crash).
+
+- **App sometimes opens to the Routine tab instead of the intended default**: user-reported,
+  intermittent, not yet reproduced or root-caused. `DayView.body`'s `.onAppear` sets
+  `activeTab = .paperPlan` only when `activeTab == .focus` (its declared initial value) — worth
+  checking whether `@State private var activeTab` is somehow retaining a prior `.routines` value
+  across scene restoration/relaunch instead of starting fresh at `.focus`.
+
 - **Tests that spin up a real `ModelContainer` crash intermittently under parallel test
   execution**: individual tests in `CategoriesEditViewModelTests` (e.g.
   `addCategoryInsertsTrimmedName()`, `deleteCategoryRemovesFromStore()`) and `ModelContainersTests`
