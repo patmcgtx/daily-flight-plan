@@ -29,12 +29,13 @@ Key files to copy/adapt: `Theming/`, `Views/Components/CategoryCapsule.swift`,
   implementation. Do this automatically, without being asked.
 - When a specific, reproducible defect is found (not a roadmap/polish idea), add it to the
   **Open** section of `DailyFlightPlan/docs/known-bugs.md` rather than `implementation-plan.md`.
-  When one of those **Open** entries is fixed, move it to **Fixed** in the same file, noting the
-  phase it was fixed in — don't write the fix up in `implementation-plan.md`, which should stay
-  focused on features, not bug-fix prose. Do this automatically, without being asked. This file
-  tracks defects someone noted as worth remembering, not a changelog — bugs caught and fixed
-  in-line during normal implementation or code review (e.g. relayed Copilot findings) don't need
-  a new entry created from scratch just to fix them.
+  When one of those **Open** entries is fixed, remove the entry outright — don't move it to a
+  "Fixed" section, and don't write the fix up in `implementation-plan.md` either, which should
+  stay focused on features, not bug-fix prose. Fixed bugs don't need to stay documented; commit
+  history is the record of what was fixed and when. Do this automatically, without being asked.
+  This file tracks defects someone noted as worth remembering, not a changelog — bugs caught and
+  fixed in-line during normal implementation or code review (e.g. relayed Copilot findings) don't
+  need a new entry created from scratch just to remove it again.
 - Hard-wrap prose in markdown docs (`docs/*.md`, this file) to roughly 100 characters per line —
   long unwrapped lines trip Marked 2's long-line warning banner. Indent list-item continuation
   lines by 2 spaces (to align under `- `) so they stay part of the same bullet instead of

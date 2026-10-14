@@ -289,7 +289,11 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
 
 ## Version 0.2 — UX Refinements (not release-ready)
 
-Improves existing features based on real use. No new capabilities — better UX on the four main views that need the most work.
+Improves existing features based on real use. No new capabilities — better UX on the four main
+views that need the most work. **One narrow exception**: Phase 2.6's AI quick-add bullet adds a
+small new entry point (single-item creation via on-device Foundation Models), carved out
+explicitly because it's small enough in scope and risk to ship alongside import refinements rather
+than waiting for a dedicated Version 0.3 feature phase — see that bullet for why.
 
 ### ✅ Phase 2.1 — Routine View Refinements
 - **Segment cards match Day view visual language**: within each schedule card, day-segment groups (Morning, Midday, etc.) are now their own collapsible `RoundedRectangle(cornerRadius: 14)` cards with `.background(.background)` fill, matching `FlightPlanView`'s section cards; header shows segment name + time range + item-count badge; title enlarges (`.headline` vs. `.subheadline.bold()`) when expanded
@@ -337,12 +341,9 @@ Improves existing features based on real use. No new capabilities — better UX 
 - **Progress gauges?** Add an item progress vs time of day gauge, plus basic items complete vs. total items, and maybe a third?
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
 - **Day intention note**: a short freeform text field on the Day view for what the user wants to
-  get out of the day — related to the "Day note area" / "Today's Destination" ideas already
-  tracked under Phase release.2; worth pulling forward since it's a small, self-contained addition.
-- **Single-item AI quick-add**: a button on the Day view that takes free text and uses on-device
-  Foundation Models to create one `PlanItem` — a scoped-down revival of the removed Comm tab's
-  item-creation flow (see Phase 1.22's `@Generable` struct sketch: title/notes/date/deadlineTime/
-  daySection/isRecurring/recurringWeekdays/isFlagged), minus the chat UI and tab it used to live on.
+  get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
+  tracked separately under Phase release.2 (now cross-referenced there, not duplicated); pulled
+  forward here since it's a small, self-contained addition.
 - **Cross-segment "completed so far" summary**: a day-wide rollup of everything completed across
   all segments today, not just each section's own `completed/total` count — ties into the
   "Reward when completing everything for today" idea above.
@@ -409,6 +410,18 @@ implementation notes/deviations are recorded at the end of each.
   dropping; provide a menu alternative for accessibility.
 - **Allow editing like a _normal_ list**: Support swipe-to-delete, animated deletions, and dragging
   items between segments.
+- **Single-item AI quick-add** *(the one new-capability exception to this version's scope — see
+  the Version 0.2 header note)*: a button on the Day view that takes free text and uses on-device
+  Foundation Models to create one `PlanItem` — title/notes/date/deadlineTime/daySection/
+  isRecurring/recurringWeekdays/isFlagged, reusing the `@Generable` struct shape originally
+  sketched for Phase 1.22's chat tab. Grouped here with the rest of Import UX rather than its own
+  phase since it's really the single-item, no-paste-needed sibling of Markdown Import's
+  multi-item paste-and-review flow — same underlying mechanism, smaller surface.
+  **Why this doesn't repeat Phase 2.4's removal**: Phase 2.4 removed the Comm tab because the
+  *chat interface itself* — streaming responses, conversation state, tool-calling plumbing — was
+  buggy and not worth the upkeep, not because on-device structured item creation was a bad idea.
+  This keeps only that second part: one button, one text field, one `@Generable` call, no
+  conversation, no tab, no streaming.
 
 ### Phase 2.7 — Missed Items Review & Pull-Forward
 **Note**: this phase replaces the automatic "Spillover" behavior from Phase 1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
@@ -518,10 +531,16 @@ A general look at sharing across the app, rather than one-off share buttons per 
   original ones. Other scopes (Timeline day, single item, date range, search results) are still
   open.
 - **Routine Markdown import** *(not yet implemented)*: a dedicated import flow for the Routine
-  tab, compatible with `RoutineMarkdownExporter`'s output format (schedule/segment headers, item
-  bullets) — closes the naming-compatibility gap noted just above, and gives Routine the
-  paste-to-import flow that Phase 2.6 already flagged belongs on its own, separate from the Day
-  view's import.
+  tab. The current Markdown Import (Phase 1.21) has no parser capable of reconstructing
+  `RoutineMarkdownExporter`'s output — it has no concept of the nested `##` schedule / `###`
+  segment headers, and its fallback parser would read each `#### Title` heading and each
+  `- Flagged:`/`- Categories:`/`- Notes:` metadata line as its own separate item rather than
+  folding them into one template. This needs new parsing logic (AI-assisted and/or structural,
+  keyed off the heading levels) that reconstructs one template per `####` block — its weekday
+  pattern from the enclosing `##` schedule name, its day segment from the enclosing `###` name,
+  and its flagged/categories/notes fields from that block's `- ` lines — not just a reuse of the
+  existing title-only fallback parser. Also gives Routine the paste-to-import flow that Phase 2.6
+  already flagged belongs on its own, separate from the Day view's import.
 - ✅ *(implemented ahead of this phase being fully scoped)* Day (Paper Plan) export: the same
   pattern as the Routine export above, but for the currently selected day's items — grouped by day
   section only (a single day has no weekday grouping) — including each item's completion status
@@ -590,8 +609,13 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - Address findings from Phase 1.14 usability testing
 - Bug fixes, UX tweaks, visual polish
 - **Categories rework?** Make the categories selector work just like MapsPlus? It's really nice in MapsPlus.
-- **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of Flight" (work day / weekend / vacation?) fields; a "Today's Destination" field with placeholder "What are your goals for today?" — an open-ended text field for the day's purpose
-- **Day note area**: a freeform text field at the top of the day view for "what is today all about?" — a one-line intention or focus for the day; persisted per-date
+- **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft
+  Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of
+  Flight" (work day / weekend / vacation?) fields. (The "Today's Destination" / day-intention
+  field originally scoped here has moved to Phase 2.3 — see "Day intention note" there; this
+  bullet now covers only Aircraft Identification, Flight Rules, and Type of Flight.)
+- **Note**: the "Day note area" freeform-intention-field item originally tracked here has moved to
+  Phase 2.3 ("Day intention note") — same idea, consolidated into one roadmap entry rather than two.
 - Get a nice AI summary of the day once it's complete, in the day view, as a sort of reward
 - Are we hiding day segments that have passed?
 - **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
