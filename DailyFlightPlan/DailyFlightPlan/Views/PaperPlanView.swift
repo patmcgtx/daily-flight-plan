@@ -56,6 +56,7 @@ struct PaperPlanView: View {
     @State private var searchText: String = ""
     @State private var isShowingSearch = false
     @FocusState private var isSearchFieldFocused: Bool
+    @State private var isShowingExport = false
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -110,6 +111,13 @@ struct PaperPlanView: View {
                         )
 
                         FilterToolbarButton(activeTab: .flightDeck)
+
+                        Button {
+                            isShowingExport = true
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityLabel("Export Day Plan")
                     }
                 }
                 #if os(iOS)
@@ -143,6 +151,12 @@ struct PaperPlanView: View {
             }
         }
         .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
+        .sheet(isPresented: $isShowingExport) {
+            MarkdownExportView(
+                title: "Export Day Plan",
+                markdown: DayPlanMarkdownExporter.export(items: exportItems(for: viewModel.selectedDate), date: viewModel.selectedDate)
+            )
+        }
         .onAppear { initializeExpandedSections() }
         .onChange(of: viewModel.selectedDate) { initializeExpandedSections() }
         .onChange(of: filterKey) { applyFilterToExpandedSections() }
@@ -462,6 +476,16 @@ struct PaperPlanView: View {
             Calendar.current.isDate($0.date, inSameDayAs: date)
             && $0.status != .canceled
         }
+    }
+
+    // MARK: - Markdown export
+
+    /// Every item on `date`, including canceled ones — completion status (pending/completed/
+    /// canceled) is itself part of what `DayPlanMarkdownExporter` renders, so this intentionally
+    /// doesn't apply the search/flag/completed/category filters `activeItems(for:)` uses for
+    /// on-screen display.
+    private func exportItems(for date: Date) -> [PlanItem] {
+        allItems.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
     }
 
     private var filterKey: String {

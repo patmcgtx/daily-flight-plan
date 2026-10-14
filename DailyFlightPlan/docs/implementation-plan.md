@@ -495,6 +495,33 @@ A general look at sharing across the app, rather than one-off share buttons per 
 - Decide on output format(s): plain text summary, Markdown, something richer (PDF? image?) — consider round-tripping with Markdown Import (Phase 1.21) for a plain-text/Markdown format, since that's already a supported input format
 - Standard `ShareLink` throughout rather than bespoke share-sheet plumbing per view
 - See also the "Web links" item in Phase 3.3 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
+- ✅ *(implemented ahead of this phase being fully scoped)* Routine-tab export: a toolbar button
+  renders every routine item as Markdown — grouped by schedule (`## Every Day`/`Weekdays`/
+  `Weekends`/custom, same as the schedule cards), then by day segment as a `###` subsection
+  (`First Thing`…`Bedtime`, then `Open`) — with each item listing flagged status, categories, and
+  notes. (Days-of-week and segment are conveyed by the nested headers, not repeated per item.)
+  Segment names match the strings `DaySection(importing:)` recognizes in Markdown Import, but this
+  is naming compatibility, not a round-trip: `MarkdownImportViewModel.ProposedItem` only carries
+  title/section/recurrence/weekdays (flagged status, categories, and notes aren't read back in),
+  and its fallback parser (used when Foundation Models is unavailable) would treat every nonempty
+  export line — headings and `- ` metadata alike — as its own item rather than reconstructing the
+  original ones. Other scopes (Timeline day, single item, date range, search results) are still
+  open.
+- ✅ *(implemented ahead of this phase being fully scoped)* Day (Paper Plan) export: the same
+  pattern as the Routine export above, but for the currently selected day's items — grouped by day
+  section only (a single day has no weekday grouping) — including each item's completion status
+  (pending/completed/canceled) and whether it's a routine item, alongside flagged status, segment,
+  categories, and notes.
+- ✅ Shared export sheet (`MarkdownExportView(title:markdown:)`, generalized from an earlier
+  Routine-only `RoutineExportView`) adds a Preview/Raw toggle — Preview renders the app's own
+  Markdown subset (`#`/`##`/`###`/`####` headers, `- ` bullets) with real heading styles and
+  bullets via a small line-by-line parser, since `Text`/`AttributedString` don't apply block-level
+  Markdown styling on their own; Raw shows the plain text. Both are text-selectable; Copy and Share
+  always act on the underlying raw Markdown regardless of which tab is showing.
+- ✅ Extracted the per-tab rendering logic out of `RoutineView`/`PaperPlanView` into standalone,
+  stateless `RoutineMarkdownExporter`/`DayPlanMarkdownExporter` enums (plain data in, `String`
+  out — no `@Query`/`@Environment` dependency) so it's unit-testable without a `ModelContainer`;
+  covered by `RoutineMarkdownExporterTests`/`DayPlanMarkdownExporterTests`.
 
 ### Phase 3.6 — Projects support
 - Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.

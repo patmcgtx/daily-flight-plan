@@ -19,6 +19,21 @@ When one is fixed, move its entry from **Open** to **Fixed** rather than writing
 
 - **Crash on delete-all-items**: deleting all items triggers a crash. Not yet root-caused.
 
+- **Tests that spin up a real `ModelContainer` crash intermittently under parallel test
+  execution**: individual tests in `CategoriesEditViewModelTests` (e.g.
+  `addCategoryInsertsTrimmedName()`, `deleteCategoryRemovesFromStore()`) and `ModelContainersTests`
+  (e.g. `seedSampleDataInsertsWhenEmpty()`, `deduplicateInstancesRemovesDuplicatesKeepingOne()`)
+  abort mid-run (`libsystem_c.dylib: abort() called` inside `Runner._applyScopingTraits`),
+  reproducible even running just one affected suite in isolation. The console log shows
+  CloudKit-mirroring teardown races ("store was removed from the coordinator") on an in-memory
+  `ModelContainer` right before each crash — looks like parallel test workers tearing down one
+  container's CloudKit mirroring delegate while another test in the same worker process is still
+  using a different container. Not specific to either suite's own logic (both suites' other tests,
+  and every suite that doesn't touch `ModelContainer` — including `ModelContainerTests`-adjacent
+  pure-function suites like the new `RoutineMarkdownExporterTests`/`DayPlanMarkdownExporterTests`
+  — pass reliably). Not yet root-caused; found while running the full suite during unrelated
+  Markdown-export work.
+
 - **Flight tab's date-picker sheet looks undersized on macOS**: `DatePickerToolbarButton`
   presents via `.sheet` on macOS (`.popover` attached to a toolbar button there never opens at
   all — a separate issue, worked around by branching to `.sheet`), with the content frame fixed

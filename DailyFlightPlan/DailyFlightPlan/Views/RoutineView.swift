@@ -26,6 +26,7 @@ struct RoutineView: View {
 
     @State private var itemToEdit: PlanItem?
     @State private var addingRoutine: RoutineAddRequest?
+    @State private var isShowingExport = false
     @State private var isPickingCustomSection = false
     @State private var pendingWeekdays: Set<Locale.Weekday>?
     @State private var sectionToDelete: (title: String, pattern: Set<Locale.Weekday>)?
@@ -82,6 +83,14 @@ struct RoutineView: View {
                 ToolbarItem(placement: .trailingBar) {
                     FilterToolbarButton(activeTab: .routines)
                 }
+                ToolbarItem(placement: .trailingBar) {
+                    Button {
+                        isShowingExport = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .accessibilityLabel("Export Routines")
+                }
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -100,6 +109,9 @@ struct RoutineView: View {
         }
         .sheet(item: $itemToEdit) { item in
             ItemForm(item: item)
+        }
+        .sheet(isPresented: $isShowingExport) {
+            MarkdownExportView(title: "Export Routine", markdown: RoutineMarkdownExporter.export(templates: templates))
         }
         .sheet(isPresented: Binding(
             get: { addingRoutine != nil },
