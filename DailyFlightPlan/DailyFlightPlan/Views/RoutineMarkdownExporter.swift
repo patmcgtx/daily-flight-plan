@@ -84,7 +84,16 @@ enum RoutineMarkdownExporter {
             grouped[key]?.sort { a, b in
                 switch (a.deadline, b.deadline) {
                 case let (.some(da), .some(db)):
-                    return da != db ? da < db : a.title.localizedCompare(b.title) == .orderedAscending
+                    // Routine templates normalize their deadline onto whichever calendar day the
+                    // template happened to be created/edited on (see `ItemFormViewModel.save`),
+                    // so two templates' deadlines can land on different days — compare clock time
+                    // only, not the full `Date`, or templates would sort by creation date instead.
+                    let calendar = Calendar.current
+                    let (ha, ma) = (calendar.component(.hour, from: da), calendar.component(.minute, from: da))
+                    let (hb, mb) = (calendar.component(.hour, from: db), calendar.component(.minute, from: db))
+                    if ha != hb { return ha < hb }
+                    if ma != mb { return ma < mb }
+                    return a.title.localizedCompare(b.title) == .orderedAscending
                 case (.some, .none): return true
                 case (.none, .some): return false
                 case (.none, .none): return a.title.localizedCompare(b.title) == .orderedAscending

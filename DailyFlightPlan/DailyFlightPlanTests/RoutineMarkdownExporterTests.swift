@@ -11,10 +11,16 @@ import Foundation
 struct RoutineMarkdownExporterTests {
 
     private func date(hour: Int, minute: Int) -> Date {
+        date(year: 2026, month: 6, day: 15, hour: hour, minute: minute)
+    }
+
+    /// Templates normalize their deadline onto whichever calendar day they were created/edited
+    /// on, so cross-day sort-order tests need deadlines on different days, not just different times.
+    private func date(year: Int, month: Int, day: Int, hour: Int, minute: Int) -> Date {
         var components = DateComponents()
-        components.year = 2026
-        components.month = 6
-        components.day = 15
+        components.year = year
+        components.month = month
+        components.day = day
         components.hour = hour
         components.minute = minute
         return Calendar.current.date(from: components)!
@@ -145,6 +151,26 @@ struct RoutineMarkdownExporterTests {
         let appleRange = markdown.range(of: "#### Apple Task")!
         let zebraRange = markdown.range(of: "#### Zebra Task")!
         #expect(appleRange.lowerBound < zebraRange.lowerBound)
+    }
+
+    @Test("Templates sort by clock time, not by the calendar day their deadline happens to be normalized onto")
+    func exportSegmentItemsSortByClockTimeAcrossDifferentDeadlineDays() {
+        let everyDay = Array(RoutineMarkdownExporter.everyDay)
+        // Earlier calendar date, later clock time — a naive full-Date comparison would sort this first.
+        let earlyDateLateTime = item(
+            title: "Early Date Late Time", deadline: date(year: 2026, month: 1, day: 1, hour: 9, minute: 0),
+            daySection: .morning, recurringWeekdays: everyDay
+        )
+        // Later calendar date, earlier clock time — should actually sort first.
+        let lateDateEarlyTime = item(
+            title: "Late Date Early Time", deadline: date(year: 2026, month: 6, day: 15, hour: 8, minute: 0),
+            daySection: .morning, recurringWeekdays: everyDay
+        )
+        let markdown = RoutineMarkdownExporter.export(templates: [earlyDateLateTime, lateDateEarlyTime])
+
+        let earlyDateRange = markdown.range(of: "#### Early Date Late Time")!
+        let lateDateRange = markdown.range(of: "#### Late Date Early Time")!
+        #expect(lateDateRange.lowerBound < earlyDateRange.lowerBound)
     }
 
     @Test("A schedule with no matching templates is omitted from the export entirely")
