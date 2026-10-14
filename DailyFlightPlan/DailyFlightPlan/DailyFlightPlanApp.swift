@@ -17,11 +17,19 @@ struct DailyFlightPlanApp: App {
 
     init() {
         do {
-            modelContainer = try ModelContainer.persistentContainer()
+            // When hosting unit tests, skip CloudKit so tests don't need iCloud entitlements or
+            // touch the real store.
+            modelContainer = try Self.isHostingUnitTests
+                ? ModelContainer.inMemoryContainer()
+                : ModelContainer.persistentContainer()
         } catch {
             fatalError("Failed to initialize persistent model container: \(error)")
         }
         Self.registerPaperPlanFontsIfNeeded()
+    }
+
+    private static var isHostingUnitTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 
     /// `Info.plist`'s `UIAppFonts` only registers fonts on iOS-family platforms — macOS ignores

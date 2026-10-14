@@ -19,6 +19,16 @@ extension ModelContainer {
         )
     }
 
+    /// Creates an empty, local-only container that is never written to disk or synced.
+    @MainActor
+    static func inMemoryContainer() throws -> ModelContainer {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        return try ModelContainer(
+            for: PlanItem.self, PlanCategory.self,
+            configurations: config
+        )
+    }
+
     /// Deletes every PlanItem from the store (including routine templates).
     /// CloudKit will propagate the deletion to all devices.
     /// Two-pass: clears relationships before deleting to avoid self-referential nullify conflicts.
@@ -340,11 +350,7 @@ extension ModelContainer {
     /// Creates an in-memory container seeded with sample data for previews and tests.
     @MainActor
     static func inMemorySampleContainer() throws -> ModelContainer {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: PlanItem.self, PlanCategory.self,
-            configurations: config
-        )
+        let container = try inMemoryContainer()
 
         let today = Date.now
         let cal = Calendar.current
