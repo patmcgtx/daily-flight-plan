@@ -127,6 +127,18 @@ struct DayPlanMarkdownExporterTests {
         #expect(appleRange.lowerBound < zebraRange.lowerBound)
     }
 
+    @Test("Items sharing the exact same deadline break the tie alphabetically by title")
+    func exportSectionItemsWithEqualDeadlinesSortByTitle() {
+        let sharedDeadline = date(hour: 8, minute: 0)
+        let zebra = item(title: "Zebra Task", deadline: sharedDeadline, daySection: .morning)
+        let apple = item(title: "Apple Task", deadline: sharedDeadline, daySection: .morning)
+        let markdown = DayPlanMarkdownExporter.export(items: [zebra, apple], date: .now)
+
+        let appleRange = markdown.range(of: "### Apple Task")!
+        let zebraRange = markdown.range(of: "### Zebra Task")!
+        #expect(appleRange.lowerBound < zebraRange.lowerBound)
+    }
+
     @Test("Canceled items are still included in the export alongside pending and completed items")
     func exportIncludesCanceledItems() {
         let canceled = item(title: "Canceled Task", daySection: .morning, status: .canceled)

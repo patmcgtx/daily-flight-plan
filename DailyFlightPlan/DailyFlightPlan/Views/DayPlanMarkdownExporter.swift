@@ -24,7 +24,8 @@ enum DayPlanMarkdownExporter {
         for key in grouped.keys {
             grouped[key]?.sort { a, b in
                 switch (a.deadline, b.deadline) {
-                case let (.some(da), .some(db)): return da < db
+                case let (.some(da), .some(db)):
+                    return da != db ? da < db : a.title.localizedCompare(b.title) == .orderedAscending
                 case (.some, .none): return true
                 case (.none, .some): return false
                 case (.none, .none): return a.title.localizedCompare(b.title) == .orderedAscending

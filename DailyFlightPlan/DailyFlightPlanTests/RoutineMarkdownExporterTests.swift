@@ -134,6 +134,19 @@ struct RoutineMarkdownExporterTests {
         #expect(appleRange.lowerBound < zebraRange.lowerBound)
     }
 
+    @Test("Items sharing the exact same deadline break the tie alphabetically by title")
+    func exportSegmentItemsWithEqualDeadlinesSortByTitle() {
+        let everyDay = Array(RoutineMarkdownExporter.everyDay)
+        let sharedDeadline = date(hour: 8, minute: 0)
+        let zebra = item(title: "Zebra Task", deadline: sharedDeadline, daySection: .morning, recurringWeekdays: everyDay)
+        let apple = item(title: "Apple Task", deadline: sharedDeadline, daySection: .morning, recurringWeekdays: everyDay)
+        let markdown = RoutineMarkdownExporter.export(templates: [zebra, apple])
+
+        let appleRange = markdown.range(of: "#### Apple Task")!
+        let zebraRange = markdown.range(of: "#### Zebra Task")!
+        #expect(appleRange.lowerBound < zebraRange.lowerBound)
+    }
+
     @Test("A schedule with no matching templates is omitted from the export entirely")
     func exportOmitsEmptySchedules() {
         let template = item(recurringWeekdays: Array(RoutineMarkdownExporter.weekdays))
