@@ -1,0 +1,92 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Unit tests (iOS 26 simulator)
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -n 1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Pick an iOS 26 iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | jq -r '
+            .devices | to_entries
+            | map(select(.key | test("SimRuntime\\.iOS-26")))
+            | sort_by(.key) | reverse
+            | map(.value[] | select(.name | startswith("iPhone")))
+            | .[0].udid')
+          if [ -z "$UDID" ] || [ "$UDID" = "null" ]; then
+            echo "No iOS 26 iPhone simulator found" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep "$UDID"
+
+      - name: Run tests
+        working-directory: DailyFlightPlan
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project DailyFlightPlan.xcodeproj \
+            -scheme DailyFlightPlan \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Report code coverage
+        if: always()
+        working-directory: DailyFlightPlan
+        run: |
+          if [ ! -d TestResults.xcresult ]; then
+            echo "No result bundle, skipping coverage."
+            exit 0
+          fi
+          xcrun xccov view --report --json TestResults.xcresult > coverage.json
+          jq -r '
+            def pct: (. * 1000 | round / 10 | tostring) + "%";
+            .targets[] | select(.name == "DailyFlightPlan.app") |
+            "## Code coverage: \(.lineCoverage | pct)",
+            "",
+            "\(.coveredLines) of \(.executableLines) lines covered in DailyFlightPlan.app.",
+            "",
+            "<details><summary>Coverage by file</summary>",
+            "",
+            "| File | Coverage | Lines |",
+            "| --- | ---: | ---: |",
+            (.files | sort_by(.lineCoverage)[] |
+              "| \(.name) | \(.lineCoverage | pct) | \(.coveredLines)/\(.executableLines) |"),
+            "",
+            "</details>"
+          ' coverage.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: TestResults
+          path: |
+            DailyFlightPlan/TestResults.xcresult
+            DailyFlightPlan/coverage.json
+          if-no-files-found: ignore

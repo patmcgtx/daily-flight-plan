@@ -635,7 +635,17 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
   - **Addition**: `ModelContainers` wasn't in the original list but had real, previously-untested logic (`deduplicateItems`/`deduplicateInstances`/`deduplicateCategories`/`seedSampleDataIfNeeded`) worth covering.
   - **Production change for testability**: `DayViewModel.currentTime` gained an `init(currentTime:)` parameter (defaults to `.now`) so clock-dependent logic (missed items, current section, auto-collapse, past sections) can be tested deterministically instead of racing the real clock.
   - **Environment note**: the default Xcode-autocreated scheme was replaced with an explicit shared scheme (`DailyFlightPlan.xcscheme`) to disable the placeholder UI test stubs (slow to run) and enable code coverage. `ItemFormViewModelTests`/`DayViewModelTests`/`CategoriesEditViewModelTests`/`ModelContainersTests` are marked `@Suite(.serialized)` — parallel SwiftData/`@Model` access across suites was crashing the test process on this beta OS/Xcode combo.
-- UI tests (XCUIAutomation): core flows — add item, complete item, cancel/defer item, navigate days, open settings. Currently disabled in the scheme (see note above) pending a real pass at this item.
+- **✅ CI unit tests (GitHub Actions)**: `.github/workflows/tests.yml` runs the unit tests on an
+  iOS 26 simulator on every PR and push to `main`, with a per-file coverage table in each run's
+  summary (mirrors MapsPlus). When hosting tests, the app uses an in-memory, non-CloudKit model
+  container so tests never need iCloud or touch the real store.
+- **View tests (ViewInspector), once the project is more stable**: SwiftUI views are the main
+  coverage gap (`FlightPlanView`, `CardDeckView`, `RoutineView`, `MarkdownImportView`, `ItemForm`
+  near 0%). Add ViewInspector unit tests as MapsPlus did, but wait until the views stop churning
+  so the tests aren't rewritten every phase.
+- UI tests (XCUIAutomation), once the project is more stable: core flows — add item, complete
+  item, cancel/defer item, navigate days, open settings. Currently disabled in the scheme (see
+  note above) pending a real pass at this item.
 
 ### Phase release.5 — Beta Testing
 - Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
