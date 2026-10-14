@@ -53,7 +53,17 @@ Mock service implementations live alongside their protocols in `#if DEBUG` block
 - **`#if DEBUG` mock services** — used in SwiftUI previews; `injectMockServices()` view modifier wires them all at once
 - **Theme via single modifier** — `ThemeViewModifier` applied once at the root preserves view identity across theme changes
 - **Foundation Models structured generation** — `@Generable` structs (`ParsedTask`, `ParsedTaskList`) + `LanguageModelSession` used in `MarkdownImportView`; graceful fallback (regex strip) when `SystemLanguageModel.default.isAvailable` is false
-- **Pure, unit-testable Markdown exporters** — `RoutineMarkdownExporter`/`DayPlanMarkdownExporter` are stateless enums with static functions that take plain data (`[PlanItem]`, a `Date`) and return a `String`; they have no `@Query`/`@Environment` dependency, so `RoutineMarkdownExporterTests`/`DayPlanMarkdownExporterTests` construct `PlanItem`s directly and assert on the rendered Markdown without a `ModelContainer`. Both views call into their exporter from a `.sheet` presenting the shared `MarkdownExportView`, which owns the Preview/Raw toggle, Copy button, and `ShareLink`-backed `.md` file. `DaySection.containing` is implicitly `@MainActor`-isolated (the app target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`), so test suites calling into these exporters are marked `@MainActor`, and the exporters call `DaySection.containing($0)` via an explicit closure rather than point-free (`.flatMap(DaySection.containing)`) to avoid a spurious actor-isolation warning.
+- **Pure, unit-testable Markdown exporters** — `RoutineMarkdownExporter`/`DayPlanMarkdownExporter`
+  are stateless enums with static functions that take plain data (`[PlanItem]`, a `Date`) and
+  return a `String`; they have no `@Query`/`@Environment` dependency, so
+  `RoutineMarkdownExporterTests`/`DayPlanMarkdownExporterTests` construct `PlanItem`s directly and
+  assert on the rendered Markdown without a `ModelContainer`. Both views call into their exporter
+  from a `.sheet` presenting the shared `MarkdownExportView`, which owns the Preview/Raw toggle,
+  Copy button, and `ShareLink`-backed `.md` file. `DaySection.containing` is implicitly
+  `@MainActor`-isolated (the app target sets `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`), so test
+  suites calling into these exporters are marked `@MainActor`, and the exporters call
+  `DaySection.containing($0)` via an explicit closure rather than point-free
+  (`.flatMap(DaySection.containing)`) to avoid a spurious actor-isolation warning.
 
 ## Data models
 
@@ -126,7 +136,21 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
 - **Flight** (`airplane`) — primary day view, styled as a filed paper flight plan (`PaperPlanView.swift`); button-based day navigation; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
-- **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all start expanded; collapsed shows name + item count). Within each card, items are subdivided by day segment (Morning, Midday, …), and each segment is itself a collapsible card matching the Flight tab's section-card styling (`.background` fill, 0.5pt border, title enlarges to `.headline` when expanded, item-count badge, `+ Add item` button pre-wired to that weekday pattern + segment via a combined `ItemForm(templateWeekdays:section:)` initializer); untimed items flow as `HFlow` pills, timed items get full-width deadline rows. Collapsed segment headers show a one-line AI summary (Foundation Models `LanguageModelSession`, same pattern as the Flight view) with a deterministic title/time-based fallback when the on-device model is unavailable (e.g. Simulator) or fails. Tap any item to edit, long-press for Edit/Delete context menu; drag items between schedule cards to reassign weekday pattern; add/delete custom weekday sections. A toolbar `square.and.arrow.up` export button opens `MarkdownExportView` via `RoutineMarkdownExporter`, rendering every template (ignoring active filters) grouped by schedule, then by day segment.
+- **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by
+  weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all
+  start expanded; collapsed shows name + item count). Within each card, items are subdivided by
+  day segment (Morning, Midday, …), and each segment is itself a collapsible card matching the
+  Flight tab's section-card styling (`.background` fill, 0.5pt border, title enlarges to
+  `.headline` when expanded, item-count badge, `+ Add item` button pre-wired to that weekday
+  pattern + segment via a combined `ItemForm(templateWeekdays:section:)` initializer); untimed
+  items flow as `HFlow` pills, timed items get full-width deadline rows. Collapsed segment headers
+  show a one-line AI summary (Foundation Models `LanguageModelSession`, same pattern as the Flight
+  view) with a deterministic title/time-based fallback when the on-device model is unavailable
+  (e.g. Simulator) or fails. Tap any item to edit, long-press for Edit/Delete context menu; drag
+  items between schedule cards to reassign weekday pattern; add/delete custom weekday sections. A
+  toolbar `square.and.arrow.up` export button opens `MarkdownExportView` via
+  `RoutineMarkdownExporter`, rendering every template (ignoring active filters) grouped by
+  schedule, then by day segment.
 - **Timeline** (`checklist`) — chronological multi-day list of all plan items; fully interactive
 - Tab order in the UI is Flight / Routine / Timeline (`Cmd+1` Flight, `Cmd+2` Routine, `Cmd+3` Timeline on macOS)
 - The original **Day** tab (`airplane`, `FlightPlanView.swift`, swipe-pager-based) is retired —
