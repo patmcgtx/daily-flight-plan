@@ -523,10 +523,10 @@ A general look at sharing across the app, rather than one-off share buttons per 
   `Weekends`/custom, same as the schedule cards), then by day segment as a `###` subsection
   (`First Thing`…`Bedtime`, then `Open`) — with each item listing flagged status, categories, and
   notes. (Days-of-week and segment are conveyed by the nested headers, not repeated per item.)
-  Segment names match the strings `DaySection(importing:)` recognizes in Markdown Import, but this
-  is naming compatibility, not a round-trip: `MarkdownImportViewModel.ProposedItem` only carries
-  title/section/recurrence/weekdays (flagged status, categories, and notes aren't read back in),
-  and its fallback parser (used when Foundation Models is unavailable) would treat every nonempty
+  **Round-trip import is not supported**: `MarkdownImportViewModel` cannot reconstruct the
+  exported schedule/segment structure or all item metadata. `ProposedItem` only carries
+  title/section/recurrence/weekdays (flagged status, categories, and notes aren't read back), and
+  its fallback parser (used when Foundation Models is unavailable) would treat every nonempty
   export line — headings and `- ` metadata alike — as its own item rather than reconstructing the
   original ones. Other scopes (Timeline day, single item, date range, search results) are still
   open.
