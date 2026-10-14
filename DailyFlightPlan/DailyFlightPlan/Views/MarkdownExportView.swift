@@ -144,7 +144,7 @@ struct MarkdownExportView: View {
     }
 
     private func copyToClipboard() {
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         UIPasteboard.general.string = markdown
         #elseif os(macOS)
         NSPasteboard.general.clearContents()
