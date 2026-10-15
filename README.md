@@ -115,8 +115,10 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
 - **Timeline** — chronological multi-day list
-  - Shows all plan items across all dates, lazily loaded 7 days at a time in each direction, with a
-    filter bar and dedicated search
+  - Shows one-off and already-materialized plan items across all dates, lazily loaded 7 days at a
+    time in each direction, with a filter bar and dedicated search; future dates show only
+    one-off scheduled items, not projected recurring habits (those remain a Flight tab preview,
+    since a routine could still change before the date arrives)
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
 **macOS keyboard shortcuts:** `Cmd+1` Flight · `Cmd+2` Routine · `Cmd+3` Timeline
