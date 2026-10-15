@@ -478,7 +478,9 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **✅ Search**: `.searchable(text:)` on the list — this is the *main* search surface for the whole app. Matches title and notes, case-insensitive, deliberately reaching every date rather than just the pre-cached `minLoadedDate...maxLoadedDate` window. Results replace the date-grouped list with a flat, date-sorted list (each row shows its date via `TimelineItemRow(showDate: true)`); empty state uses `ContentUnavailableView.search(text:)`; tapping a result opens the same edit sheet as a normal row. Respects the active Flagged/Done/Missed/category filters.
 - **✅ Fix: search field wasn't visible at all** — two stacked issues. First, `.searchable` was attached deep inside the `ScrollViewReader`/`List` chain, where it contended with the filter bar's own `.safeAreaInset(edge: .top)` for the same slot; moved it to the outer `NavigationStack` instead. Second, even after that, the field was still invisible on a physical device on iOS 26 (but fine in the iOS 27 simulator) — `.searchable`'s default `.automatic` placement apparently resolves differently between those OS builds (always-visible drawer vs. a minimized tap-to-expand button). Fixed by forcing an explicit `.navigationBarDrawer(displayMode: .always)` placement instead of leaving it to automatic resolution.
 - **✅ Search now runs a real database fetch, not an in-memory filter**: `searchResults` used to call `.filter` on the `allItems` `@Query` array (already fully materialized in memory). Switched to a fresh `FetchDescriptor<PlanItem>` with a `#Predicate` using `localizedStandardContains` (case/diacritic-insensitive, pushed down to the store) and `sortBy: [SortDescriptor(\.date)]`, so search performance and memory use no longer scale with total item count as the database grows over years of use. Verified at runtime (not just compile-time) that the predicate translates correctly and both matching and non-matching queries behave as expected.
-- Editing on today/future items with swipe gestures (cancel, defer, flag, delete)
+- **✅ Editing on today/future items with swipe gestures (cancel, defer, flag, delete)** —
+  landed on the new Nav Log tab (Phase 2.10) instead of here; Timeline itself still uses a
+  context menu (Edit/Cancel only, no delete)
 - **✅ Land on *today* + scroll to today**: already covered by the existing `ScrollViewReader`
   auto-scroll-on-appear and the toolbar "Go to Today" (`scope`) button — confirmed during catch-up
   planning that no new code was needed here, just closing out the line item.
@@ -495,6 +497,44 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **Addition (decided during catch-up planning)**: scope beyond "match the paper aesthetic" is
   still open — revisit alongside Phase 2.8 for any shared styling components worth factoring out
   across the three tabs.
+
+### Phase 2.10 — Nav Log (fresh Timeline rebuild)
+A second, deliberately plain take on the Timeline concept, added as its own tab rather than
+replacing Timeline — Timeline is left as-is for now so the two can be compared side by side.
+
+- **✅ New "Nav Log" tab**: `NavLogView.swift`, added to `DayView`'s `TabView` alongside Flight/
+  Routine/Timeline (`list.bullet.rectangle` icon, Cmd+4 shortcut on macOS)
+- **✅ Standard `List` with one `Section` per calendar day** — deliberately simpler than
+  Timeline's time-of-day sub-headers/segment grouping; a Figma mock showing richer per-segment
+  styling was provided but intentionally not followed for this pass, per explicit instruction to
+  keep this a plain, standard list
+- **✅ Swipe actions replace the context menu**: leading edge = Flag/Unflag (orange); trailing
+  edge = Delete (red, destructive), Cancel (gray), Defer (blue, pushes the item one day forward
+  keeping its day-section/deadline clock-time — `PlanItem.deferToTomorrow()`). **This is the only
+  screen that can delete an item** — Timeline and Day only ever cancel.
+- **✅ Extracted `TimelineViewModel`**: pulled the day-windowing/grouping/status-filter logic that
+  used to live inline in `TimelineView` out into a shared `@Observable` view model, so Nav Log
+  reuses it (`loadedItems`/`groupedByDate`/`chronologicalOrder`) instead of duplicating it;
+  Timeline was refactored to use the same view model with no behavior change
+- **✅ Fix: default scroll-to-today landed one section short, Today peeking out from under the
+  nav bar**: root cause wasn't the scroll API — `ScrollViewReader.scrollTo`, list style, and
+  scroll-target view were all ruled out by testing — it was the past/future window-growth
+  `onAppear` pagination cascading *during the initial mount*, before the scroll position settled,
+  which read each newly-loaded earlier day as itself being "first" and kept growing the window
+  past Today. Fixed by gating window growth behind a `hasSettled` flag that only flips true
+  ~300ms after mount, and by switching to the newer `ScrollPosition` API (set declaratively at
+  state-declaration time) instead of an imperative `ScrollViewReader.scrollTo` call in `onAppear`.
+  Verified on-device via the simulator at each step, including that later user-driven pagination
+  (scrolling to load more past/future days) still works after the settle window closes.
+- **✅ Date-picker toolbar button**: same `DatePickerToolbarButton` component used on Flight/Day,
+  wired to a `goToDate(_:)` that grows the loaded past/future window if the picked date falls
+  outside it, then scrolls to that date's section. **Deviation**: unlike the initial
+  scroll-to-today (which only works as `ScrollPosition`'s *declarative* initial value — see the
+  fix above), mutating that same `scrollPosition` binding imperatively from a button tap silently
+  did nothing in testing, for both a future-date pick and the "Today" shortcut. The picker's
+  navigation uses `ScrollViewReader.scrollTo` instead (fired ~50ms after the tap, via `Task`, to
+  let a window-growth re-render land first) — reliable here since, unlike the initial-mount case,
+  the list is already fully settled by the time a user can tap anything.
 
 ---
 

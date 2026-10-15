@@ -88,6 +88,16 @@ class PlanItem {
 
     var status: ItemStatus = ItemStatus.pending
 
+    /// Pushes this item one day forward, preserving its day-section/deadline clock-time.
+    func deferToTomorrow() {
+        let calendar = Calendar.current
+        guard let nextDate = calendar.date(byAdding: .day, value: 1, to: date) else { return }
+        date = nextDate
+        if let deadline, let nextDeadline = calendar.date(byAdding: .day, value: 1, to: deadline) {
+            self.deadline = nextDeadline
+        }
+    }
+
     @Relationship(deleteRule: .nullify, inverse: \PlanCategory.items)
     var categories: [PlanCategory]?
 

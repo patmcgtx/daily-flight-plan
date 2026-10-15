@@ -25,6 +25,7 @@ struct TimelineView: View {
 
     @State private var itemToEdit: PlanItem? = nil
     @State private var addItemRequest: AddItemRequest? = nil
+    @State private var viewModel = TimelineViewModel()
 
     private struct AddItemRequest: Identifiable {
         let date: Date
@@ -40,13 +41,8 @@ struct TimelineView: View {
     @AppStorage(AppStorageKeys.showMissedOnly.rawValue) private var showMissedOnly: Bool = false
     @AppStorage(AppStorageKeys.showCompletedOnly.rawValue) private var showCompletedOnly: Bool = false
 
-    /// How many days of history/future are currently loaded, in each direction from today.
-    /// Grows in weekly increments as the user scrolls toward either edge.
-    @State private var pastDaysWindow: Int = 7
-    @State private var futureDaysWindow: Int = 7
-
     private let calendar = Calendar.current
-    private var today: Date { calendar.startOfDay(for: .now) }
+    private var today: Date { viewModel.today }
 
     /// `searchText` with whitespace trimmed — matches `matchingSearchText(_:)`'s own trimming
     /// (used by Day/Routine), so whitespace-only input is treated as "no query" everywhere, not
@@ -57,38 +53,16 @@ struct TimelineView: View {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var minLoadedDate: Date {
-        calendar.date(byAdding: .day, value: -pastDaysWindow, to: today) ?? today
-    }
-
-    private var maxLoadedDate: Date {
-        calendar.date(byAdding: .day, value: futureDaysWindow, to: today) ?? today
-    }
-
     private var filteredItems: [PlanItem] {
-        let windowed = allItems.filter { item in
-            let day = calendar.startOfDay(for: item.date)
-            guard day >= minLoadedDate && day <= maxLoadedDate else { return false }
-            // Future dates never show routine instances — routines could still change before then.
-            return day <= today || item.template == nil
-        }
-        let filtered = windowed.matchingTimelineStatusFilters(
+        viewModel.filteredItems(
+            from: allItems,
             showFlaggedOnly: showFlaggedOnly, showCompletedOnly: showCompletedOnly,
-            showMissedOnly: showMissedOnly, isMissed: isMissed
+            showMissedOnly: showMissedOnly, categorySelectionService: categorySelectionService
         )
-        return categorySelectionService?.filterItems(filtered) ?? filtered
     }
 
-    /// Today and every loaded future day always get a section — even empty ones — so each has its
-    /// "Add item" affordance. Past days stay sparse: a section only appears if it actually has
-    /// items, so an empty history window doesn't turn into a wall of "Nothing planned" rows.
     private var groupedByDate: [(date: Date, items: [PlanItem])] {
-        var dict = Dictionary(grouping: filteredItems) { calendar.startOfDay(for: $0.date) }
-        for offset in 0...futureDaysWindow {
-            guard let date = calendar.date(byAdding: .day, value: offset, to: today) else { continue }
-            if dict[date] == nil { dict[date] = [] }
-        }
-        return dict.keys.sorted().map { date in (date: date, items: dict[date]!) }
+        viewModel.groupedByDate(filteredItems)
     }
 
     /// Searches by title and notes across *every* loaded-or-not date — unlike the grouped list,
@@ -117,23 +91,9 @@ struct TimelineView: View {
         let matched = (try? modelContext.fetch(descriptor)) ?? []
         let filtered = matched.matchingTimelineStatusFilters(
             showFlaggedOnly: showFlaggedOnly, showCompletedOnly: showCompletedOnly,
-            showMissedOnly: showMissedOnly, isMissed: isMissed
+            showMissedOnly: showMissedOnly, isMissed: viewModel.isMissed
         )
         return categorySelectionService?.filterItems(filtered) ?? filtered
-    }
-
-    /// Pending item whose deadline, day-section window, or entire day has already passed.
-    private func isMissed(_ item: PlanItem) -> Bool {
-        guard item.status == .pending else { return false }
-        let day = calendar.startOfDay(for: item.date)
-        guard day <= today else { return false }
-        if let deadline = item.deadline { return deadline < Date.now }
-        if day < today { return true }
-        guard let section = item.daySection,
-              let sectionEnd = calendar.date(
-                  bySettingHour: section.endHour, minute: 59, second: 59, of: Date.now
-              ) else { return false }
-        return sectionEnd < Date.now
     }
 
     var body: some View {
@@ -153,7 +113,7 @@ struct TimelineView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.tertiary)
                                 } else {
-                                    ForEach(segmentedGroups(for: group.items, includeEmpty: canAddItems)) { segment in
+                                    ForEach(viewModel.segmentedGroups(for: group.items, includeEmpty: canAddItems)) { segment in
                                         segmentHeader(
                                             for: segment.section,
                                             onAdd: canAddItems ? { addItemRequest = AddItemRequest(date: group.date, section: segment.section) } : nil
@@ -174,10 +134,10 @@ struct TimelineView: View {
                                 // that's an initial-render artifact, not a real scroll-to-edge event.
                                 guard groups.count > 1 else { return }
                                 if group.date == groups.first?.date {
-                                    pastDaysWindow += 7
+                                    viewModel.pastDaysWindow += 7
                                 }
                                 if group.date == groups.last?.date {
-                                    futureDaysWindow += 7
+                                    viewModel.futureDaysWindow += 7
                                 }
                             }
                         }
@@ -264,51 +224,7 @@ struct TimelineView: View {
         }
     }
 
-    // MARK: Segment grouping within a day
-
-    private struct SegmentGroup: Identifiable {
-        let section: DaySection?
-        let items: [PlanItem]
-        var id: String { section?.rawValue ?? "open" }
-    }
-
-    /// Groups a day's items into time-of-day segments for readability — deadline items fall into
-    /// the segment containing their clock time; segment-assigned items use their explicit segment;
-    /// everything else lands in a trailing "Open" group. Empty segments are omitted for past days
-    /// (a historical log isn't something to plan against), but included for today/future days so
-    /// every segment gets an "Add item" affordance even before it has anything in it.
-    private func segmentedGroups(for items: [PlanItem], includeEmpty: Bool) -> [SegmentGroup] {
-        var grouped: [DaySection?: [PlanItem]] = [:]
-        for item in items {
-            if let section = item.daySection {
-                grouped[section, default: []].append(item)
-            } else if let deadline = item.deadline, let section = DaySection.containing(deadline) {
-                grouped[section, default: []].append(item)
-            } else {
-                grouped[nil, default: []].append(item)
-            }
-        }
-        for key in grouped.keys {
-            grouped[key]?.sort { a, b in
-                switch (a.deadline, b.deadline) {
-                case let (.some(da), .some(db)): return da < db
-                case (.some, .none): return true
-                case (.none, .some): return false
-                case (.none, .none): return a.title < b.title
-                }
-            }
-        }
-        var result = DaySection.allCases.compactMap { section -> SegmentGroup? in
-            let items = grouped[section] ?? []
-            guard includeEmpty || !items.isEmpty else { return nil }
-            return SegmentGroup(section: section, items: items)
-        }
-        let openItems = grouped[nil] ?? []
-        if includeEmpty || !openItems.isEmpty {
-            result.append(SegmentGroup(section: nil, items: openItems))
-        }
-        return result
-    }
+    // MARK: Segment header
 
     private func segmentHeader(for section: DaySection?, onAdd: (() -> Void)?) -> some View {
         HStack {

@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import CoreData
 
-enum AppTab: Hashable { case focus, flightDeck, timeline, routines, paperPlan }
+enum AppTab: Hashable { case focus, flightDeck, timeline, routines, paperPlan, navLog }
 
 struct DayView: View {
 
@@ -61,6 +61,10 @@ struct DayView: View {
                 TimelineView(onDismiss: {})
             }
 
+            Tab("Nav Log", systemImage: "list.bullet.rectangle", value: AppTab.navLog) {
+                NavLogView()
+            }
+
             // Day tab (FlightPlanView) retired in favor of the "Flight" (Paper) tab above, but
             // left here commented out rather than deleted in case it's worth reviving.
             // Tab("Day", systemImage: "airplane", value: AppTab.flightDeck) {
@@ -85,6 +89,7 @@ struct DayView: View {
                 Button("") { activeTab = .paperPlan }.keyboardShortcut("1", modifiers: .command)
                 Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
                 Button("") { activeTab = .timeline }.keyboardShortcut("3", modifiers: .command)
+                Button("") { activeTab = .navLog }.keyboardShortcut("4", modifiers: .command)
             }
             .opacity(0)
             .frame(width: 0, height: 0)
