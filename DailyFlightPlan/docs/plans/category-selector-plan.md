@@ -1,6 +1,6 @@
 # Port MapsPlus's Category Selector UX into DailyFlightPlan (interim implementation)
 
-Sub-plan of Phase 2.5 (see `../implementation-plan.md` and `global-filter-sheet-plan.md`). Written
+Sub-plan of Phase 2.3 (see `../implementation-plan.md` and `global-filter-sheet-plan.md`). Written
 during planning on 2026-10-02.
 
 **✅ Implemented 2026-10-03.** At the time, `.popover(...)` + `.presentationCompactAdaptation(
@@ -9,9 +9,9 @@ dismiss) and was dropped in favor of a `.presentationDetents` sheet fallback on 
 2026-10-05**: that belief was wrong — the real gap was a missing explicit `attachmentAnchor`/
 `arrowEdge` and content `.frame(minWidth:idealWidth:maxWidth:)`, confirmed by comparing against
 MapsPlus's working popover. This standalone category popover was itself removed/superseded in
-Phase 2.5 (category selection now lives inside `FilterSheetView`, opened via `.popover(...)` +
+Phase 2.3 (category selection now lives inside `FilterSheetView`, opened via `.popover(...)` +
 `.presentationCompactAdaptation(.popover)` with correct sizing) — see `global-filter-sheet-plan.md`
-and `docs/known-bugs.md`'s Fixed section for the full writeup. Floating "+" buttons on
+for the full writeup. Floating "+" buttons on
 FlightPlanView/RoutineView (also decided alongside this plan) were implemented in the same pass —
 see `global-filter-sheet-plan.md`'s "Add button" section.
 

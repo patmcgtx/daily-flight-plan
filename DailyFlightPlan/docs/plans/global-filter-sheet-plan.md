@@ -1,6 +1,6 @@
 # Global Filter Button + Sheet — Design Plan
 
-Design doc for Phase 2.5 (see `../implementation-plan.md`). Written during planning on 2026-10-02.
+Design doc for Phase 2.3 (see `../implementation-plan.md`). Written during planning on 2026-10-02.
 
 **✅ Implemented 2026-10-03.** See "Implementation notes" at the end of this doc for what actually
 shipped and where it deviated from the plan below.
@@ -178,7 +178,7 @@ No changes needed — confirmed all required keys and the shared service already
   - `BuildProject` to confirm compiles; `RunAllTests` for the new filtering unit tests.
 
 ## Follow-up (once implemented)
-Mark Phase 2.5 ✅ in `../implementation-plan.md` with a note on the General/Specific sheet design and
+Mark Phase 2.3 ✅ in `../implementation-plan.md` with a note on the General/Specific sheet design and
 the Routine-now-respects-category/search deviation from the original placeholder notes.
 
 ## Corrected placement/presentation (supersedes the floating-button sections above)
@@ -255,8 +255,7 @@ What actually shipped, and how it differs from the plan above:
   maxWidth:)` on the content, both present in MapsPlus's working reference popover. Adding those
   fixed it; a follow-up fix added height bounds (`minHeight:idealHeight:maxHeight:`) to the same
   `.frame(...)` since `FilterSheetView`'s `Form`/`List` content (unlike MapsPlus's plain-stack
-  content) has no intrinsic height for the popover sizing system to read. See
-  `docs/known-bugs.md`'s Fixed section for the full writeup.
+  content) has no intrinsic height for the popover sizing system to read.
 - **`RoutineView`**: `filteredTemplates` computed property (category filter over `templates`)
   feeds `items(for pattern:)`, so category filtering affects what's shown inside each schedule
   card's segments. Drag/delete/rename actions still resolve against raw `templates` by UUID so
