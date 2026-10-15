@@ -10,8 +10,9 @@ your flight plan. Combines one-off and recurring tasks, organized by time-of-day
   services, UI direction
 - **Build plan**: `DailyFlightPlan/docs/implementation-plan.md` — phased implementation order
 - **App icon**: `DailyFlightPlan/docs/app-icon.md` — design description and asset catalog notes
-- **Known bugs**: `DailyFlightPlan/docs/known-bugs.md` — specific defects (Open) and their
-  write-ups once resolved (Fixed); separate from the roadmap/phase narrative in the build plan
+- **Known bugs**: `DailyFlightPlan/docs/known-bugs.md` — specific, reproducible defects (Open);
+  entries are removed outright once fixed rather than moved to a "Fixed" section; separate from
+  the roadmap/phase narrative in the build plan
 
 ## Reference architecture
 Mirror the MapsPlus app: https://github.com/patmcgtx/mapplus

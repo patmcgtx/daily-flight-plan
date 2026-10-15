@@ -114,8 +114,9 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
-- **Log** — chronological multi-day list
-  - Shows all plan items across all dates with a filter bar
+- **Timeline** — chronological multi-day list
+  - Shows all plan items across all dates, lazily loaded 7 days at a time in each direction, with a
+    filter bar and dedicated search
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
 **macOS keyboard shortcuts:** `Cmd+1` Flight · `Cmd+2` Routine · `Cmd+3` Timeline
@@ -179,14 +180,15 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 
 | Phase | Description |
 |-------|-------------|
-| 2.1 | Routine view refinements |
-| 2.2 | Nav Log — full history + future, lazy-load, search |
-| 2.3 | Day/Flight view refinements |
-| 2.4 | ✅ Remove Comm tab (too buggy, superseded by Markdown Import) |
-| 2.5 | Global filter sheet + category management (placeholder, not yet implemented) |
+| 2.1 | ✅ Routine view refinements |
+| 2.2 | ✅ Remove Comm tab (too buggy, superseded by Markdown Import) |
+| 2.3 | ✅ Global filter sheet + category management |
+| 2.4 | ✅ Paper Plan view — replaces Day tab as the primary view |
+| 2.5 | Day/Flight view refinements |
 | 2.6 | Import UX refinements (flag duplicates, notes, tagging) |
 | 2.7 | Missed items review & pull-forward |
-| 2.8 | ✅ Paper Plan view — replaces Day tab as the primary view |
+| 2.8 | Nav Log / Timeline refinements + paper treatment |
+| 2.9 | Routine refinements + paper treatment |
 
 **Version 0.3** expands device support and adds missing features:
 
@@ -196,6 +198,8 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | 3.2 | Local notifications |
 | 3.3 | Rich item content (web links, photo attachments) |
 | 3.4 | iPad support (adaptive layout, Stage Manager, keyboard nav) |
+| 3.5 | Sharing & export (Markdown export shipped ahead of schedule; share scope/format still open) |
+| 3.6 | Projects support (spike — does this replace or complement categories?) |
 
 **Version 0.4** adds monetization:
 
