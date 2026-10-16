@@ -411,10 +411,19 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
 - **Progress gauges?** Add an item progress vs time of day gauge, plus basic items complete vs. total items, and maybe a third?
 - Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
-- **Day intention note**: a short freeform text field on the Day view for what the user wants to
-  get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
-  tracked separately under Phase release.2 (now cross-referenced there, not duplicated); pulled
-  forward here since it's a small, self-contained addition.
+- **Day intention note + custom flight number**: a short freeform text field on the Day view for
+  what the user wants to get out of the day — consolidates the "Day note area" and "Today's
+  Destination" ideas previously tracked separately under Phase release.2 (now cross-referenced
+  there, not duplicated); pulled forward here since it's a small, self-contained addition.
+  Combined with another small per-day idea: letting the user override the mock "flight number"
+  (`PaperPlanStyle.flightNumber(for:)`, currently always "DFP YYYYMMDD") shown on both the Flight
+  tab (`flightStatusCard`) and Nav Log (`dayHeader`) — same underlying need, since neither has
+  anywhere to live today (`PlanItem.date` is only ever a grouping key; days themselves aren't
+  modeled). One small new `@Model` (e.g. `DayOverride`, keyed by `Calendar.startOfDay`) can hold
+  both an optional intention-note string and an optional flight-number override, queried once per
+  displayed day and falling back to the auto-generated flight number when no override exists.
+  Light validation only on the flight number (non-empty, reasonable length) — it's a cosmetic
+  flourish, not a real identifier.
 - **Cross-segment "completed so far" summary**: a day-wide rollup of everything completed across
   all segments today, not just each section's own `completed/total` count — ties into the
   "Reward when completing everything for today" idea above.
@@ -595,21 +604,6 @@ Adds the features needed before wider release: user-configurable settings (Calen
 ### Phase 3.3 — Rich Item Content
 - **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
 - **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
-
-### Phase 3.3b — Custom Flight Numbers
-- Let the user override the mock "flight number" (`PaperPlanStyle.flightNumber(for:)`, currently
-  always "DFP YYYYMMDD") on a per-day basis — defaults to the existing auto-generated format,
-  editable per day
-- Needs new persistence: there's no existing per-day record to hang this on today —
-  `PlanItem.date` is only ever a grouping key, and days themselves aren't modeled anywhere.
-  Likely a small new `@Model` (e.g. `DayOverride`, keyed by `Calendar.startOfDay`), queried once
-  per displayed day and falling back to `PaperPlanStyle.flightNumber(for:)` when no override
-  exists for that date
-- Surface the edit affordance everywhere the flight number already shows — the Flight tab
-  (`flightStatusCard`'s flight-number label) and Nav Log (`dayHeader`'s "FLIGHT ..." line) — so
-  both read from the same override source instead of drifting
-- Light validation only (non-empty, reasonable length); otherwise free text — it's a cosmetic
-  flourish, not a real flight-plan identifier
 
 ### Phase 3.4 — iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
