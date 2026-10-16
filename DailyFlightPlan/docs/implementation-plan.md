@@ -533,12 +533,8 @@ replacing Timeline — Timeline is left as-is for now so the two can be compared
   outside it, then calls `ScrollViewReader.scrollTo` (fired ~50ms after the tap, via `Task`, to
   let a window-growth re-render land first) to jump to that date's section.
 - **✅ Paper theme pass**: row/header fonts, colors, checkbox glyph, and section-header styling
-  now reuse the Flight tab's `PaperPlanStyle` tokens (IBM Plex Mono, highlighter-yellow "Today"
-  badge, ink/muted/surface colors) — deliberately scoped to content styling only, not touching
-  `List`'s native chrome (still plain `List` mechanics: system row separators/insets, standard
-  swipe-action rendering), per the tradeoff discussed when this was proposed (a prior attempt to
-  reskin the old Timeline tab's `List` into true flat-bordered paper cards was tried and rolled
-  back — see that phase's note). Checkbox glyph uses `square`/`checkmark.square.fill`/
+  reuse the Flight tab's `PaperPlanStyle` tokens (IBM Plex Mono, highlighter-yellow "Today"
+  badge, ink/muted/surface colors). Checkbox glyph uses `square`/`checkmark.square.fill`/
   `xmark.square` (not Flight's circular checkmark), matching the Figma mock's plain checkbox look.
 - **✅ Per-day completion count + mock flight number in the section header**: Today and past days
   show a "completed/total COMPLETE" count (mirroring the Flight tab's progress box), omitted for
@@ -546,6 +542,33 @@ replacing Timeline — Timeline is left as-is for now so the two can be compared
   YYYYMMDD" line, reusing the exact mock-flight-number format from the Flight tab's full-page
   header. `PaperPlanStyle.flightNumber(for:)` was extracted from `PaperPlanView` (previously a
   private method there) into the shared style enum so both tabs format it identically.
+- **✅ Notes/routine icons on item rows**: a muted `note.text` icon for items with non-empty
+  notes, and a muted `infinity` icon for recurring items — same icons/styling `PaperPlanView`'s
+  pills already use, now next to the (optional) flag icon in each Nav Log row's title line.
+- **✅ Flagged items highlight the title instead of showing a flag icon**: replaced the red
+  `flag.fill` icon with the Flight tab's own treatment — a highlighter-yellow background tightly
+  padded around just the title text (`PaperPlanStyle.highlighter.opacity(0.8)`, text color
+  switches to `PaperPlanStyle.inkOnHighlighter`), for visual consistency between the two tabs.
+- **✅ Square-cornered bordered rows, matching Flight's flat card look**: initially scoped to
+  content-only styling (leaving `List`'s native chrome alone, per the tradeoff noted when this
+  was proposed — a prior attempt to reskin the old Timeline tab's `List` into true flat-bordered
+  cards was tried and rolled back), but revisited once asked to match Flight's lines/borders more
+  closely. Each row now gets a flat `PaperRowBackground` (`PaperPlanStyle.surface` fill +
+  `PaperPlanStyle.border` stroke, square corners) via `.listRowBackground`, with the system
+  separator hidden and `.listRowSpacing` adding a small gap between rows instead — reads as a
+  stack of bordered cards rather than a native grouped list. **Deviation**: `.listStyle(
+  .insetGrouped)` combined with that row spacing made iOS auto-round each now-gapped row into a
+  full pill/capsule shape, clipping the square background into a capsule — switched to
+  `.listStyle(.plain)` (iOS only; macOS left on `.inset`), which has no such per-row rounding, to
+  let the square border render as drawn. The section wrapper's own rounded-corner chrome (the
+  original accepted gap from Flight's true flat cards) goes away along with the style switch, as
+  a side effect — no longer a known mismatch.
+- **✅ Fix: initial scroll-to-today stopped working**: re-testing the border change above surfaced
+  that the `proxy.scrollTo(viewModel.today, anchor: .top)` call itself had been dropped from the
+  `.task` block in an earlier edit (the `hasSettled` guard logic landed, but the actual scroll
+  call it was meant to gate never got added back) — unrelated to the `.listStyle` switch, which
+  briefly looked like the culprit. Restored; re-verified the initial landing, the date picker's
+  jump-to-date, and the square borders all work together.
 
 ---
 

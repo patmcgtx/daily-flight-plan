@@ -51,13 +51,15 @@ struct NavLogView: View {
                                 Text("Nothing planned")
                                     .font(PaperPlanStyle.mono(.subheadline))
                                     .foregroundStyle(PaperPlanStyle.muted)
-                                    .listRowBackground(PaperPlanStyle.surface)
+                                    .listRowBackground(PaperRowBackground())
+                                    .listRowSeparator(.hidden)
                             } else {
                                 ForEach(viewModel.chronologicalOrder(for: group.items)) { item in
                                     NavLogItemRow(item: item) {
                                         itemToEdit = item
                                     }
-                                    .listRowBackground(PaperPlanStyle.surface)
+                                    .listRowBackground(PaperRowBackground())
+                                    .listRowSeparator(.hidden)
                                 }
                             }
                         } header: {
@@ -78,8 +80,20 @@ struct NavLogView: View {
                 #if os(macOS)
                 .listStyle(.inset)
                 #else
-                .listStyle(.insetGrouped)
+                // `.insetGrouped` combined with `.listRowSpacing` below made iOS treat each
+                // gapped row as its own rounded "capsule" (automatic per-row corner rounding
+                // once rows aren't visually contiguous), clipping `PaperRowBackground`'s square
+                // `Rectangle`/stroke into a pill shape. `.plain` has no such grouping chrome, so
+                // the row background renders with the flat square corners it's actually drawn
+                // with — verified this didn't regress the settle-guarded scroll-to-today/
+                // date-picker navigation, which doesn't depend on list style.
+                .listStyle(.plain)
                 #endif
+                // Rows draw their own square-cornered border below (`PaperRowBackground`), so the
+                // system separator is hidden and a small gap is added instead — reads as a stack
+                // of flat-bordered cards, matching the Flight tab's look, rather than native
+                // List chrome.
+                .listRowSpacing(6)
                 .scrollContentBackground(.hidden)
                 .background { PaperPlanStyle.background.ignoresSafeArea() }
                 .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
@@ -100,6 +114,7 @@ struct NavLogView: View {
                 .task {
                     try? await Task.sleep(for: .milliseconds(300))
                     hasSettled = true
+                    proxy.scrollTo(viewModel.today, anchor: .top)
                 }
             }
         }
@@ -193,13 +208,14 @@ private struct NavLogItemRow: View {
                         .font(PaperPlanStyle.mono(.body, weight: .bold))
                         .textCase(.uppercase)
                         .strikethrough(item.status == .completed || item.status == .canceled, color: PaperPlanStyle.muted)
-                        .foregroundStyle(item.status == .canceled ? PaperPlanStyle.muted : PaperPlanStyle.ink)
+                        .foregroundStyle(
+                            item.isFlagged
+                                ? PaperPlanStyle.inkOnHighlighter
+                                : (item.status == .canceled ? PaperPlanStyle.muted : PaperPlanStyle.ink)
+                        )
                         .lineLimit(1)
-                    if item.isFlagged {
-                        Image(systemName: "flag.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.red)
-                    }
+                        .padding(.horizontal, item.isFlagged ? 3 : 0)
+                        .background(item.isFlagged ? PaperPlanStyle.highlighter.opacity(0.8) : Color.clear)
                     if !item.notes.isEmpty {
                         Image(systemName: "note.text")
                             .font(.caption2)
@@ -279,6 +295,19 @@ private struct NavLogItemRow: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Row background
+
+/// A flat, square-cornered card — `PaperPlanStyle.surface` filled, `PaperPlanStyle.border`
+/// stroked — standing in for the system's rounded `insetGrouped` row background, so each row
+/// reads as one of the Flight tab's bordered paper cards instead of native `List` chrome.
+private struct PaperRowBackground: View {
+    var body: some View {
+        Rectangle()
+            .fill(PaperPlanStyle.surface)
+            .overlay(Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1))
     }
 }
 
