@@ -61,7 +61,7 @@ struct NavLogView: View {
                                 }
                             }
                         } header: {
-                            dayHeader(for: group.date)
+                            dayHeader(for: group.date, items: group.items)
                         }
                         .id(group.date)
                         .onAppear {
@@ -106,29 +106,42 @@ struct NavLogView: View {
     }
 
     /// Day section header: a "Today"/"Tomorrow"/"Yesterday" badge (highlighter-yellow for Today,
-    /// matching the Flight tab's day label) followed by the bold mono weekday/date — the compact,
-    /// single-row equivalent of `PaperPlanView.dayLabelText`, which stacks the same pieces
-    /// vertically for its full-page header.
+    /// matching the Flight tab's day label), the bold mono weekday/date, and — for today and past
+    /// days only, mirroring the Flight tab's completion box — a "completed/total" count. Below
+    /// that, every day gets the same mock "flight number" (`PaperPlanStyle.flightNumber(for:)`)
+    /// shown on the Flight tab's full-page header, shrunk to fit a compact list-section header.
     @ViewBuilder
-    private func dayHeader(for date: Date) -> some View {
+    private func dayHeader(for date: Date, items: [PlanItem]) -> some View {
         let calendar = Calendar.current
         let isToday = calendar.isDateInToday(date)
         let isTomorrow = calendar.isDateInTomorrow(date)
         let isYesterday = calendar.isDateInYesterday(date)
-        HStack(spacing: 8) {
-            if isToday || isTomorrow || isYesterday {
-                Text(isToday ? "Today" : isTomorrow ? "Tomorrow" : "Yesterday")
-                    .font(PaperPlanStyle.mono(.caption, weight: .bold))
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                if isToday || isTomorrow || isYesterday {
+                    Text(isToday ? "Today" : isTomorrow ? "Tomorrow" : "Yesterday")
+                        .font(PaperPlanStyle.mono(.caption, weight: .bold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(isToday ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.muted)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(isToday ? PaperPlanStyle.highlighter : Color.clear)
+                }
+                Text(date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                    .font(PaperPlanStyle.mono(.subheadline, weight: .bold))
                     .textCase(.uppercase)
-                    .foregroundStyle(isToday ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.muted)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(isToday ? PaperPlanStyle.highlighter : Color.clear)
+                    .foregroundStyle(PaperPlanStyle.ink)
+                Spacer()
+                if date <= viewModel.today {
+                    let completed = items.filter { $0.status == .completed }.count
+                    Text("\(completed)/\(items.count) COMPLETE")
+                        .font(PaperPlanStyle.mono(.caption2, weight: .bold))
+                        .foregroundStyle(PaperPlanStyle.muted)
+                }
             }
-            Text(date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
-                .font(PaperPlanStyle.mono(.subheadline, weight: .bold))
-                .textCase(.uppercase)
-                .foregroundStyle(PaperPlanStyle.ink)
+            Text("FLIGHT \(PaperPlanStyle.flightNumber(for: date))")
+                .font(PaperPlanStyle.mono(.caption2))
+                .foregroundStyle(PaperPlanStyle.muted.opacity(0.7))
         }
     }
 
@@ -186,6 +199,16 @@ private struct NavLogItemRow: View {
                         Image(systemName: "flag.fill")
                             .font(.caption2)
                             .foregroundStyle(.red)
+                    }
+                    if !item.notes.isEmpty {
+                        Image(systemName: "note.text")
+                            .font(.caption2)
+                            .foregroundStyle(PaperPlanStyle.muted)
+                    }
+                    if item.isRecurring {
+                        Image(systemName: "infinity")
+                            .font(.caption2)
+                            .foregroundStyle(PaperPlanStyle.muted)
                     }
                 }
                 if let deadline = item.deadline {

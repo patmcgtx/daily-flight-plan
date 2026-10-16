@@ -517,24 +517,35 @@ replacing Timeline — Timeline is left as-is for now so the two can be compared
   reuses it (`loadedItems`/`groupedByDate`/`chronologicalOrder`) instead of duplicating it;
   Timeline was refactored to use the same view model with no behavior change
 - **✅ Fix: default scroll-to-today landed one section short, Today peeking out from under the
-  nav bar**: root cause wasn't the scroll API — `ScrollViewReader.scrollTo`, list style, and
-  scroll-target view were all ruled out by testing — it was the past/future window-growth
+  nav bar**: root cause wasn't the scroll API itself — it was the past/future window-growth
   `onAppear` pagination cascading *during the initial mount*, before the scroll position settled,
   which read each newly-loaded earlier day as itself being "first" and kept growing the window
   past Today. Fixed by gating window growth behind a `hasSettled` flag that only flips true
-  ~300ms after mount, and by switching to the newer `ScrollPosition` API (set declaratively at
-  state-declaration time) instead of an imperative `ScrollViewReader.scrollTo` call in `onAppear`.
-  Verified on-device via the simulator at each step, including that later user-driven pagination
-  (scrolling to load more past/future days) still works after the settle window closes.
+  ~300ms after mount. **Deviation/false start**: the newer id-based `ScrollPosition` API (set
+  declaratively at state-declaration time) looked like the fix in isolation, but silently stopped
+  landing once the date picker below also needed a `ScrollViewReader` on the same `List` — the two
+  apparently can't coexist. Settled on `ScrollViewReader.scrollTo` for everything, with the
+  initial landing deferred until after the same `hasSettled` flag flips (so the window has
+  stopped growing by the time it fires) — reliable for both the initial landing and later
+  user-driven pagination (scrolling to load more past/future days).
 - **✅ Date-picker toolbar button**: same `DatePickerToolbarButton` component used on Flight/Day,
   wired to a `goToDate(_:)` that grows the loaded past/future window if the picked date falls
-  outside it, then scrolls to that date's section. **Deviation**: unlike the initial
-  scroll-to-today (which only works as `ScrollPosition`'s *declarative* initial value — see the
-  fix above), mutating that same `scrollPosition` binding imperatively from a button tap silently
-  did nothing in testing, for both a future-date pick and the "Today" shortcut. The picker's
-  navigation uses `ScrollViewReader.scrollTo` instead (fired ~50ms after the tap, via `Task`, to
-  let a window-growth re-render land first) — reliable here since, unlike the initial-mount case,
-  the list is already fully settled by the time a user can tap anything.
+  outside it, then calls `ScrollViewReader.scrollTo` (fired ~50ms after the tap, via `Task`, to
+  let a window-growth re-render land first) to jump to that date's section.
+- **✅ Paper theme pass**: row/header fonts, colors, checkbox glyph, and section-header styling
+  now reuse the Flight tab's `PaperPlanStyle` tokens (IBM Plex Mono, highlighter-yellow "Today"
+  badge, ink/muted/surface colors) — deliberately scoped to content styling only, not touching
+  `List`'s native chrome (still plain `List` mechanics: system row separators/insets, standard
+  swipe-action rendering), per the tradeoff discussed when this was proposed (a prior attempt to
+  reskin the old Timeline tab's `List` into true flat-bordered paper cards was tried and rolled
+  back — see that phase's note). Checkbox glyph uses `square`/`checkmark.square.fill`/
+  `xmark.square` (not Flight's circular checkmark), matching the Figma mock's plain checkbox look.
+- **✅ Per-day completion count + mock flight number in the section header**: Today and past days
+  show a "completed/total COMPLETE" count (mirroring the Flight tab's progress box), omitted for
+  future days since they haven't happened yet; every day additionally shows a "FLIGHT DFP
+  YYYYMMDD" line, reusing the exact mock-flight-number format from the Flight tab's full-page
+  header. `PaperPlanStyle.flightNumber(for:)` was extracted from `PaperPlanView` (previously a
+  private method there) into the shared style enum so both tabs format it identically.
 
 ---
 

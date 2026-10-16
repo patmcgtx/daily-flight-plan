@@ -281,13 +281,6 @@ struct PaperPlanView: View {
         }
     }
 
-    /// A mock flight number — "DFP" (the form number from the mockup's masthead) plus the
-    /// date in YYYYMMDD — shown ahead of the date, filed-flight-plan style.
-    private func flightNumber(for date: Date) -> String {
-        let comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
-        return "DFP \(comps.year ?? 0)\(String(format: "%02d", comps.month ?? 0))\(String(format: "%02d", comps.day ?? 0))"
-    }
-
     private func flightStatusCard(_ items: [PlanItem], date: Date) -> some View {
         let completed = items.filter { $0.status == .completed }.count
         let total = items.count
@@ -302,7 +295,7 @@ struct PaperPlanView: View {
             HStack(spacing: 16) {
                 paperProgressBox(completed: completed, total: total, pct: pct)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Flight \(flightNumber(for: date))")
+                    Text("Flight \(PaperPlanStyle.flightNumber(for: date))")
                         .font(PaperPlanStyle.mono(.caption, weight: .bold))
                         .textCase(.uppercase)
                         .foregroundStyle(PaperPlanStyle.muted)

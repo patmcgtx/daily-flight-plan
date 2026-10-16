@@ -65,6 +65,14 @@ enum PaperPlanStyle {
         }
     }
 
+    /// A mock flight number — "DFP" (the form number from the mockup's masthead) plus the date
+    /// in YYYYMMDD — shown filed-flight-plan style ahead of/near a day's date. Shared by every
+    /// view using the paper theme, so the format stays identical everywhere it appears.
+    static func flightNumber(for date: Date) -> String {
+        let comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return "DFP \(comps.year ?? 0)\(String(format: "%02d", comps.month ?? 0))\(String(format: "%02d", comps.day ?? 0))"
+    }
+
     private static func rgb(_ r: Int, _ g: Int, _ b: Int) -> Color {
         Color(red: Double(r) / 255, green: Double(g) / 255, blue: Double(b) / 255)
     }

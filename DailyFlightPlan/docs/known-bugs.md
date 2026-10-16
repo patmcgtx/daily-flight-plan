@@ -27,6 +27,18 @@ in (or confirmed) before it can be investigated as a real defect.
 
 ## Open
 
+- **App crashes to Home Screen when tapping the Nav Log tab right after a fresh/cold launch**:
+  reproduced twice on iPhone 17 Simulator (iOS 27.0), both times tapping "Nav Log" from the Flight
+  tab within seconds of a cold app launch — the app exits to the Home Screen instead of opening
+  Nav Log. No backtrace captured either time; console output shows nothing beyond the usual
+  startup noise (CloudKit-account-unavailable, Previews-agent dylib loading) at the moment of the
+  crash. Waiting longer after launch before tapping Nav Log appears to avoid it, suggesting a
+  startup-timing race (possibly `NavLogView`'s own `.task`-based settle guard interacting badly
+  with something still initializing elsewhere this early, e.g. `ModelContainer`
+  dedup/materialization work kicked off by `DayView.task`) rather than anything in Nav Log's row
+  content itself. Needs an actual symbolicated crash log/backtrace to root-cause — not yet
+  captured because the simulator crash reporter didn't surface one either time.
+
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added
   to the Day-view section-summary prompt (`DayViewModel.generateSummaryIfNeeded`, Phase 1.14), the
   on-device model sometimes describes a still-*open* item as completed (the inverse of the original
