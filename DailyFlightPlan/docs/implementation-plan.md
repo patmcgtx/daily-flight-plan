@@ -596,6 +596,21 @@ Adds the features needed before wider release: user-configurable settings (Calen
 - **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
 - **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
 
+### Phase 3.3b — Custom Flight Numbers
+- Let the user override the mock "flight number" (`PaperPlanStyle.flightNumber(for:)`, currently
+  always "DFP YYYYMMDD") on a per-day basis — defaults to the existing auto-generated format,
+  editable per day
+- Needs new persistence: there's no existing per-day record to hang this on today —
+  `PlanItem.date` is only ever a grouping key, and days themselves aren't modeled anywhere.
+  Likely a small new `@Model` (e.g. `DayOverride`, keyed by `Calendar.startOfDay`), queried once
+  per displayed day and falling back to `PaperPlanStyle.flightNumber(for:)` when no override
+  exists for that date
+- Surface the edit affordance everywhere the flight number already shows — the Flight tab
+  (`flightStatusCard`'s flight-number label) and Nav Log (`dayHeader`'s "FLIGHT ..." line) — so
+  both read from the same override source instead of drifting
+- Light validation only (non-empty, reasonable length); otherwise free text — it's a cosmetic
+  flourish, not a real flight-plan identifier
+
 ### Phase 3.4 — iPad Support
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
 - Verify `HFlow` pill layouts scale well on wider screens
