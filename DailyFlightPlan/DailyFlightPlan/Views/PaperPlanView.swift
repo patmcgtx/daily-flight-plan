@@ -956,7 +956,8 @@ struct PaperPlanView: View {
                         item.status = .completed
                     }
                 } label: {
-                    Image(systemName: "circle")
+                    // Square, not circle — matches Nav Log's checkbox glyph for consistency.
+                    Image(systemName: "square")
                         .foregroundStyle(PaperPlanStyle.muted)
                         .font(.subheadline)
                 }
@@ -1029,18 +1030,22 @@ struct PaperPlanView: View {
                     try? modelContext.save()
                 }
             } label: {
-                ZStack {
-                    Circle()
-                        .stroke(
-                            item.status == .completed ? PaperPlanStyle.routeBlue : PaperPlanStyle.border.opacity(0.5),
-                            lineWidth: 1.5
-                        )
-                        .frame(width: 26, height: 26)
-                    if item.status == .completed {
-                        Image(systemName: "checkmark")
-                            .font(.caption.bold())
-                            .foregroundStyle(PaperPlanStyle.routeBlue)
-                    }
+                // Square, not circle — matches Nav Log's checkbox glyph for consistency across
+                // tabs; kept this row's own `routeBlue` completed-state accent rather than
+                // switching to Nav Log's ink/muted palette.
+                switch item.status {
+                case .completed:
+                    Image(systemName: "checkmark.square.fill")
+                        .font(.title3)
+                        .foregroundStyle(PaperPlanStyle.routeBlue)
+                case .canceled:
+                    Image(systemName: "xmark.square")
+                        .font(.title3)
+                        .foregroundStyle(PaperPlanStyle.muted)
+                case .pending:
+                    Image(systemName: "square")
+                        .font(.title3)
+                        .foregroundStyle(PaperPlanStyle.border.opacity(0.5))
                 }
             }
             .buttonStyle(.plain)
