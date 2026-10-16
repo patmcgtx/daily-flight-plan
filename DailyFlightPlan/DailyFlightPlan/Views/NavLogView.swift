@@ -97,7 +97,9 @@ struct NavLogView: View {
                 .scrollContentBackground(.hidden)
                 .background { PaperPlanStyle.background.ignoresSafeArea() }
                 .sheet(item: $itemToEdit) { item in ItemForm(item: item) }
-                .navigationTitle("Nav Log")
+                // No title text — matches the Flight tab, which also has no `.navigationTitle`
+                // and relies entirely on its toolbar; Nav Log is expected to grow the same full
+                // toolbar eventually, making a placeholder title redundant until then.
                 .inlineNavigationTitle()
                 .toolbar {
                     ToolbarItem(placement: .trailingBar) {
@@ -158,6 +160,9 @@ struct NavLogView: View {
                 .font(PaperPlanStyle.mono(.caption2))
                 .foregroundStyle(PaperPlanStyle.muted.opacity(0.7))
         }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 2)
+        .background(PaperPlanStyle.headerBackground)
     }
 
     /// Grows the loaded window to cover `date` if it isn't already loaded, then scrolls its

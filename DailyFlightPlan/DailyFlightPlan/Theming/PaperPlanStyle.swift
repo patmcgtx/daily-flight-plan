@@ -24,6 +24,10 @@ enum PaperPlanStyle {
     static let routeBlue = adaptive(light: rgb(0x51, 0x69, 0x9A), dark: rgb(0x7F, 0xA9, 0xDC))
     static let shadow = Color.black.opacity(0.18)
 
+    /// The Figma mock's pale lavender-blue day-header band (behind the "Today"/date block) —
+    /// distinct from `surface`'s item-row cream and `background`'s page tone.
+    static let headerBackground = adaptive(light: rgb(0xE1, 0xE7, 0xF8), dark: rgb(0x19, 0x23, 0x31))
+
     /// Text sitting on a solid/near-solid highlighter background always needs dark ink, in both
     /// color schemes — unlike the rest of the palette, the yellow itself doesn't invert for dark
     /// mode, so text on top of it can't just follow `ink`.
