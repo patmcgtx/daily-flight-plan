@@ -27,7 +27,7 @@ Daily Flight Plan is about execution, not planning. It's a lightweight layer on 
 - **Context on your terms.** Calendar events and Reminders appear inline for full context, but can be toggled off instantly when you need to narrow your focus to just your own plan.
 - **Finishing feels good.** Progress is always visible; completing your plan feels like landing the plane.
 
-**Version 1.0 target:** A polished, public-release app with full fit/finish, accessibility, and beta testing complete. The 0.x series builds toward it: core functionality (0.1), UX polish (0.2), settings + device expansion (0.3), and in-app purchases (0.4). Watch and Siri come later (Version 3.0).
+**Version 1.0 target:** Core features complete, with full fit/finish, accessibility, and beta testing done. The 0.x series builds toward it: core functionality (0.1), UX polish (0.2), and settings + device expansion (0.3). Watch, Siri, widgets, and an in-app purchases proof of concept come later (Future Plans).
 
 ## From idea to app
 
@@ -176,7 +176,7 @@ DailyFlightPlan/
 
 ## Build plan
 
-Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is working but not yet polished for public release.
+Version 0.1 (Phases 0.1.1–0.1.22) is feature-complete — core functionality is working but not yet polished for public release.
 
 **Version 0.2** improves existing views:
 
@@ -203,23 +203,17 @@ Version 0.1 (Phases 1.1–1.22) is feature-complete — core functionality is wo
 | 3.5 | Sharing & export (Markdown export shipped ahead of schedule; share scope/format still open) |
 | 3.6 | Projects support (spike — does this replace or complement categories?) |
 
-**Version 0.4** adds monetization:
+**Version 1.0** is the core-features-complete milestone:
 
 | Phase | Description |
 |-------|-------------|
-| — | In-app purchases (StoreKit 2, Pro Themes, Unlimited Categories) |
+| 1.1 | Full-app UX audit |
+| 1.2 | Fit and finish + aviation UI spike |
+| 1.3 | Performance & stability audit (incl. smooth day swipe navigation) |
+| 1.4 | Tech debt (unit tests, UI tests, architecture review) |
+| 1.5 | Beta testing |
 
-**Version 1.0** is the public release target:
-
-| Phase | Description |
-|-------|-------------|
-| release.1 | Full-app UX audit |
-| release.2 | Fit and finish + aviation UI spike |
-| release.3 | Performance & stability audit (incl. smooth day swipe navigation) |
-| release.4 | Tech debt (unit tests, UI tests, architecture review) |
-| release.5 | Beta testing |
-
-See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Version 3.0 plans (Siri, Widgets, Apple Watch).
+See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Future Plans (Siri, Widgets, Apple Watch, In-App Purchases POC).
 
 ## Building
 

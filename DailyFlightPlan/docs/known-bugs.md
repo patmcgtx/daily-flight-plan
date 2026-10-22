@@ -13,8 +13,8 @@ Not yet reproduced — each entry needs the affected action, device/OS, and obse
 in (or confirmed) before it can be investigated as a real defect.
 
 - **Deep links to Reminders/Calendar reportedly broken**: affected action unclear — could be the
-  `x-apple-reminderkit://` row-tap deep link added in Phase 1.19, or the `calshow:` tap added in
-  Phase 1.7; device/OS not specified; observed result not specified (nothing happens? wrong app?
+  `x-apple-reminderkit://` row-tap deep link added in Phase 0.1.19, or the `calshow:` tap added in
+  Phase 0.1.7; device/OS not specified; observed result not specified (nothing happens? wrong app?
   wrong item? crash?). Reproduce with those specifics before moving to Open.
 
 - **App sometimes opens to the Routine tab instead of the intended default**: affected action is
@@ -28,7 +28,7 @@ in (or confirmed) before it can be investigated as a real defect.
 ## Open
 
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added
-  to the Day-view section-summary prompt (`DayViewModel.generateSummaryIfNeeded`, Phase 1.14), the
+  to the Day-view section-summary prompt (`DayViewModel.generateSummaryIfNeeded`, Phase 0.1.14), the
   on-device model sometimes describes a still-*open* item as completed (the inverse of the original
   "Yes"-junk complaint fixed in the same phase). Likely needs either a stronger prompt structure
   (e.g. separate "Done:" / "Open:" clauses instead of one inline-marked list) or a deterministic
