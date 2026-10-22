@@ -587,31 +587,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
 - Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.
 - Does this work with or replace categories? In theory, you could use a category as a project.
 - So maybe categories instead of projects, but fuller/dedicated category management?
-
----
-
-## Version 0.4 — In-App Purchases
-
-Introduces monetization via StoreKit 2 — Pro Themes, Unlimited Categories, and Markdown Import as
-individual unlocks, bundled as Daily Flight Plan Pro. An `EntitlementManager` service gates
-premium features across the app.
-
-- **Monetization model TBD** — likely a free tier with limits + optional unlock
-- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $2.49
-- **Individual unlocks:**
-  - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
-  - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
-  - **Markdown Import** ($0.99) — Foundation Models text-to-plan import (paste any text → AI parses titles, sections, and schedules → review and commit); gate the Parse button behind this entitlement
-- **Daily Flight Plan Pro bundle** ($2.49) — all three unlocks; $0.48 savings vs. buying separately
-- **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
-- Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
-- Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
-- Gate Markdown Import Parse button: show upsell sheet when tapped without entitlement
-- `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
-- Restore purchases flow (required for App Store)
-- **Note**: a "Comm AI Chat" unlock was originally planned here; dropped when the Comm tab itself
-  was removed in Phase 2.2
-
+-
 ---
 
 ## Version 1.0 — Fit, Finish & Release
@@ -652,7 +628,7 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
-- **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Version 3.0 planning.
+- **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Future Plans.
 - **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
 - **iCloud sync status indicator**: surface iCloud sync state to the user — detect whether iCloud is signed in and whether the CloudKit container is reachable; show a subtle banner or Settings badge if sync is unavailable (signed out, iCloud Drive disabled, or network unreachable); explain what it means for cross-device data (not lost, just not synced yet); deep-link to Settings for remediation
 - **iCloud sync error handling**: handle and surface CloudKit error conditions gracefully — out-of-storage (prompt to manage iCloud storage), network offline (silent retry with status indicator), container initialization failure (fallback to local-only mode with a clear explanation); avoid silent data loss or confusing missing-item states
@@ -722,7 +698,6 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 
 ### Phase release.5 — Beta Testing
 - Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
-- We'll want to get them to test In-App Purchase, etc. too.
 
 #### CloudKit initialization
 CloudKit needs its schema initialized once. Steps:
@@ -733,7 +708,7 @@ Before you ship to the App Store, use Console's Deploy Schema Changes to Product
 
 ---
 
-## Version 3.0
+## Future Plans
 
 Platform expansion beyond iPhone and Mac — Siri integration for voice entry and on-device AI awareness, home screen and lock screen widgets, Live Activity for the Dynamic Island, and an Apple Watch companion app for wrist-based progress and completion.
 
@@ -758,3 +733,25 @@ Platform expansion beyond iPhone and Mac — Siri integration for voice entry an
 - Tap to complete items directly from the wrist
 - Syncs via Watch Connectivity (`WCSession`) or shared CloudKit container (depends on iCloud sync status)
 - Keep it read + complete only; add/edit stays on iPhone
+
+### In-App Purchases POC
+
+**Proof of concept only — nothing will be sold on the App Store.** Selling apps or in-app content
+isn't permitted for this project (per the author's day job), so this is an exploration of how
+monetization *would* work via StoreKit 2 — Pro Themes, Unlimited Categories, and Markdown Import as
+individual unlocks, bundled as Daily Flight Plan Pro. An `EntitlementManager` service would gate
+premium features across the app. Any prototype stays out of release builds.
+- **Monetization model TBD** — likely a free tier with limits + optional unlock
+- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $2.49
+- **Individual unlocks:**
+  - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
+  - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
+  - **Markdown Import** ($0.99) — Foundation Models text-to-plan import (paste any text → AI parses titles, sections, and schedules → review and commit); gate the Parse button behind this entitlement
+- **Daily Flight Plan Pro bundle** ($2.49) — all three unlocks; $0.48 savings vs. buying separately
+- **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
+- Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
+- Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
+- Gate Markdown Import Parse button: show upsell sheet when tapped without entitlement
+- `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
+- Restore purchases flow (required for App Store)
+- **Note**: a "Comm AI Chat" unlock was originally planned here; dropped when the Comm tab itself was removed in Phase 2.2
