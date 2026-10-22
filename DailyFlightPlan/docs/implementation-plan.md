@@ -406,7 +406,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
-- **Move the date** (e.g. "OCT 20") *above* the day of weeek in the title area, next to yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient layout.
+- **Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient layout.
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
 - **Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
