@@ -25,6 +25,9 @@ in (or confirmed) before it can be investigated as a real defect.
   across scene restoration/relaunch instead of starting fresh at `.focus`. Reproduce reliably
   (and note device/OS) before moving to Open.
 
+- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
+
+
 ## Open
 
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added
@@ -37,10 +40,6 @@ in (or confirmed) before it can be investigated as a real defect.
 - **Completed/canceled items still accept context menu actions**: pills in the done or cancelled
   rows still show the "Cancel Item" context menu action. Fix: gate the context menu's destructive
   action in `ItemPillView` on `item.status == .pending`.
-
-- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the
-  Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet
-  recorded; not yet root-caused.
 
 - **Crash on delete-all-items**: deleting all items triggers a crash. Not yet root-caused.
 

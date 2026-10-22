@@ -406,6 +406,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
+- **Move the date** (e.g. "OCT 20") *above* the day of weeek in the title area, next to yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient layout.
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
 - **Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
@@ -430,7 +431,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **Add a flag toggle on import**: The import can't automatically know if this item should be
   flagged, but make it easy.
 - **Add categorization on import**: Allow tagging items on import, automatically or manually.
-- **Import Calendar events as a plan item**: long-press a `CalendarEventRow` to import it as a`PlanItem`, the same way Reminders already can (see "Import Reminder as PlanItem" in Phase 0.1.14)
+- **Import Calendar events as a plan item**: long-press a `CalendarEventRow` to import it as a `PlanItem`, the same way Reminders already can (see "Import Reminder as PlanItem" in Phase 0.1.14)
   — a Calendar event is read-only, so this turns it into something that can be checked off.
 - **Remove 'routine' options from import**: Routine import should be its own flow rather than
   cluttering a normal day import.
@@ -587,7 +588,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
 - Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.
 - Does this work with or replace categories? In theory, you could use a category as a project.
 - So maybe categories instead of projects, but fuller/dedicated category management?
--
+
 ---
 
 ## Version 1.0 — Core Features Complete
@@ -595,10 +596,10 @@ A general look at sharing across the app, rather than one-off share buttons per 
 The core-features-complete milestone. Addresses usability findings from real-world use, pays down tech debt, adds aviation-themed polish, completes the user's guide and app icon, and closes out with beta testing. This is not an App Store release — nothing is being sold (see "In-App Purchases POC" under Future Plans).
 
 ### Phase 1.1 — Full-App UX Audit
-A holistic pass across all four tabs, rather than scattering open-ended "UX audit" items across individual view phases. Best done by using the app for a real stretch of time (à la Phase 0.1.14) and noting friction points, then fixing what's found.
-- **Day tab** (Flight Plan view): general UX audit and fix
+A holistic pass across the three active tabs (Flight, Routine, and Timeline), rather than scattering open-ended "UX audit" items across individual view phases. Best done by using the app for a real stretch of time (à la Phase 0.1.14) and noting friction points, then fixing what's found.
+- **Flight tab** (Paper Plan view): general UX audit and fix
 - **Routine tab**: general UX audit and fix *(originally tracked in Phase 2.1)*
-- **Timeline tab** (Nav Log): general UX audit and fix
+- **Timeline tab**: general UX audit and fix
 - **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
 - **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 2.8)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase 1.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
 - **Per-filter "only" option**: generalize the Timeline Missed/Flagged isolate-style toggles (see Phase 2.8) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders, category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
