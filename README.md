@@ -2,8 +2,8 @@
 
 A daily planning and execution app for iOS, inspired by an airplane flight plan checklist. Today is your trip; this is your checklist.
 
-> "While we delay, life hurries past."
-> — Seneca
+> “Finish every day and be done with it!”
+> — Ralph Waldo Emerson
 
 See this app's [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
 
