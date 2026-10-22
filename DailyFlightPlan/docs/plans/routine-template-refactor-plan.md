@@ -27,7 +27,7 @@ Decisions already made with the user:
   no recurring-weekday picker at all. `RoutineView` gets its own new `RoutineForm` for creating/
   editing `RoutineTemplate`s. Converting between the two becomes a manual delete-and-recreate.
 - **Delete `DayView.migrateOldRecurringItems()`** entirely rather than adapt it — it migrates data
-  from before the current template model even existed (Phase 1.15), and there are no shipped
+  from before the current template model even existed (Phase 0.1.15), and there are no shipped
   users who could still have it.
 
 ## New model shape

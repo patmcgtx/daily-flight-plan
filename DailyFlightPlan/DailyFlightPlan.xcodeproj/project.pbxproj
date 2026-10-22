@@ -29,6 +29,25 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		694578C7308A4700004F6042 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = SOURCE_ROOT; };
+		694578C8308A4732004F6042 /* figma-make-1.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "figma-make-1.jpg"; sourceTree = "<group>"; };
+		694578C9308A4732004F6042 /* figma-make-2.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "figma-make-2.jpg"; sourceTree = "<group>"; };
+		694578CA308A4732004F6042 /* fp1.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = fp1.jpeg; sourceTree = "<group>"; };
+		694578CB308A4732004F6042 /* main-dark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "main-dark.png"; sourceTree = "<group>"; };
+		694578CC308A4732004F6042 /* main-dark-framed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "main-dark-framed.png"; sourceTree = "<group>"; };
+		694578CD308A4732004F6042 /* main-light.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "main-light.png"; sourceTree = "<group>"; };
+		694578CE308A4732004F6042 /* main-light-framed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "main-light-framed.png"; sourceTree = "<group>"; };
+		694578D0308A4732004F6042 /* category-selector-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "category-selector-plan.md"; sourceTree = "<group>"; };
+		694578D1308A4732004F6042 /* global-filter-sheet-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "global-filter-sheet-plan.md"; sourceTree = "<group>"; };
+		694578D2308A4732004F6042 /* routine-template-refactor-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "routine-template-refactor-plan.md"; sourceTree = "<group>"; };
+		694578D3308A4732004F6042 /* ui-design-functional-spec.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "ui-design-functional-spec.md"; sourceTree = "<group>"; };
+		694578D5308A4732004F6042 /* app-icon.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "app-icon.md"; sourceTree = "<group>"; };
+		694578D6308A4732004F6042 /* architecture.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = architecture.md; sourceTree = "<group>"; };
+		694578D7308A4732004F6042 /* daily-flight-plan-figma.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "daily-flight-plan-figma.png"; sourceTree = "<group>"; };
+		694578D8308A4732004F6042 /* implementation-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "implementation-plan.md"; sourceTree = "<group>"; };
+		694578D9308A4732004F6042 /* known-bugs.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "known-bugs.md"; sourceTree = "<group>"; };
+		694578DA308A4732004F6042 /* project-spec-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "project-spec-prompt.md"; sourceTree = "<group>"; };
+		694578DB308A4732004F6042 /* story.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = story.md; sourceTree = "<group>"; };
 		6949596E302996B200889101 /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/System/Library/Frameworks/CloudKit.framework; sourceTree = DEVELOPER_DIR; };
 		69B4708F3013A306005A13D5 /* DailyFlightPlan.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyFlightPlan.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		69B470A03013A307005A13D5 /* DailyFlightPlanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyFlightPlanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -93,6 +112,47 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		694578CF308A4732004F6042 /* images */ = {
+			isa = PBXGroup;
+			children = (
+				694578C8308A4732004F6042 /* figma-make-1.jpg */,
+				694578C9308A4732004F6042 /* figma-make-2.jpg */,
+				694578CA308A4732004F6042 /* fp1.jpeg */,
+				694578CB308A4732004F6042 /* main-dark.png */,
+				694578CC308A4732004F6042 /* main-dark-framed.png */,
+				694578CD308A4732004F6042 /* main-light.png */,
+				694578CE308A4732004F6042 /* main-light-framed.png */,
+			);
+			path = images;
+			sourceTree = "<group>";
+		};
+		694578D4308A4732004F6042 /* plans */ = {
+			isa = PBXGroup;
+			children = (
+				694578D0308A4732004F6042 /* category-selector-plan.md */,
+				694578D1308A4732004F6042 /* global-filter-sheet-plan.md */,
+				694578D2308A4732004F6042 /* routine-template-refactor-plan.md */,
+				694578D3308A4732004F6042 /* ui-design-functional-spec.md */,
+			);
+			path = plans;
+			sourceTree = "<group>";
+		};
+		694578DC308A4732004F6042 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				694578CF308A4732004F6042 /* images */,
+				694578D4308A4732004F6042 /* plans */,
+				694578D5308A4732004F6042 /* app-icon.md */,
+				694578D6308A4732004F6042 /* architecture.md */,
+				694578D7308A4732004F6042 /* daily-flight-plan-figma.png */,
+				694578D8308A4732004F6042 /* implementation-plan.md */,
+				694578D9308A4732004F6042 /* known-bugs.md */,
+				694578DA308A4732004F6042 /* project-spec-prompt.md */,
+				694578DB308A4732004F6042 /* story.md */,
+			);
+			path = docs;
+			sourceTree = "<group>";
+		};
 		6949596D302996B200889101 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -108,7 +168,9 @@
 				69B470A33013A307005A13D5 /* DailyFlightPlanTests */,
 				69B470AD3013A307005A13D5 /* DailyFlightPlanUITests */,
 				6949596D302996B200889101 /* Frameworks */,
+				694578DC308A4732004F6042 /* docs */,
 				69B470903013A306005A13D5 /* Products */,
+				694578C7308A4700004F6042 /* README.md */,
 			);
 			sourceTree = "<group>";
 		};
