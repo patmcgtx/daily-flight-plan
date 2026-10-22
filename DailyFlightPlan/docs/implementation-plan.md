@@ -407,6 +407,9 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
+- **Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
+  marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
+  analogy.
 - **Auto-drop missed items?** When a day segment passes, items should automatically promote to "Open."
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
 - **Progress gauges?** Add an item progress vs time of day gauge, plus basic items complete vs. total items, and maybe a third?
@@ -427,6 +430,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **Add a flag toggle on import**: The import can't automatically know if this item should be
   flagged, but make it easy.
 - **Add categorization on import**: Allow tagging items on import, automatically or manually.
+- **Import Calendar events as a plan item**: long-press a `CalendarEventRow` to import it as a`PlanItem`, the same way Reminders already can (see "Import Reminder as PlanItem" in Phase 1.14)
+  — a Calendar event is read-only, so this turns it into something that can be checked off.
 - **Remove 'routine' options from import**: Routine import should be its own flow rather than
   cluttering a normal day import.
 - **Easier way to handle day segments**: Show segments in the import view and allow dragging and
@@ -473,6 +478,9 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **✅ Segmented by time of day**: each day's items are grouped under small bold/secondary sub-headers ("First Thing", "Morning", … "Open") instead of one flat list, for readability
 - **✅ Per-segment "Add item"**: today and future days show every segment (even empty ones) with a `+` button to the right of the segment title, opening `ItemForm(date:section:)` pre-filled; past days only show segments that already have items, with no add affordance (the log doesn't allow adding to the past)
 - **✅ Fix: empty future days were invisible**: `groupedByDate` used to only create a section for a date if it had items (plus a forced entry for today), so an empty future day never got a section — and never got its per-segment add buttons — until something was scheduled on it. Now every day from today through the loaded `futureDaysWindow` gets a section unconditionally; past days stay sparse (items-only) since a week of "Nothing planned" history rows would just be clutter. This also fixed a related bug where, with only one section on screen (e.g. a brand-new log with no data), that single section matched both `groupedByDate.first` and `.last`, so its `onAppear` grew `pastDaysWindow` and `futureDaysWindow` simultaneously on first render instead of only when scrolling to an edge — guarded with `groupedByDate.count > 1`
+- **Further break each day into day segments** *(builds on "Segmented by time of day" above)*: make
+  the per-segment grouping a stronger visual unit — e.g. collapsible segments or more distinct
+  segment containers — so a day is easier to chunk and process at a glance.
 - **✅ Removed dead date-header navigation**: the per-day header's tap-to-navigate + `arrow.up.right` icon did nothing in production (`DayView` always passes no-op `onSelectDate`/`onDismiss` since the Log view became a permanent tab, not a sheet) — removed the icon, the `Button` wrapper, and the now-unused `onSelectDate` parameter
 - **✅ Tab renamed "Log" → "Timeline"**: tab label in `DayView.swift` and the view's `navigationTitle` both now read "Timeline" (was "Log" / "Nav Log")
 - **✅ Search**: `.searchable(text:)` on the list — this is the *main* search surface for the whole app. Matches title and notes, case-insensitive, deliberately reaching every date rather than just the pre-cached `minLoadedDate...maxLoadedDate` window. Results replace the date-grouped list with a flat, date-sorted list (each row shows its date via `TimelineItemRow(showDate: true)`); empty state uses `ContentUnavailableView.search(text:)`; tapping a result opens the same edit sheet as a normal row. Respects the active Flagged/Done/Missed/category filters.
@@ -617,14 +625,11 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - **Timeline tab** (Nav Log): general UX audit and fix
 - **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
 - **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 2.8)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase release.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
-- **Per-filter "only" option**: generalize the Timeline Missed/Flagged isolate-style toggles (see
-  Phase 2.8) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders,
-  category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting
-  to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
+- **Per-filter "only" option**: generalize the Timeline Missed/Flagged isolate-style toggles (see Phase 2.8) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders, category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
   specifically need this most, then decide how general to make the underlying mechanism.
-- **Mac menu bar integration + window minimum size** *(moved here from Phase 1.18)*: proper menu
-  bar items (not just the hidden `Cmd+1`–`Cmd+4` tab-switch buttons) and a sensible minimum window
-  size for the macOS build.
+- **Mac menu bar integration + window minimum size** *(moved here from Phase 1.18)*: proper menu bar items (not just the hidden `Cmd+1`–`Cmd+4` tab-switch buttons) and a sensible minimum window size for the macOS build.
+- **Per-section add button**: add a small `+` button on each segment of the Day view (header or content area) so the user can add an item directly into that segment without going through the main Add form and re-selecting the segment. (Timeline already has this for today and future days — see Phase 2.8.)
+- **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
 
 ### Phase release.2 — Fit and Finish
 - Address findings from Phase 1.14 usability testing
@@ -662,9 +667,9 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
   Instruments to see whether it's animation-count buildup, view-identity churn forcing
   unnecessary re-renders, or something else.
 - **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or replaced with a minimal, generic example set before shipping
-- **Per-section add button**: consider a small `+` button on each section header (or in the section content area) so the user can add an item directly into that section without going through the main Add form and re-selecting the section
-- **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
 - ✅ Add an app icon — see `app-icon.md` for the design description
+- **New app icon**: replace the current icon with a fresh design; update `app-icon.md` and the
+  asset catalog to match.
 - **User's guide**: write a short guide covering the core concepts (flight plan metaphor, sections, recurring habits, AI chat) and the key gestures/actions; ship it as an in-app help sheet or a public web page linked from Settings
 
 ### Phase release.3 — Performance & Stability Audit
@@ -711,6 +716,9 @@ A holistic pass across all four tabs, rather than scattering open-ended "UX audi
 - UI tests (XCUIAutomation), once the project is more stable: core flows — add item, complete
   item, cancel/defer item, navigate days, open settings. Currently disabled in the scheme (see
   note above) pending a real pass at this item.
+- **Nightly UI tests**: run the UI test suite on a nightly schedule (e.g. a scheduled GitHub
+  Actions workflow) rather than on every PR, since UI tests are too slow for the per-PR unit-test
+  workflow.
 
 ### Phase release.5 — Beta Testing
 - Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
@@ -728,6 +736,11 @@ Before you ship to the App Store, use Console's Deploy Schema Changes to Product
 ## Version 3.0
 
 Platform expansion beyond iPhone and Mac — Siri integration for voice entry and on-device AI awareness, home screen and lock screen widgets, Live Activity for the Dynamic Island, and an Apple Watch companion app for wrist-based progress and completion.
+
+### Other Device Support
+- Foldable iPhone ("Duo") support: resizable windows and layouts that adapt to the fold/split
+  screen (see also iPad support in Phase 3.4)
+- Apple Watch, Widgets, and Siri are covered by the sections below
 
 ### Siri & AI
 - Support Siri for adding items and asking specific questions

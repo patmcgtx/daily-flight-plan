@@ -38,6 +38,10 @@ in (or confirmed) before it can be investigated as a real defect.
   rows still show the "Cancel Item" context menu action. Fix: gate the context menu's destructive
   action in `ItemPillView` on `item.status == .pending`.
 
+- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the
+  Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet
+  recorded; not yet root-caused.
+
 - **Crash on delete-all-items**: deleting all items triggers a crash. Not yet root-caused.
 
 - **Tests that spin up a real `ModelContainer` crash intermittently under parallel test
