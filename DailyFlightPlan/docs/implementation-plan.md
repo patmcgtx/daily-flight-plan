@@ -683,9 +683,10 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
   - **Production change for testability**: `DayViewModel.currentTime` gained an `init(currentTime:)` parameter (defaults to `.now`) so clock-dependent logic (missed items, current section, auto-collapse, past sections) can be tested deterministically instead of racing the real clock.
   - **Environment note**: the default Xcode-autocreated scheme was replaced with an explicit shared scheme (`DailyFlightPlan.xcscheme`) to disable the placeholder UI test stubs (slow to run) and enable code coverage. `ItemFormViewModelTests`/`DayViewModelTests`/`CategoriesEditViewModelTests`/`ModelContainersTests` are marked `@Suite(.serialized)` — parallel SwiftData/`@Model` access across suites was crashing the test process on this beta OS/Xcode combo.
 - **✅ CI unit tests (GitHub Actions)**: `.github/workflows/tests.yml` runs the unit tests on an
-  iOS 26 simulator on every PR and push to `main`, with a per-file coverage table in each run's
-  summary (mirrors MapsPlus). When hosting tests, the app uses an in-memory, non-CloudKit model
-  container so tests never need iCloud or touch the real store.
+  iOS 27 simulator (the `xcode-27` runner image, since the deployment target is now iOS 27) on
+  every PR and push to `main`, with a per-file coverage table in each run's summary (mirrors
+  MapsPlus). When hosting tests, the app uses an in-memory, non-CloudKit model container so tests
+  never need iCloud or touch the real store.
 - **View tests (ViewInspector), once the project is more stable**: SwiftUI views are the main
   coverage gap (`FlightPlanView`, `CardDeckView`, `RoutineView`, `MarkdownImportView`, `ItemForm`
   near 0%). Add ViewInspector unit tests as MapsPlus did, but wait until the views stop churning
