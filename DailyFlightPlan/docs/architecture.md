@@ -89,6 +89,12 @@ Mock service implementations live alongside their protocols in `#if DEBUG` block
     name: String
     items: [PlanItem]               // inverse relationship
 
+@Model class Day                    // per-calendar-day customizations; created lazily on first edit
+    date: Date                      // start-of-day lookup key (no relationship to PlanItem)
+    flightName: String              // "" means use the default "DFP YYYYMMDD" flight number
+    intention: String               // the day's "destination" note
+    modifiedAt: Date                // picks the winner in deduplicateDays(in:)
+
 enum DaySection: String, CaseIterable, Codable
     firstThing  // before the morning rush
     morning     // up to 10:59am

@@ -22,6 +22,9 @@ struct CockpitView: View {
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
 
+    /// Custom flight names and intentions. Rows are created lazily on first edit.
+    @Query private var days: [Day]
+
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
     private var showFlaggedOnly: Bool = false
 
@@ -58,6 +61,9 @@ struct CockpitView: View {
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isShowingExport = false
     @FocusState private var isFlightNameFocused: Bool
+    /// What the flight name field shows. Mirrors the displayed flight number while unfocused;
+    /// while editing it holds the raw text so the field can be emptied without snapping back.
+    @State private var flightDraft: String = ""
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -158,8 +164,8 @@ struct CockpitView: View {
                 markdown: DayPlanMarkdownExporter.export(
                     items: exportItems(for: viewModel.selectedDate),
                     date: viewModel.selectedDate,
-                    flightNumber: viewModel.flightNumber(for: viewModel.selectedDate),
-                    intention: viewModel.intention(for: viewModel.selectedDate)
+                    flightNumber: displayedFlightNumber(for: viewModel.selectedDate),
+                    intention: existingDay(for: viewModel.selectedDate)?.intention ?? ""
                 )
             )
         }
@@ -288,15 +294,63 @@ struct CockpitView: View {
         }
     }
 
+    // MARK: - Day details (flight name + intention)
+
+    /// The stored `Day` for `date`, from the `@Query` — fine for display, but may lag a render
+    /// behind a just-inserted row, so writes go through `dayForEditing(_:)` instead.
+    private func existingDay(for date: Date) -> Day? {
+        let key = Day.normalized(date)
+        return days.filter { Day.normalized($0.date) == key }.max { $0.modifiedAt < $1.modifiedAt }
+    }
+
+    /// The `Day` to write to for `date`, created on first use. Fetches from the context rather
+    /// than `days` so rapid consecutive edits can't insert a duplicate row.
+    private func dayForEditing(_ date: Date) -> Day {
+        if let existing = fetchedDay(for: date) { return existing }
+        let day = Day(date: date)
+        modelContext.insert(day)
+        return day
+    }
+
+    /// The newest stored `Day` for `date`, fetched straight from the context.
+    private func fetchedDay(for date: Date) -> Day? {
+        let start = Day.normalized(date)
+        let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start
+        let descriptor = FetchDescriptor<Day>(
+            predicate: #Predicate { $0.date >= start && $0.date < end },
+            sortBy: [SortDescriptor(\.modifiedAt, order: .reverse)]
+        )
+        return (try? modelContext.fetch(descriptor))?.first
+    }
+
+    private func displayedFlightNumber(for date: Date) -> String {
+        existingDay(for: date)?.displayFlightNumber ?? Day.defaultFlightNumber(for: date)
+    }
+
+    /// Stores `text` as the flight name for `date`. Blank text, or text equal to the default
+    /// number, is stored as "" so the name keeps tracking the default; a row left with nothing
+    /// customized is deleted rather than synced as an empty record.
+    private func commitFlightName(_ text: String, for date: Date) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isDefault = trimmed.isEmpty || trimmed == Day.defaultFlightNumber(for: date)
+        guard !isDefault else {
+            guard let day = existingDay(for: date) ?? fetchedDay(for: date) else { return }
+            day.setFlightName("")
+            if day.isBlank { modelContext.delete(day) }
+            return
+        }
+        dayForEditing(date).setFlightName(text)
+    }
+
     /// The flight name caption, editable inline. It shows the default "DFP YYYYMMDD" number as
     /// real text, so the user can tweak it (e.g. append a suffix) rather than retype the date.
-    /// While editing the raw text is shown; on blur, blank or unchanged-default text is cleared
-    /// so the name keeps tracking the default.
     private func flightNameField(for date: Date) -> some View {
-        let defaultNumber = DayViewModel.defaultFlightNumber(for: date)
         let name = Binding(
-            get: { isFlightNameFocused ? viewModel.customFlightName(for: date) : viewModel.flightNumber(for: date) },
-            set: { viewModel.setFlightName($0, for: date) }
+            get: { flightDraft },
+            set: {
+                flightDraft = String($0.prefix(Day.maxFlightNameLength))
+                commitFlightName(flightDraft, for: date)
+            }
         )
         return VStack(alignment: .leading, spacing: 2) {
             Text("Flight")
@@ -305,7 +359,7 @@ struct CockpitView: View {
                 .foregroundStyle(CockpitStyle.muted)
             TextField(
                 "", text: name,
-                prompt: Text(defaultNumber)
+                prompt: Text(Day.defaultFlightNumber(for: date))
                     .font(CockpitStyle.mono(.body, weight: .bold))
                     .foregroundStyle(CockpitStyle.muted)
             )
@@ -321,19 +375,11 @@ struct CockpitView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture { isFlightNameFocused = true }
+        .onChange(of: displayedFlightNumber(for: date), initial: true) { _, displayed in
+            if !isFlightNameFocused { flightDraft = displayed }
+        }
         .onChange(of: isFlightNameFocused) { _, focused in
-            let custom = viewModel.customFlightName(for: date)
-            if focused {
-                // Seed the editor with the default so the date doesn't need retyping.
-                if custom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    viewModel.setFlightName(defaultNumber, for: date)
-                }
-            } else {
-                let trimmed = custom.trimmingCharacters(in: .whitespacesAndNewlines)
-                if trimmed.isEmpty || trimmed == defaultNumber {
-                    viewModel.setFlightName("", for: date)
-                }
-            }
+            if !focused { flightDraft = displayedFlightNumber(for: date) }
         }
     }
 
@@ -341,8 +387,8 @@ struct CockpitView: View {
     /// in the Flight Status card beside the progress box.
     private func destinationField(for date: Date) -> some View {
         let intention = Binding(
-            get: { viewModel.intention(for: date) },
-            set: { viewModel.setIntention($0, for: date) }
+            get: { existingDay(for: date)?.intention ?? "" },
+            set: { dayForEditing(date).setIntention($0) }
         )
         return VStack(alignment: .leading, spacing: 2) {
             Text("Destination")
@@ -486,12 +532,11 @@ struct CockpitView: View {
                     .frame(width: 1, height: 14)
             } else {
                 // Past and future days have no live clock/countdown, so show a day blurb instead.
-                let weekday = date.formatted(.dateTime.weekday(.wide))
                 briefingItem(
                     icon: nil,
                     text: date < Calendar.current.startOfDay(for: .now)
-                        ? "A \(weekday) in the can"
-                        : "A \(weekday) to look forward to"
+                        ? "It's in the past"
+                        : "Future you"
                 )
                 Rectangle()
                     .fill(CockpitStyle.border.opacity(0.4))

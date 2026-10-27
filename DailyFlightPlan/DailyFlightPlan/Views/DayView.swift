@@ -96,6 +96,7 @@ struct DayView: View {
             ModelContainer.deduplicateItems(in: modelContext)
             ModelContainer.deduplicateInstances(in: modelContext)
             ModelContainer.deduplicateCategories(in: modelContext)
+            ModelContainer.deduplicateDays(in: modelContext)
             await watchForCalendarDayChange()
         }
         .task(id: viewModel.selectedDate) {
@@ -113,6 +114,7 @@ struct DayView: View {
                 ModelContainer.deduplicateItems(in: modelContext)
                 ModelContainer.deduplicateInstances(in: modelContext)
                 ModelContainer.deduplicateCategories(in: modelContext)
+                ModelContainer.deduplicateDays(in: modelContext)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
@@ -140,7 +142,10 @@ struct DayView: View {
                 isDeletingData = true
                 // Let the overlay fully render before touching the store
                 try? await Task.sleep(for: .milliseconds(150))
-                if deleteItems { ModelContainer.deleteAllItems(in: modelContext) }
+                if deleteItems {
+                    ModelContainer.deleteAllItems(in: modelContext)
+                    ModelContainer.deleteAllDays(in: modelContext)
+                }
                 if deleteCategories { ModelContainer.deleteAllCategories(in: modelContext) }
                 // Hold the overlay until @Query finishes propagating the deletions
                 try? await Task.sleep(for: .seconds(2))
@@ -155,6 +160,7 @@ struct DayView: View {
                     ModelContainer.deduplicateItems(in: modelContext)
                     ModelContainer.deduplicateInstances(in: modelContext)
                     ModelContainer.deduplicateCategories(in: modelContext)
+                    ModelContainer.deduplicateDays(in: modelContext)
                 }
             )
         }

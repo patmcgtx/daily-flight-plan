@@ -423,14 +423,15 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
   tracked separately under Phase 1.2 (now cross-referenced there, not duplicated); pulled
   forward here since it's a small, self-contained addition.
-  - *In progress (in-memory UI only; persistence deferred to a future `Day` model):* the Flight
-    Status card now has a tap-to-edit flight name (inline `TextField` in the "FLIGHT" caption,
-    pre-filled with the computed `DFP YYYYMMDD` as real text so the date needn't be retyped;
-    blank or unchanged text keeps tracking the default) and an editable "DESTINATION" field for
-    the intention (multi-line, up to 3 lines) that replaces the old "Plan active" / "All done!"
-    / "No items planned" status line, beside the progress box. State lives in `DayViewModel`
-    keyed by start-of-day, so it resets on relaunch. Both appear in the Markdown day export
-    header ("Flight:" / "Destination:").
+  - ✅ *Done (persisted; see [day-model-plan.md](plans/day-model-plan.md)):* the Flight Status
+    card has a tap-to-edit flight name (inline `TextField` in the "FLIGHT" caption, pre-filled
+    with the computed `DFP YYYYMMDD` as real text so the date needn't be retyped; blank or
+    unchanged text keeps tracking the default) and an editable "DESTINATION" field for the
+    intention (multi-line, up to 3 lines) that replaces the old "Plan active" / "All done!" /
+    "No items planned" status line, beside the progress box. Both are stored in a new `Day`
+    SwiftData model (CloudKit-synced) and appear in the Markdown day export header
+    ("Flight:" / "Destination:"). Deviation: Settings' "delete items" also deletes all `Day`
+    rows.
 - **Cross-segment "completed so far" summary**: a day-wide rollup of everything completed across
   all segments today, not just each section's own `completed/total` count — ties into the
   "Reward when completing everything for today" idea above.
