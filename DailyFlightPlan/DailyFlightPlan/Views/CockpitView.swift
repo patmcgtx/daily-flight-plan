@@ -298,18 +298,18 @@ struct CockpitView: View {
             get: { isFlightNameFocused ? viewModel.customFlightName(for: date) : viewModel.flightNumber(for: date) },
             set: { viewModel.setFlightName($0, for: date) }
         )
-        return HStack(spacing: 6) {
+        return VStack(alignment: .leading, spacing: 2) {
             Text("Flight")
-                .font(CockpitStyle.mono(.caption, weight: .bold))
+                .font(CockpitStyle.mono(.caption2, weight: .bold))
                 .textCase(.uppercase)
                 .foregroundStyle(CockpitStyle.muted)
             TextField(
                 "", text: name,
                 prompt: Text(defaultNumber)
-                    .font(CockpitStyle.mono(.caption, weight: .bold))
+                    .font(CockpitStyle.mono(.body, weight: .bold))
                     .foregroundStyle(CockpitStyle.muted)
             )
-            .font(CockpitStyle.mono(.caption, weight: .bold))
+            .font(CockpitStyle.mono(.body, weight: .bold))
             .textCase(.uppercase)
             .foregroundStyle(CockpitStyle.ink)
             .textFieldStyle(.plain)
@@ -317,11 +317,8 @@ struct CockpitView: View {
             .submitLabel(.done)
             .onSubmit { isFlightNameFocused = false }
             .accessibilityLabel("Flight name")
-            Image(systemName: "pencil")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(CockpitStyle.muted)
-                .accessibilityHidden(true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
         .onTapGesture { isFlightNameFocused = true }
         .onChange(of: isFlightNameFocused) { _, focused in
@@ -340,28 +337,37 @@ struct CockpitView: View {
         }
     }
 
-    /// "DESTINATION:" row — a short, multi-line-capable note on what the day is for.
-    private func destinationRow(for date: Date) -> some View {
+    /// "DESTINATION" label with a short, multi-line-capable note on what the day is for, shown
+    /// in the Flight Status card beside the progress box.
+    private func destinationField(for date: Date) -> some View {
         let intention = Binding(
             get: { viewModel.intention(for: date) },
             set: { viewModel.setIntention($0, for: date) }
         )
-        return HStack(alignment: .top, spacing: 6) {
-            Text("DESTINATION:")
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("Destination")
                 .font(CockpitStyle.mono(.caption2, weight: .bold))
+                .textCase(.uppercase)
                 .foregroundStyle(CockpitStyle.muted)
-            TextField(
-                "", text: intention,
-                prompt: Text("What's today for?")
+            // The placeholder is a separate Text rather than the field's `prompt`, which
+            // truncates to one line instead of wrapping.
+            ZStack(alignment: .topLeading) {
+                if intention.wrappedValue.isEmpty {
+                    Text("What is this \(date.formatted(.dateTime.weekday(.wide))) for?")
+                        .font(CockpitStyle.mono(.caption2))
+                        .foregroundStyle(CockpitStyle.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                TextField("", text: intention, axis: .vertical)
                     .font(CockpitStyle.mono(.caption2))
-                    .foregroundStyle(CockpitStyle.muted),
-                axis: .vertical
-            )
-            .font(CockpitStyle.mono(.caption2))
-            .foregroundStyle(CockpitStyle.ink)
-            .textFieldStyle(.plain)
-            .lineLimit(1...3)
-            .accessibilityLabel("Day destination")
+                    .foregroundStyle(CockpitStyle.ink)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("Day destination")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -370,20 +376,12 @@ struct CockpitView: View {
         let completed = items.filter { $0.status == .completed }.count
         let total = items.count
         let pct = total > 0 ? Double(completed) / Double(total) : 0
-        let statusText: String = {
-            if total == 0 { return "No items planned" }
-            if completed == total { return "All done!" }
-            return "Plan active"
-        }()
-
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 16) {
                 paperProgressBox(completed: completed, total: total, pct: pct)
                 VStack(alignment: .leading, spacing: 4) {
                     flightNameField(for: date)
-                    Text(statusText)
-                        .font(CockpitStyle.mono(.body, weight: .bold))
-                        .foregroundStyle(CockpitStyle.ink)
+                    destinationField(for: date)
                     if let nextUp = nextUpTime(items, referenceDate: date) {
                         Text("Next up at \(nextUp)")
                             .font(CockpitStyle.mono(.caption))
@@ -396,11 +394,8 @@ struct CockpitView: View {
 
             Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
 
-            VStack(alignment: .leading, spacing: 8) {
-                routeIntentionsLine()
-                destinationRow(for: date)
-            }
-            .padding(14)
+            routeIntentionsLine()
+                .padding(14)
         }
         .background(CockpitStyle.surface)
         .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))

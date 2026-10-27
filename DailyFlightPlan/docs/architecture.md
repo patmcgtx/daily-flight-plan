@@ -187,8 +187,8 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
   highlighter badge, the other two in plain muted text. The mock flight number (`DFP` + date as
   `YYYYMMDD`) lives in the Flight Status card.
 - **Flight Status card**: square `completed/total` progress indicator (proportional black fill);
-  status line ("Plan active" / "All done!" / "No items planned"); "Next up at HH:MM" (earliest
-  upcoming pending deadline); a "Route / Intentions" line listing all six day sections in order,
+  tap-to-edit flight name; an editable "Destination" (day intention) field in place of the old
+  status line; "Next up at HH:MM" (earliest upcoming pending deadline); a "Route / Intentions" line listing all six day sections in order,
   each bolded once every item assigned to it is completed.
 - **Briefing row**: live clock, live countdown to midnight, and outstanding-flagged-item count,
   separated by thin vertical dividers between a top/bottom rule. The clock and countdown tick
