@@ -194,7 +194,9 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
   separated by thin vertical dividers between a top/bottom rule. The clock and countdown tick
   every second via `SwiftUI.TimelineView(.periodic(from:by:))` — disambiguated as `SwiftUI.TimelineView`
   since the app already has its own `TimelineView` for the Timeline tab — rather than the shared
-  `DayViewModel` clock, which only updates per-minute for the rest of the app.
+  `DayViewModel` clock, which only updates per-minute for the rest of the app. On days other
+  than today the clock and countdown are replaced by a blurb: "A <weekday> in the can" for past
+  days, "A <weekday> to look forward to" for future days.
 - **Section cards**: flat `Rectangle` (no corner radius) per day section, black/gray border, hard
   offset shadow. The active section's name (not the whole header) gets the yellow highlighter
   treatment instead of a tinted background.

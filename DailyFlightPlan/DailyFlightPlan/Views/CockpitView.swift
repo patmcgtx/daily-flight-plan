@@ -484,6 +484,18 @@ struct CockpitView: View {
                 Rectangle()
                     .fill(CockpitStyle.border.opacity(0.4))
                     .frame(width: 1, height: 14)
+            } else {
+                // Past and future days have no live clock/countdown, so show a day blurb instead.
+                let weekday = date.formatted(.dateTime.weekday(.wide))
+                briefingItem(
+                    icon: nil,
+                    text: date < Calendar.current.startOfDay(for: .now)
+                        ? "A \(weekday) in the can"
+                        : "A \(weekday) to look forward to"
+                )
+                Rectangle()
+                    .fill(CockpitStyle.border.opacity(0.4))
+                    .frame(width: 1, height: 14)
             }
             briefingItem(
                 icon: "sparkles",
@@ -500,14 +512,18 @@ struct CockpitView: View {
         }
     }
 
-    private func briefingItem(icon: String, text: String) -> some View {
+    private func briefingItem(icon: String?, text: String) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.caption2)
-                .foregroundStyle(CockpitStyle.ink)
+            if let icon {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .foregroundStyle(CockpitStyle.ink)
+            }
             Text(text)
                 .font(CockpitStyle.mono(.caption))
                 .foregroundStyle(CockpitStyle.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 
