@@ -4,13 +4,13 @@
 //
 import Foundation
 
-/// Pure Markdown-rendering logic for the Paper Plan (Day) tab's export feature. Kept separate
-/// from `PaperPlanView` so this can be unit tested without instantiating a SwiftUI view or a
+/// Pure Markdown-rendering logic for the Cockpit (Day) tab's export feature. Kept separate
+/// from `CockpitView` so this can be unit tested without instantiating a SwiftUI view or a
 /// `@Query`.
 enum DayPlanMarkdownExporter {
 
     /// Renders every item in `items` (the caller is responsible for scoping these to a single
-    /// calendar day — ignoring the Paper Plan tab's own search/flag/completed/category filters,
+    /// calendar day — ignoring the Cockpit tab's own search/flag/completed/category filters,
     /// since completion status is itself part of what's exported), grouped by day section.
     static func export(items: [PlanItem], date: Date, now: Date = .now) -> String {
         func effectiveSection(_ item: PlanItem) -> DaySection? {

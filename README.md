@@ -77,7 +77,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - **SwiftData + CloudKit** — persistence with iCloud sync through a private CloudKit database
 - **EventKit** — Calendar and Reminders integration
 - **SwiftUI-Flow** (`HFlow`) — horizontal wrapping flow layouts for item pills
-- **IBM Plex Mono** — bundled custom font for the Flight tab's filed-flight-plan paper aesthetic
+- **IBM Plex Mono** — bundled custom font for the Cockpit tab's filed-flight-plan paper aesthetic
 - **`@Observable @MainActor` ViewModels** — no Combine
 - **Protocol-based services** injected via `@Environment` + `@Entry`
 
@@ -85,7 +85,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 
 **Three tabs:**
 
-- **Flight** — primary day view, styled like a filed paper flight plan (monospaced type, flat
+- **Cockpit** — primary day view, styled like a filed paper flight plan (monospaced type, flat
   black borders, hard offset shadows, cream background; adapts to a dark "Paper Night" palette)
   - Day navigation via `←`/`→` buttons flanking the date heading (not swipe — a single `ScrollView`
     is used instead of a paging `TabView` so Liquid Glass bar transparency/blur tracks correctly)
@@ -117,7 +117,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - **Timeline** — chronological multi-day list
   - Shows one-off and already-materialized plan items across all dates, lazily loaded 7 days at a
     time in each direction, with a filter bar and dedicated search; future dates show only
-    one-off scheduled items, not projected recurring habits (those remain a Flight tab preview,
+    one-off scheduled items, not projected recurring habits (those remain a Cockpit tab preview,
     since a routine could still change before the date arrives)
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
@@ -154,18 +154,18 @@ DailyFlightPlan/
 │   └── Categories/      — CategorySelectionService
 ├── Theming/
 │   ├── DFPTheme.swift        — theme enum + ThemeViewModifier (dormant — see Theme switcher note above)
-│   ├── PaperPlanStyle.swift  — color/font tokens for the Flight tab's paper look
+│   ├── CockpitStyle.swift  — color/font tokens for the Cockpit tab's paper look
 │   └── Fonts/                — bundled IBM Plex Mono (.ttf), registered via Info.plist UIAppFonts
 └── Views/
     ├── Components/      — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
     │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/     — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
-    ├── PaperPlanView.swift    — Flight tab (primary day view, paper-plan styling)
+    ├── CockpitView.swift    — Cockpit tab (primary day view, paper-plan styling)
     ├── FlightPlanView.swift   — retired Day tab (swipe pager); commented out in DayView, kept for reference
     ├── RoutineView.swift      — Routine tab (recurring habit template management)
     ├── RoutineMarkdownExporter.swift — Pure Markdown rendering for the Routine tab's export
-    ├── DayPlanMarkdownExporter.swift — Pure Markdown rendering for the Flight tab's export
+    ├── DayPlanMarkdownExporter.swift — Pure Markdown rendering for the Cockpit tab's export
     ├── MarkdownExportView.swift — Shared export sheet (Preview/Raw toggle, Copy, ShareLink)
     ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)

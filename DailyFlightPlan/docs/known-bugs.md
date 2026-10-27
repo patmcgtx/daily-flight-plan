@@ -19,11 +19,10 @@ in (or confirmed) before it can be investigated as a real defect.
 
 - **App sometimes opens to the Routine tab instead of the intended default**: affected action is
   app launch; device/OS not specified; observed result is landing on the Routine tab instead of
-  the Flight tab that `DayView.body`'s `.onAppear` is supposed to switch to (it only does so when
-  `activeTab == .focus`, its declared initial value). Reported as intermittent. Hypothesis worth
-  checking once reproduced: `@State private var activeTab` retaining a prior `.routines` value
-  across scene restoration/relaunch instead of starting fresh at `.focus`. Reproduce reliably
-  (and note device/OS) before moving to Open.
+  the Cockpit tab, which is `DayView.activeTab`'s declared initial value. Reported as
+  intermittent. Hypothesis worth checking once reproduced: `@State private var activeTab`
+  retaining a prior `.routines` value across scene restoration/relaunch instead of starting
+  fresh at `.cockpit`. Reproduce reliably (and note device/OS) before moving to Open.
 
 - **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
 
@@ -58,7 +57,7 @@ in (or confirmed) before it can be investigated as a real defect.
   — pass reliably). Not yet root-caused; found while running the full suite during unrelated
   Markdown-export work.
 
-- **Flight tab's date-picker sheet looks undersized on macOS**: `DatePickerToolbarButton`
+- **Cockpit tab's date-picker sheet looks undersized on macOS**: `DatePickerToolbarButton`
   presents via `.sheet` on macOS (`.popover` attached to a toolbar button there never opens at
   all — a separate issue, worked around by branching to `.sheet`), with the content frame fixed
   to `width: 300` and no height constraint so the sheet sizes to the native graphical

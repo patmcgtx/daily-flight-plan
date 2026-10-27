@@ -15,8 +15,8 @@ DailyFlightPlan/
 │   └── Categories/   — CategorySelectionService (UserDefaults-backed; category filter state not synced)
 ├── Theming/
 │   ├── DFPTheme.swift        — theme enum + ThemeViewModifier (adapted from MapsPlus); dormant,
-│   │                           see "Flight tab" below
-│   ├── PaperPlanStyle.swift  — color/font tokens for the Flight tab's filed-flight-plan look;
+│   │                           see "Cockpit tab" below
+│   ├── CockpitStyle.swift  — color/font tokens for the Cockpit tab's filed-flight-plan look;
 │   │                           deliberately separate from DFPTheme since it's a fixed look for
 │   │                           one tab, not a user-selectable app-wide theme
 │   └── Fonts/                — bundled IBM Plex Mono (.ttf, 3 weights), registered via
@@ -26,13 +26,13 @@ DailyFlightPlan/
     │                   ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
     ├── View Models/  — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
-    ├── PaperPlanView.swift    — Flight tab (struct PaperPlanView): primary day view, paper-plan styling
+    ├── CockpitView.swift    — Cockpit tab (struct CockpitView): primary day view, paper-plan styling
     ├── FlightPlanView.swift   — retired Day tab (struct FlightPlanView): swipe pager; `Tab(…)` entry
     │                           commented out in DayView.swift, kept for reference/possible revival
     ├── RoutineView.swift      — Routine tab: manage recurring habit templates; grouped by weekday pattern and day segment
     ├── RoutineMarkdownExporter.swift — Pure Markdown-rendering logic for the Routine tab's export
     │                           (static functions, no view/`@Query` dependency — unit tested directly)
-    ├── DayPlanMarkdownExporter.swift — Pure Markdown-rendering logic for the Flight tab's export
+    ├── DayPlanMarkdownExporter.swift — Pure Markdown-rendering logic for the Cockpit tab's export
     │                           (same shape as above, for a single day's items)
     ├── MarkdownExportView.swift — Shared export sheet: Preview/Raw toggle, Copy button, `ShareLink`
     │                           backed by a temp `.md` file; takes a `title` + pre-rendered `markdown` string
@@ -135,12 +135,12 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 ## UI: "Structured Flight Plan"
 
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
-- **Flight** (`airplane`) — primary day view, styled as a filed paper flight plan (`PaperPlanView.swift`); button-based day navigation; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
+- **Cockpit** (`airplane`) — primary day view, styled as a filed paper flight plan (`CockpitView.swift`); button-based day navigation; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
 - **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by
   weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all
   start expanded; collapsed shows name + item count). Within each card, items are subdivided by
   day segment (Morning, Midday, …), and each segment is itself a collapsible card matching the
-  Flight tab's section-card styling (`.background` fill, 0.5pt border, title enlarges to
+  Cockpit tab's section-card styling (`.background` fill, 0.5pt border, title enlarges to
   `.headline` when expanded, item-count badge, `+ Add item` button pre-wired to that weekday
   pattern + segment via a combined `ItemForm(templateWeekdays:section:)` initializer); untimed
   items flow as `HFlow` pills, timed items get full-width deadline rows. Collapsed segment headers
@@ -156,7 +156,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 - The original **Day** tab (`airplane`, `FlightPlanView.swift`, swipe-pager-based) is retired —
   its `Tab(…)` entry is commented out in `DayView.swift`, not deleted, in case it's worth reviving
 
-**Navigation bar toolbar (Flight tab, inside `NavigationStack`):**
+**Navigation bar toolbar (Cockpit tab, inside `NavigationStack`):**
 - Leading: `⚙` Settings button, `arrow.down.doc` Import button
 - Trailing: `ToolbarItemGroup` — `scope` go-to-today button; search toggle; filter menu
   (`line.3.horizontal.decrease.circle`) with Flagged/Done/Routines/Calendar/Reminders toggles;
@@ -165,15 +165,15 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
   each item is a routine) — system groups into a single Liquid Glass capsule on iOS 26
 - Trailing: `+` Add Item button (separate from the group, bottom-trailing overlay)
 - `.toolbarBackgroundVisibility(.hidden, for: .navigationBar, .tabBar)` (iOS only) forces both
-  bars fully transparent — see the Flight tab's Liquid Glass note below for why this is explicit
+  bars fully transparent — see the Cockpit tab's Liquid Glass note below for why this is explicit
   rather than left to the system's automatic heuristic
 
 All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`, `showRecurring`) is saved to `@AppStorage` and shared across all tabs. The filter icon fills/accents when any filter is active.
 
-**Flight tab (`PaperPlanView.swift`) — current primary view:**
+**Cockpit tab (`CockpitView.swift`) — current primary view:**
 - **Paper styling**: monospaced type (IBM Plex Mono, bundled in `Theming/Fonts/`), flat black
   borders with hard (non-blurred) offset shadows instead of rounded/blurred cards, cream
-  background; tokens in `Theming/PaperPlanStyle.swift`. Dark mode ("Paper Night") via adaptive
+  background; tokens in `Theming/CockpitStyle.swift`. Dark mode ("Paper Night") via adaptive
   `UIColor`/`NSColor` providers — near-black background, dark slate cards, light borders/text.
 - **Day navigation**: `←`/`→` buttons flanking the date heading, calling
   `viewModel.goToYesterday()`/`goToTomorrow()` directly — no swipe gesture. A single `ScrollView`
@@ -182,9 +182,10 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
   `ScrollView`s (as `FlightPlanView`'s pager does) confuses that heuristic — see
   `UIViewController.setContentScrollView(_:for:)` — causing the nav/tab bars to show a static
   backdrop color instead of real content scrolling, blurred, behind them.
-- **Date header**: "Today"/"Tomorrow"/"Yesterday" label above the weekday name — "Today" on a
-  yellow highlighter badge, the other two in plain muted text. Below the weekday: a mock flight
-  number (`DFP` + date as `YYYYMMDD`) and the short-form date.
+- **Date header**: the short-form date (e.g. "OCT 20") above the weekday name, with the
+  "Today"/"Tomorrow"/"Yesterday" label alongside it when applicable — "Today" on a yellow
+  highlighter badge, the other two in plain muted text. The mock flight number (`DFP` + date as
+  `YYYYMMDD`) lives in the Flight Status card.
 - **Flight Status card**: square `completed/total` progress indicator (proportional black fill);
   status line ("Plan active" / "All done!" / "No items planned"); "Next up at HH:MM" (earliest
   upcoming pending deadline); a "Route / Intentions" line listing all six day sections in order,
@@ -227,7 +228,7 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
 
 **Cards tab (commented out):** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches Flight Plan. AI summaries generated on `.onAppear`. `+ Add item` inside expanded card content.
 
-**Cockpit tab (commented out):** Original main day view with scrolling date header, `NowBarView`, grouped item sub-rows (pending / done / cancelled / habits), AI section summaries, and the full DaySectionView component. Kept for reference; may be retired in Phase 1.4 (Tech Debt).
+**Original "Cockpit" tab (commented out, now "Focus"):** Original main day view with scrolling date header, `NowBarView`, grouped item sub-rows (pending / done / cancelled / habits), AI section summaries, and the full DaySectionView component. Kept for reference; may be retired in Phase 1.4 (Tech Debt).
 
 **Item types in the day view:**
 | Type | Layout | Visual treatment |
