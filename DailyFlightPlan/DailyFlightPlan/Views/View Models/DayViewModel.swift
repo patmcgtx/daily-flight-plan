@@ -13,6 +13,9 @@ final class DayViewModel {
     private(set) var forwardNavigation: Bool = true
     private(set) var sectionSummaries: [DaySection: String] = [:]
 
+    /// Per-day flight name and intention, keyed by start-of-day. In-memory only for now.
+    private var dayDetails: [Date: DayDetails] = [:]
+
     // Updated each minute by startLiveClock(); drives currentSection and Past area in real time.
     private(set) var currentTime: Date = .now
     private(set) var loadingSummarySections: Set<DaySection> = []
@@ -52,6 +55,46 @@ final class DayViewModel {
     /// All six sections, always — past sections remain visible for day-at-a-glance reference.
     var activeSections: [DaySection] {
         DaySection.allCases
+    }
+
+    // MARK: Day details (flight name + intention)
+
+    /// What the user has typed for a day's flight name/intention. Empty strings mean "unset".
+    struct DayDetails {
+        var flightName: String = ""
+        var intention: String = ""
+    }
+
+    static let maxFlightNameLength = 24
+
+    /// The auto-generated mock flight number: "DFP" plus the date as YYYYMMDD.
+    static func defaultFlightNumber(for date: Date) -> String {
+        let comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return "DFP \(comps.year ?? 0)\(String(format: "%02d", comps.month ?? 0))\(String(format: "%02d", comps.day ?? 0))"
+    }
+
+    /// The raw, user-entered flight name for `date` (empty when none has been set).
+    func customFlightName(for date: Date) -> String {
+        dayDetails[Calendar.current.startOfDay(for: date)]?.flightName ?? ""
+    }
+
+    /// The flight name to display: the user's entry if it isn't blank, else the default number.
+    func flightNumber(for date: Date) -> String {
+        let custom = customFlightName(for: date).trimmingCharacters(in: .whitespacesAndNewlines)
+        return custom.isEmpty ? Self.defaultFlightNumber(for: date) : custom
+    }
+
+    func setFlightName(_ name: String, for date: Date) {
+        dayDetails[Calendar.current.startOfDay(for: date), default: DayDetails()].flightName =
+            String(name.prefix(Self.maxFlightNameLength))
+    }
+
+    func intention(for date: Date) -> String {
+        dayDetails[Calendar.current.startOfDay(for: date)]?.intention ?? ""
+    }
+
+    func setIntention(_ text: String, for date: Date) {
+        dayDetails[Calendar.current.startOfDay(for: date), default: DayDetails()].intention = text
     }
 
     func goToYesterday() {

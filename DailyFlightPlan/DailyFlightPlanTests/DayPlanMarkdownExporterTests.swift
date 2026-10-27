@@ -149,4 +149,31 @@ struct DayPlanMarkdownExporterTests {
         #expect(markdown.contains("- Status: Canceled"))
         #expect(markdown.contains("### Pending Task"))
     }
+
+    @Test("Flight number and intention appear in the header only when non-blank",
+          arguments: [
+            ("DFP 20260615", "Ship the release", true, true),
+            ("DFP 20260615", "   ", true, false),
+            ("  ", "Ship the release", false, true),
+            ("", "", false, false)
+          ])
+    func exportHeaderIncludesFlightAndDestination(
+        flight: String, intention: String, expectsFlight: Bool, expectsDestination: Bool
+    ) {
+        let markdown = DayPlanMarkdownExporter.export(
+            items: [], date: .now, flightNumber: flight, intention: intention
+        )
+
+        #expect(markdown.contains("Flight: ") == expectsFlight)
+        #expect(markdown.contains("Destination: ") == expectsDestination)
+    }
+
+    @Test("A multi-line intention is exported with Markdown hard line breaks")
+    func exportMultiLineIntention() {
+        let markdown = DayPlanMarkdownExporter.export(
+            items: [], date: .now, intention: "Line one\nLine two"
+        )
+
+        #expect(markdown.contains("Destination: Line one  \nLine two"))
+    }
 }

@@ -57,6 +57,7 @@ struct CockpitView: View {
     @State private var isShowingSearch = false
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isShowingExport = false
+    @FocusState private var isFlightNameFocused: Bool
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -154,7 +155,12 @@ struct CockpitView: View {
         .sheet(isPresented: $isShowingExport) {
             MarkdownExportView(
                 title: "Export Day Plan",
-                markdown: DayPlanMarkdownExporter.export(items: exportItems(for: viewModel.selectedDate), date: viewModel.selectedDate)
+                markdown: DayPlanMarkdownExporter.export(
+                    items: exportItems(for: viewModel.selectedDate),
+                    date: viewModel.selectedDate,
+                    flightNumber: viewModel.flightNumber(for: viewModel.selectedDate),
+                    intention: viewModel.intention(for: viewModel.selectedDate)
+                )
             )
         }
         .onAppear { initializeExpandedSections() }
@@ -282,11 +288,82 @@ struct CockpitView: View {
         }
     }
 
-    /// A mock flight number — "DFP" (the form number from the mockup's masthead) plus the
-    /// date in YYYYMMDD — shown ahead of the date, filed-flight-plan style.
-    private func flightNumber(for date: Date) -> String {
-        let comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
-        return "DFP \(comps.year ?? 0)\(String(format: "%02d", comps.month ?? 0))\(String(format: "%02d", comps.day ?? 0))"
+    /// The flight name caption, editable inline. It shows the default "DFP YYYYMMDD" number as
+    /// real text, so the user can tweak it (e.g. append a suffix) rather than retype the date.
+    /// While editing the raw text is shown; on blur, blank or unchanged-default text is cleared
+    /// so the name keeps tracking the default.
+    private func flightNameField(for date: Date) -> some View {
+        let defaultNumber = DayViewModel.defaultFlightNumber(for: date)
+        let name = Binding(
+            get: { isFlightNameFocused ? viewModel.customFlightName(for: date) : viewModel.flightNumber(for: date) },
+            set: { viewModel.setFlightName($0, for: date) }
+        )
+        return HStack(spacing: 6) {
+            Text("Flight")
+                .font(CockpitStyle.mono(.caption, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(CockpitStyle.muted)
+            TextField(
+                "", text: name,
+                prompt: Text(defaultNumber)
+                    .font(CockpitStyle.mono(.caption, weight: .bold))
+                    .foregroundStyle(CockpitStyle.muted)
+            )
+            .font(CockpitStyle.mono(.caption, weight: .bold))
+            .textCase(.uppercase)
+            .foregroundStyle(CockpitStyle.ink)
+            .textFieldStyle(.plain)
+            .focused($isFlightNameFocused)
+            .submitLabel(.done)
+            .onSubmit { isFlightNameFocused = false }
+            .accessibilityLabel("Flight name")
+            Image(systemName: "pencil")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(CockpitStyle.muted)
+                .accessibilityHidden(true)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { isFlightNameFocused = true }
+        .onChange(of: isFlightNameFocused) { _, focused in
+            let custom = viewModel.customFlightName(for: date)
+            if focused {
+                // Seed the editor with the default so the date doesn't need retyping.
+                if custom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    viewModel.setFlightName(defaultNumber, for: date)
+                }
+            } else {
+                let trimmed = custom.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty || trimmed == defaultNumber {
+                    viewModel.setFlightName("", for: date)
+                }
+            }
+        }
+    }
+
+    /// "DESTINATION:" row — a short, multi-line-capable note on what the day is for.
+    private func destinationRow(for date: Date) -> some View {
+        let intention = Binding(
+            get: { viewModel.intention(for: date) },
+            set: { viewModel.setIntention($0, for: date) }
+        )
+        return HStack(alignment: .top, spacing: 6) {
+            Text("DESTINATION:")
+                .font(CockpitStyle.mono(.caption2, weight: .bold))
+                .foregroundStyle(CockpitStyle.muted)
+            TextField(
+                "", text: intention,
+                prompt: Text("What's today for?")
+                    .font(CockpitStyle.mono(.caption2))
+                    .foregroundStyle(CockpitStyle.muted),
+                axis: .vertical
+            )
+            .font(CockpitStyle.mono(.caption2))
+            .foregroundStyle(CockpitStyle.ink)
+            .textFieldStyle(.plain)
+            .lineLimit(1...3)
+            .accessibilityLabel("Day destination")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func flightStatusCard(_ items: [PlanItem], date: Date) -> some View {
@@ -303,10 +380,7 @@ struct CockpitView: View {
             HStack(spacing: 16) {
                 paperProgressBox(completed: completed, total: total, pct: pct)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Flight \(flightNumber(for: date))")
-                        .font(CockpitStyle.mono(.caption, weight: .bold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(CockpitStyle.muted)
+                    flightNameField(for: date)
                     Text(statusText)
                         .font(CockpitStyle.mono(.body, weight: .bold))
                         .foregroundStyle(CockpitStyle.ink)
@@ -322,8 +396,11 @@ struct CockpitView: View {
 
             Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
 
-            routeIntentionsLine()
-                .padding(14)
+            VStack(alignment: .leading, spacing: 8) {
+                routeIntentionsLine()
+                destinationRow(for: date)
+            }
+            .padding(14)
         }
         .background(CockpitStyle.surface)
         .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))

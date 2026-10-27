@@ -628,4 +628,39 @@ struct DayViewModelTests {
         let updated = viewModel.contentSignature(items: [remaining], events: [], reminders: [])
         #expect(updated != baseline)
     }
+
+    @Test("flightNumber(for:) falls back to DFP + YYYYMMDD until a non-blank name is set",
+          arguments: [("", "DFP 20260615"), ("   ", "DFP 20260615"), ("Deep Work", "Deep Work")])
+    func flightNumberFallsBackToDefault(entered: String, expected: String) {
+        let viewModel = DayViewModel()
+        let day = fixedTime(hour: 9, minute: 0)
+        viewModel.setFlightName(entered, for: day)
+
+        #expect(viewModel.flightNumber(for: day) == expected)
+    }
+
+    @Test("Flight names and intentions are stored per calendar day, regardless of time of day")
+    func dayDetailsAreKeyedByDay() {
+        let viewModel = DayViewModel()
+        let morning = fixedTime(hour: 8, minute: 0)
+        let evening = fixedTime(hour: 21, minute: 30)
+        let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: morning)!
+
+        viewModel.setIntention("Finish the draft", for: morning)
+        viewModel.setFlightName("Draft Day", for: morning)
+
+        #expect(viewModel.intention(for: evening) == "Finish the draft")
+        #expect(viewModel.customFlightName(for: evening) == "Draft Day")
+        #expect(viewModel.intention(for: nextDay).isEmpty)
+        #expect(viewModel.customFlightName(for: nextDay).isEmpty)
+    }
+
+    @Test("setFlightName(_:for:) caps the name at the maximum length")
+    func flightNameIsCapped() {
+        let viewModel = DayViewModel()
+        let day = fixedTime(hour: 9, minute: 0)
+        viewModel.setFlightName(String(repeating: "A", count: 100), for: day)
+
+        #expect(viewModel.customFlightName(for: day).count == DayViewModel.maxFlightNameLength)
+    }
 }
