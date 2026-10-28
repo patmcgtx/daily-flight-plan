@@ -42,7 +42,7 @@ struct DayView: View {
     var body: some View {
         TabView(selection: $activeTab) {
 
-            Tab("Cockpit", systemImage: "airplane", value: AppTab.cockpit) {
+            Tab("Cockpit", systemImage: "airplane.up.forward", value: AppTab.cockpit) {
                 CockpitView(
                     viewModel: viewModel,
                     calendarEvents: calendarEvents,
@@ -57,7 +57,7 @@ struct DayView: View {
                 RoutineView()
             }
 
-            Tab("Nav Log", systemImage: "checklist", value: AppTab.timeline) {
+            Tab("Nav Log", systemImage: "list.bullet.clipboard", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
 

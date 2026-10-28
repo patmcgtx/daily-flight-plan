@@ -187,25 +187,56 @@ extension ModelContainer {
     /// may still be delivering it), it's conservatively treated as one-off for this pass and
     /// merged correctly on a later pass once the relationship resolves. Prefers completed/skipped
     /// instances over pending ones when choosing which to keep.
+    ///
+    /// A second pass cleans up *orphans*: unlinked instances whose title and day match a
+    /// template-linked instance. Their keys never collide with the linked copy's (the linked key
+    /// is the template's `sourceID`), so the first pass can't merge them, and the link never
+    /// "resolves later" if it was actually lost. The linked copy is kept — adopting the orphan's
+    /// status if the orphan was already done and the linked copy is still pending. Trade-off: a
+    /// genuine one-off item that happens to share a routine's title on the same day is removed too.
     @MainActor
     static func deduplicateInstances(in context: ModelContext) {
         do {
             let all = try context.fetch(FetchDescriptor<PlanItem>())
             var seen = [String: PlanItem]()
             var toDelete = [PlanItem]()
+            var deletedIDs = Set<ObjectIdentifier>()
+
+            func markForDeletion(_ item: PlanItem) {
+                toDelete.append(item)
+                deletedIDs.insert(ObjectIdentifier(item))
+            }
 
             for instance in all where !instance.isTemplate {
                 let key = instance.instanceDedupeKey
                 if let existing = seen[key] {
                     if existing.status == .pending && instance.status != .pending {
-                        toDelete.append(existing)
+                        markForDeletion(existing)
                         seen[key] = instance
                     } else {
-                        toDelete.append(instance)
+                        markForDeletion(instance)
                     }
                 } else {
                     seen[key] = instance
                 }
+            }
+
+            // Orphan pass: unlinked copies of a linked routine instance (same title + day).
+            let survivors = all.filter { !$0.isTemplate && !deletedIDs.contains(ObjectIdentifier($0)) }
+            func titleDayKey(_ item: PlanItem) -> String {
+                let day = Calendar.current.startOfDay(for: item.date).timeIntervalSinceReferenceDate
+                return "\(item.title.lowercased())|\(day)"
+            }
+            var linkedByTitleDay = [String: PlanItem]()
+            for instance in survivors where instance.template != nil {
+                linkedByTitleDay[titleDayKey(instance)] = instance
+            }
+            for orphan in survivors where orphan.template == nil {
+                guard let linked = linkedByTitleDay[titleDayKey(orphan)] else { continue }
+                if linked.status == .pending && orphan.status != .pending {
+                    linked.status = orphan.status
+                }
+                markForDeletion(orphan)
             }
 
             guard !toDelete.isEmpty else { return }
