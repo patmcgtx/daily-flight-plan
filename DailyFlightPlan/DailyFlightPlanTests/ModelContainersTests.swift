@@ -235,6 +235,54 @@ struct ModelContainersTests {
         #expect(remaining.count == 2)
     }
 
+    @Test("deduplicateInstances removes an unlinked copy of a routine instance on the same day, whatever its section or status, and keeps the linked one",
+          arguments: [
+            (DaySection.afternoon, ItemStatus.pending),
+            (DaySection.midday, ItemStatus.pending),
+            (DaySection.afternoon, ItemStatus.canceled)
+          ])
+    func deduplicateInstancesRemovesUnlinkedCopyOfLinkedInstance(orphanSection: DaySection, orphanStatus: ItemStatus) throws {
+        let context = try makeContext()
+        let day = Calendar.current.startOfDay(for: .now)
+        let template = PlanItem(title: "Eat some nuts", date: day, daySection: .afternoon, recurringWeekdays: [.monday], isTemplate: true)
+        context.insert(template)
+
+        let linked = PlanItem(title: "Eat some nuts", date: day, daySection: .afternoon, status: .pending)
+        linked.template = template
+        context.insert(linked)
+
+        context.insert(PlanItem(title: "EAT SOME NUTS", date: day, daySection: orphanSection, status: orphanStatus))
+        try context.save()
+
+        ModelContainer.deduplicateInstances(in: context)
+
+        let remaining = try fetchItems(context).filter { !$0.isTemplate }
+        #expect(remaining.count == 1)
+        #expect(remaining[0].template != nil)
+        #expect(remaining[0].status == orphanStatus)
+    }
+
+    @Test("deduplicateInstances leaves an unlinked item alone when no linked instance shares its title and day")
+    func deduplicateInstancesKeepsUnlinkedItemWithoutLinkedTwin() throws {
+        let context = try makeContext()
+        let day = Calendar.current.startOfDay(for: .now)
+        let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: day)!
+        let template = PlanItem(title: "Meditate", date: day, daySection: .morning, recurringWeekdays: [.monday], isTemplate: true)
+        context.insert(template)
+
+        let linked = PlanItem(title: "Meditate", date: day, daySection: .morning)
+        linked.template = template
+        context.insert(linked)
+
+        context.insert(PlanItem(title: "Meditate", date: nextDay, daySection: .morning))
+        context.insert(PlanItem(title: "Call mom", date: day, daySection: .morning))
+        try context.save()
+
+        ModelContainer.deduplicateInstances(in: context)
+
+        #expect(try fetchItems(context).filter { !$0.isTemplate }.count == 3)
+    }
+
     // MARK: seedSampleDataIfNeeded
 
     @Test("seedSampleDataIfNeeded inserts sample template items into an empty store")
