@@ -61,6 +61,7 @@ struct CockpitView: View {
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isShowingExport = false
     @FocusState private var isFlightNameFocused: Bool
+    @FocusState private var isDestinationFocused: Bool
     /// What the flight name field shows. Mirrors the displayed flight number while unfocused;
     /// while editing it holds the raw text so the field can be emptied without snapping back.
     @State private var flightDraft: String = ""
@@ -388,7 +389,18 @@ struct CockpitView: View {
     private func destinationField(for date: Date) -> some View {
         let intention = Binding(
             get: { existingDay(for: date)?.intention ?? "" },
-            set: { dayForEditing(date).setIntention($0) }
+            set: { text in
+                // A vertical-axis field inserts a newline on Return; treat Return as "Done"
+                // instead — dismiss the keyboard and keep the text to a single paragraph.
+                if text.contains("\n") {
+                    isDestinationFocused = false
+                    dayForEditing(date).setIntention(
+                        text.replacingOccurrences(of: "\n", with: "")
+                    )
+                } else {
+                    dayForEditing(date).setIntention(text)
+                }
+            }
         )
         return VStack(alignment: .leading, spacing: 2) {
             Text("Destination")
@@ -412,6 +424,9 @@ struct CockpitView: View {
                     .textFieldStyle(.plain)
                     .lineLimit(1...3)
                     .fixedSize(horizontal: false, vertical: true)
+                    .focused($isDestinationFocused)
+                    .submitLabel(.done)
+                    .onSubmit { isDestinationFocused = false }
                     .accessibilityLabel("Day destination")
             }
         }
