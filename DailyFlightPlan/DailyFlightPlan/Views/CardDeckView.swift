@@ -90,7 +90,7 @@ struct CardDeckView: View {
                             Label("Show Completed", systemImage: "checkmark")
                         }
                         Toggle(isOn: $showRecurring) {
-                            Label("Routines", systemImage: "infinity")
+                            Label("Routines", systemImage: "wrench")
                         }
                     } label: {
                         Image(systemName: isFilterActive
@@ -552,7 +552,7 @@ Button {
                     Image(systemName: "flag.fill").font(.caption).foregroundStyle(.orange)
                 }
                 if item.isRecurring {
-                    Image(systemName: "infinity").font(.caption2).foregroundStyle(.secondary)
+                    Image(systemName: "wrench").font(.caption2).foregroundStyle(.secondary)
                 }
             }
         }

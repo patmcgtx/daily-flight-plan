@@ -53,11 +53,11 @@ struct DayView: View {
                 )
             }
 
-            Tab("Routine", systemImage: "infinity", value: AppTab.routines) {
+            Tab("Maintenance", systemImage: "wrench", value: AppTab.routines) {
                 RoutineView()
             }
 
-            Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
+            Tab("Nav Log", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
 

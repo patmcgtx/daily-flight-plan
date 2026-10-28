@@ -29,8 +29,8 @@ DailyFlightPlan/
     ├── CockpitView.swift    — Cockpit tab (struct CockpitView): primary day view, paper-plan styling
     ├── FlightPlanView.swift   — retired Day tab (struct FlightPlanView): swipe pager; `Tab(…)` entry
     │                           commented out in DayView.swift, kept for reference/possible revival
-    ├── RoutineView.swift      — Routine tab: manage recurring habit templates; grouped by weekday pattern and day segment
-    ├── RoutineMarkdownExporter.swift — Pure Markdown-rendering logic for the Routine tab's export
+    ├── RoutineView.swift      — Maintenance tab: manage recurring habit templates; grouped by weekday pattern and day segment
+    ├── RoutineMarkdownExporter.swift — Pure Markdown-rendering logic for the Maintenance tab's export
     │                           (static functions, no view/`@Query` dependency — unit tested directly)
     ├── DayPlanMarkdownExporter.swift — Pure Markdown-rendering logic for the Cockpit tab's export
     │                           (same shape as above, for a single day's items)
@@ -38,7 +38,7 @@ DailyFlightPlan/
     │                           backed by a temp `.md` file; takes a `title` + pre-rendered `markdown` string
     ├── MarkdownImportView.swift — Paste-to-import sheet: TextEditor → Foundation Models parse → review list → commit
     ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
-    ├── TimelineView.swift     — Timeline tab: chronological multi-day interactive list
+    ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```
@@ -142,7 +142,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
 - **Cockpit** (`airplane`) — primary day view, styled as a filed paper flight plan (`CockpitView.swift`); button-based day navigation; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
-- **Routine** (`infinity`) — recurring habit template management: collapsible cards grouped by
+- **Maintenance** (`wrench`) — recurring habit template management: collapsible cards grouped by
   weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all
   start expanded; collapsed shows name + item count). Within each card, items are subdivided by
   day segment (Morning, Midday, …), and each segment is itself a collapsible card matching the
@@ -157,7 +157,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
   toolbar `square.and.arrow.up` export button opens `MarkdownExportView` via
   `RoutineMarkdownExporter`, rendering every template (ignoring active filters) grouped by
   schedule, then by day segment.
-- **Timeline** (`checklist`) — chronological multi-day list of all plan items; fully interactive
+- **Nav Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
 - Tab order in the UI is Flight / Routine / Timeline (`Cmd+1` Flight, `Cmd+2` Routine, `Cmd+3` Timeline on macOS)
 - The original **Day** tab (`airplane`, `FlightPlanView.swift`, swipe-pager-based) is retired —
   its `Tab(…)` entry is commented out in `DayView.swift`, not deleted, in case it's worth reviving
@@ -199,7 +199,7 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
 - **Briefing row**: live clock, live countdown to midnight, and outstanding-flagged-item count,
   separated by thin vertical dividers between a top/bottom rule. The clock and countdown tick
   every second via `SwiftUI.TimelineView(.periodic(from:by:))` — disambiguated as `SwiftUI.TimelineView`
-  since the app already has its own `TimelineView` for the Timeline tab — rather than the shared
+  since the app already has its own `TimelineView` for the Nav Log tab — rather than the shared
   `DayViewModel` clock, which only updates per-minute for the rest of the app. On days other
   than today the clock and countdown are replaced by a blurb: "A <weekday> in the can" for past
   days, "A <weekday> to look forward to" for future days.
@@ -232,7 +232,7 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
 - **Filter-driven expand/collapse**: when a filter is active, sections with matching items/events/reminders expand; empty sections collapse. User can manually override afterward.
 - **`+ Add item`** inside each section card header links to `ItemForm(date:section:)`.
 
-**Timeline tab:** Embedded as a tab. Shows all plan items grouped by date with a filter bar and today indicator. Items are fully interactive in-place: checkbox completes, tap opens edit form, long-press shows Edit/Cancel context menu. Filters (flagged, done, category) are shared state via `@AppStorage`.
+**Nav Log tab:** Embedded as a tab. Shows all plan items grouped by date with a filter bar and today indicator. Items are fully interactive in-place: checkbox completes, tap opens edit form, long-press shows Edit/Cancel context menu. Filters (flagged, done, category) are shared state via `@AppStorage`.
 
 **Cards tab (commented out):** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches Flight Plan. AI summaries generated on `.onAppear`. `+ Add item` inside expanded card content.
 

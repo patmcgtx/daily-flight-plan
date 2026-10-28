@@ -338,7 +338,7 @@ private struct ProposedItemRow: View {
                         }
                     } label: {
                         HStack(spacing: 3) {
-                            Image(systemName: "infinity")
+                            Image(systemName: "wrench")
                             Text(item.isRecurring ? weekdayLabel : "Routine")
                         }
                         .font(.caption2)

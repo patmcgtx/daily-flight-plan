@@ -104,7 +104,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - The original "Day" tab (`FlightPlanView`, swipe-pager-based) is retired in favor of this view —
     commented out, not deleted, in `DayView.swift` in case it's worth reviving
 
-- **Routine** — recurring habit template management
+- **Maintenance** — recurring habit template management
   - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
   - Tap a card header to expand/collapse; collapsed state shows section name and item count
   - Each card subdivided by day segment (First Thing, Morning, …); each segment is its own collapsible card matching the Day view's look — tap to expand/collapse, title enlarges when expanded, `+ Add item` button pre-filled with that weekday pattern and segment
@@ -114,7 +114,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   - Drag items between cards to reassign their weekday pattern
   - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
 
-- **Timeline** — chronological multi-day list
+- **Nav Log** — chronological multi-day list
   - Shows one-off and already-materialized plan items across all dates, lazily loaded 7 days at a
     time in each direction, with a filter bar and dedicated search; future dates show only
     one-off scheduled items, not projected recurring habits (those remain a Cockpit tab preview,
@@ -130,7 +130,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
 - Filter menu: flagged, done, calendar, reminders, routines, and category filters
 - **Markdown / text import**: paste any text (e.g. a Things export) → Foundation Models parses titles, sections, and recurring schedules → review list with swipe-to-delete → commit or cancel
-- **Markdown export**: a toolbar button on the Flight and Routine tabs renders items as Markdown (title, flagged/completion status, categories, notes, plus day-section grouping and — on Routine — schedule grouping) in a sheet with a Preview/Raw toggle, one-tap Copy, and a `ShareLink` (AirDrop, Messages, Save to Files, etc.)
+- **Markdown export**: a toolbar button on the Cockpit and Maintenance tabs renders items as Markdown (title, flagged/completion status, categories, notes, plus day-section grouping and — on Routine — schedule grouping) in a sheet with a Preview/Raw toggle, one-tap Copy, and a `ShareLink` (AirDrop, Messages, Save to Files, etc.)
 - Category management (add, rename, delete)
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo) — currently dormant: its toolbar menu lived
   only on the now-retired Day tab; `DFPTheme`/`ThemeViewModifier` are still wired up for when a
@@ -163,13 +163,13 @@ DailyFlightPlan/
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
     ├── CockpitView.swift    — Cockpit tab (primary day view, paper-plan styling)
     ├── FlightPlanView.swift   — retired Day tab (swipe pager); commented out in DayView, kept for reference
-    ├── RoutineView.swift      — Routine tab (recurring habit template management)
-    ├── RoutineMarkdownExporter.swift — Pure Markdown rendering for the Routine tab's export
+    ├── RoutineView.swift      — Maintenance tab (recurring habit template management)
+    ├── RoutineMarkdownExporter.swift — Pure Markdown rendering for the Maintenance tab's export
     ├── DayPlanMarkdownExporter.swift — Pure Markdown rendering for the Cockpit tab's export
     ├── MarkdownExportView.swift — Shared export sheet (Preview/Raw toggle, Copy, ShareLink)
     ├── MarkdownImportView.swift — Paste-to-import sheet; Foundation Models structured parsing
     ├── CardDeckView.swift     — Cards tab (commented out)
-    ├── TimelineView.swift     — Timeline tab
+    ├── TimelineView.swift     — Nav Log tab
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```

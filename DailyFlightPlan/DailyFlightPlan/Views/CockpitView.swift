@@ -778,7 +778,7 @@ struct CockpitView: View {
                         }
                         if !routinePills.isEmpty {
                             HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "infinity")
+                                Image(systemName: "wrench")
                                     .font(.caption)
                                     .foregroundStyle(CockpitStyle.muted)
                                     .frame(width: 16)
@@ -1139,7 +1139,7 @@ struct CockpitView: View {
                     .foregroundStyle(CockpitStyle.muted)
             }
             if item.isRecurring && showRecurringBadge {
-                Image(systemName: "infinity")
+                Image(systemName: "wrench")
                     .font(.caption2)
                     .foregroundStyle(CockpitStyle.muted)
             }

@@ -196,7 +196,7 @@ struct DaySectionView: View {
 
             if !habitPills.isEmpty || !projectedPills.isEmpty {
                 HStack(alignment: .top, spacing: 6) {
-                    Image(systemName: "infinity")
+                    Image(systemName: "wrench")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .frame(width: 14)

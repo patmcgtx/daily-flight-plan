@@ -84,7 +84,7 @@ struct DeadlineItemRow: View {
             Spacer()
 
             if item.isRecurring {
-                Image(systemName: "infinity")
+                Image(systemName: "wrench")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
