@@ -278,18 +278,6 @@ struct ModelContainersTests {
         Calendar.current.date(from: DateComponents(year: 2026, month: 6, day: dayOfMonth, hour: hour))!
     }
 
-    @Test("deleteAllDays removes every Day from the store")
-    func deleteAllDaysRemovesEverything() throws {
-        let context = try makeContext()
-        context.insert(Day(date: day(15), intention: "One"))
-        context.insert(Day(date: day(16), flightName: "Two"))
-        try context.save()
-
-        ModelContainer.deleteAllDays(in: context)
-
-        #expect(try fetchDays(context).isEmpty)
-    }
-
     @Test("deduplicateDays keeps the most recently modified row for a calendar day")
     func deduplicateDaysKeepsNewest() throws {
         let context = try makeContext()

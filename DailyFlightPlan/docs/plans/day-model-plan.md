@@ -22,12 +22,15 @@ Design choices:
   nothing customized is deleted (`Day.isBlank`).
 - **All properties have defaults, no unique constraint** (CloudKit rules).
 
-## Duplicates and deletion
+## Duplicates
 
 CloudKit can't enforce uniqueness, so two devices can each create a row for the same date.
 `ModelContainer.deduplicateDays(in:)` keeps the most recently modified row per day and fills its
 blank fields from older rows. It runs at launch, on returning to the foreground, and from
-Settings' Deduplicate action. `deleteAllDays(in:)` runs with Settings' "delete items".
+Settings' Deduplicate action.
+
+Settings' "delete items" does not touch `Day` rows: its alert only mentions items and routines,
+and silently deleting custom flight names and intentions would be unexpected data loss.
 
 ## UI wiring (`CockpitView`)
 
@@ -49,4 +52,5 @@ Settings' Deduplicate action. `deleteAllDays(in:)` runs with Settings' "delete i
 ## Not done
 
 - No UI for "Type of Flight" / "Flight Rules"; they could become more fields on `Day`.
-- A settings toggle to keep days when deleting items.
+- A Settings option (with its own confirmation) to delete day customizations; there is currently
+  no way to delete them in bulk.

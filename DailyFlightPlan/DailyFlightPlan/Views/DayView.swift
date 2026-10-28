@@ -142,10 +142,7 @@ struct DayView: View {
                 isDeletingData = true
                 // Let the overlay fully render before touching the store
                 try? await Task.sleep(for: .milliseconds(150))
-                if deleteItems {
-                    ModelContainer.deleteAllItems(in: modelContext)
-                    ModelContainer.deleteAllDays(in: modelContext)
-                }
+                if deleteItems { ModelContainer.deleteAllItems(in: modelContext) }
                 if deleteCategories { ModelContainer.deleteAllCategories(in: modelContext) }
                 // Hold the overlay until @Query finishes propagating the deletions
                 try? await Task.sleep(for: .seconds(2))

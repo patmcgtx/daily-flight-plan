@@ -430,8 +430,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     intention (multi-line, up to 3 lines) that replaces the old "Plan active" / "All done!" /
     "No items planned" status line, beside the progress box. Both are stored in a new `Day`
     SwiftData model (CloudKit-synced) and appear in the Markdown day export header
-    ("Flight:" / "Destination:"). Deviation: Settings' "delete items" also deletes all `Day`
-    rows.
+    ("Flight:" / "Destination:"). Settings' "delete items" leaves `Day` rows alone, since its
+    alert doesn't mention them.
 - **Cross-segment "completed so far" summary**: a day-wide rollup of everything completed across
   all segments today, not just each section's own `completed/total` count — ties into the
   "Reward when completing everything for today" idea above.

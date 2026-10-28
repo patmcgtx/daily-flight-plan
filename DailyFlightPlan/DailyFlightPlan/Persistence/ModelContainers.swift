@@ -91,19 +91,6 @@ extension ModelContainer {
         try? context.save()
     }
 
-    /// Deletes every Day (custom flight names and intentions) from the store.
-    /// CloudKit will propagate the deletion to all devices.
-    @MainActor
-    static func deleteAllDays(in context: ModelContext) {
-        do {
-            let all = try context.fetch(FetchDescriptor<Day>())
-            for day in all { context.delete(day) }
-            try context.save()
-        } catch {
-            print("deleteAllDays error: \(error)")
-        }
-    }
-
     /// Merges duplicate Day rows for the same calendar day, which can appear when two devices
     /// each lazily create a row before syncing (CloudKit forbids unique constraints).
     /// The most recently modified row wins; any of its blank fields are filled from the next most
