@@ -328,4 +328,23 @@ struct ModelContainersTests {
 
         #expect(try fetchDays(context).count == 2)
     }
+
+    @Test("deduplicateDays deletes blank rows, including every row of an all-blank duplicate group")
+    func deduplicateDaysDeletesBlankRows() throws {
+        let context = try makeContext()
+        // All-blank duplicate group for the 15th
+        context.insert(Day(date: day(15, hour: 8)))
+        context.insert(Day(date: day(15, hour: 20), flightName: "  ", intention: "\n"))
+        // Lone blank row for the 16th
+        context.insert(Day(date: day(16)))
+        // Customized row for the 17th survives
+        context.insert(Day(date: day(17), intention: "Keep me"))
+        try context.save()
+
+        ModelContainer.deduplicateDays(in: context)
+
+        let days = try fetchDays(context)
+        #expect(days.count == 1)
+        #expect(days.first?.intention == "Keep me")
+    }
 }

@@ -26,8 +26,8 @@ Design choices:
 
 CloudKit can't enforce uniqueness, so two devices can each create a row for the same date.
 `ModelContainer.deduplicateDays(in:)` keeps the most recently modified row per day and fills its
-blank fields from older rows. It runs at launch, on returning to the foreground, and from
-Settings' Deduplicate action.
+blank fields from older rows; a row left with nothing customized is deleted. It runs at launch,
+on returning to the foreground, and from Settings' Deduplicate action.
 
 Settings' "delete items" does not touch `Day` rows: its alert only mentions items and routines,
 and silently deleting custom flight names and intentions would be unexpected data loss.

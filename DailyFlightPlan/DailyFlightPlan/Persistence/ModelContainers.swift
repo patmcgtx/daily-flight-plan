@@ -95,6 +95,7 @@ extension ModelContainer {
     /// each lazily create a row before syncing (CloudKit forbids unique constraints).
     /// The most recently modified row wins; any of its blank fields are filled from the next most
     /// recent row that has a value, so an edit made on one device isn't lost to an empty row.
+    /// If the merged row has nothing customized, it is deleted too.
     @MainActor
     static func deduplicateDays(in context: ModelContext) {
         let all = (try? context.fetch(FetchDescriptor<Day>())) ?? []
@@ -113,7 +114,12 @@ extension ModelContainer {
                 }
                 toDelete.append(other)
             }
-            canonical.date = date
+            // A row with nothing customized carries no information, so don't keep it either.
+            if canonical.isBlank {
+                toDelete.append(canonical)
+            } else {
+                canonical.date = date
+            }
         }
 
         guard !toDelete.isEmpty else { return }
