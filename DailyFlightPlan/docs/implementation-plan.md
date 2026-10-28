@@ -363,9 +363,9 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **New `PaperPlanView.swift`** — a "filed flight plan" paper aesthetic: monospaced type (IBM
   Plex Mono, bundled under `Theming/Fonts/` and registered via `Info.plist`'s `UIAppFonts`), flat
   black borders with hard (non-blurred) offset shadows instead of rounded/blurred cards, a
-  cream/tan background. Tokens live in `Theming/PaperPlanStyle.swift`, separate from `DFPTheme`
+  cream/tan background. Tokens live in `Theming/CockpitStyle.swift`, separate from `DFPTheme`
   since this is a fixed look for one tab, not a user-selectable app-wide theme.
-- **Dark mode ("Paper Night")**: all `PaperPlanStyle` colors are adaptive (`UIColor`/`NSColor`
+- **Dark mode ("Paper Night")**: all `CockpitStyle` colors are adaptive (`UIColor`/`NSColor`
   dynamic providers), switching to a near-black background, dark slate card surfaces, and light
   borders/text automatically with the system appearance.
 - **Day tab retired, not deleted**: `FlightPlanView` and its `Tab("Day", …)` entry are commented
@@ -406,7 +406,11 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
-- **Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient layout.
+- **✅ Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to
+  yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient
+  layout. Done in `CockpitView.dayLabelText(for:)`: the date and the relative-day label now
+  share one `HStack` row above the weekday; the date stays muted and the label keeps its
+  existing styling.
 - **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
 - **Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
@@ -419,6 +423,15 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
   tracked separately under Phase 1.2 (now cross-referenced there, not duplicated); pulled
   forward here since it's a small, self-contained addition.
+  - ✅ *Done (persisted; see [day-model-plan.md](plans/day-model-plan.md)):* the Flight Status
+    card has a tap-to-edit flight name (inline `TextField` in the "FLIGHT" caption, pre-filled
+    with the computed `DFP YYYYMMDD` as real text so the date needn't be retyped; blank or
+    unchanged text keeps tracking the default) and an editable "DESTINATION" field for the
+    intention (multi-line, up to 3 lines) that replaces the old "Plan active" / "All done!" /
+    "No items planned" status line, beside the progress box. Both are stored in a new `Day`
+    SwiftData model (CloudKit-synced) and appear in the Markdown day export header
+    ("Flight:" / "Destination:"). Settings' "delete items" leaves `Day` rows alone, since its
+    alert doesn't mention them.
 - **Cross-segment "completed so far" summary**: a day-wide rollup of everything completed across
   all segments today, not just each section's own `completed/total` count — ties into the
   "Reward when completing everything for today" idea above.
@@ -492,14 +505,14 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   auto-scroll-on-appear and the toolbar "Go to Today" (`scope`) button — confirmed during catch-up
   planning that no new code was needed here, just closing out the line item.
 - **Give `TimelineView` the "paper" treatment** *(added during catch-up planning)*: adopt
-  `PaperPlanStyle`/patterns from `PaperPlanView` (Phase 2.4) so Timeline matches the Flight tab's
+  `CockpitStyle`/patterns from `CockpitView` (Phase 2.4) so Timeline matches the Cockpit tab's
   visual language instead of its original, pre-Paper-Plan look. A first pass (restyling the
   existing `List` in place rather than rebuilding it as free-floating cards) was tried and rolled
   back — needs a fresh design pass once updated Figma mocks are ready before trying again.
 
 ### Phase 2.9 — Routine Refinements / paper treatment
-- **Give `RoutineView` the "paper" treatment**: adopt `PaperPlanStyle`/patterns from `PaperPlanView`
-  (Phase 2.4) so Routine matches the Flight tab's (and, once Phase 2.8 lands, Timeline's) visual
+- **Give `RoutineView` the "paper" treatment**: adopt `CockpitStyle`/patterns from `CockpitView`
+  (Phase 2.4) so Routine matches the Cockpit tab's (and, once Phase 2.8 lands, Timeline's) visual
   language, rather than being the only tab still on the old card style.
 - **Addition (decided during catch-up planning)**: scope beyond "match the paper aesthetic" is
   still open — revisit alongside Phase 2.8 for any shared styling components worth factoring out
@@ -568,7 +581,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
   and its flagged/categories/notes fields from that block's `- ` lines — not just a reuse of the
   existing title-only fallback parser. Also gives Routine the paste-to-import flow that Phase 2.6
   already flagged belongs on its own, separate from the Day view's import.
-- ✅ *(implemented ahead of this phase being fully scoped)* Day (Paper Plan) export: the same
+- ✅ *(implemented ahead of this phase being fully scoped)* Day (Cockpit) export: the same
   pattern as the Routine export above, but for the currently selected day's items — grouped by day
   section only (a single day has no weekday grouping) — including each item's completion status
   (pending/completed/canceled) and whether it's a routine item, alongside flagged status, segment,
@@ -579,7 +592,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
   bullets via a small line-by-line parser, since `Text`/`AttributedString` don't apply block-level
   Markdown styling on their own; Raw shows the plain text. Both are text-selectable; Copy and Share
   always act on the underlying raw Markdown regardless of which tab is showing.
-- ✅ Extracted the per-tab rendering logic out of `RoutineView`/`PaperPlanView` into standalone,
+- ✅ Extracted the per-tab rendering logic out of `RoutineView`/`CockpitView` into standalone,
   stateless `RoutineMarkdownExporter`/`DayPlanMarkdownExporter` enums (plain data in, `String`
   out — no `@Query`/`@Environment` dependency) so it's unit-testable without a `ModelContainer`;
   covered by `RoutineMarkdownExporterTests`/`DayPlanMarkdownExporterTests`.
@@ -597,7 +610,7 @@ The core-features-complete milestone. Addresses usability findings from real-wor
 
 ### Phase 1.1 — Full-App UX Audit
 A holistic pass across the three active tabs (Flight, Routine, and Timeline), rather than scattering open-ended "UX audit" items across individual view phases. Best done by using the app for a real stretch of time (à la Phase 0.1.14) and noting friction points, then fixing what's found.
-- **Flight tab** (Paper Plan view): general UX audit and fix
+- **Cockpit tab** (formerly the Paper Plan view): general UX audit and fix
 - **Routine tab**: general UX audit and fix *(originally tracked in Phase 2.1)*
 - **Timeline tab**: general UX audit and fix
 - **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.

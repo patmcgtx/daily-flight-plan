@@ -53,7 +53,7 @@ struct ItemPillView: View {
                     .foregroundStyle(.tertiary)
             }
             if item.isRecurring && showRecurringBadge {
-                Image(systemName: "infinity")
+                Image(systemName: "wrench")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

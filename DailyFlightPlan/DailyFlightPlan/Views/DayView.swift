@@ -7,7 +7,7 @@ import SwiftData
 import EventKit
 import CoreData
 
-enum AppTab: Hashable { case focus, flightDeck, timeline, routines, paperPlan }
+enum AppTab: Hashable { case flightDeck, timeline, routines, cockpit }
 
 struct DayView: View {
 
@@ -28,7 +28,7 @@ struct DayView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.modelContext) private var modelContext
 
-    @State private var activeTab: AppTab = .focus
+    @State private var activeTab: AppTab = .cockpit
     @State private var isShowingSettings = false
     @State private var isShowingImport = false
     @State private var pendingDeleteItems = false
@@ -42,8 +42,8 @@ struct DayView: View {
     var body: some View {
         TabView(selection: $activeTab) {
 
-            Tab("Flight", systemImage: "airplane", value: AppTab.paperPlan) {
-                PaperPlanView(
+            Tab("Cockpit", systemImage: "airplane", value: AppTab.cockpit) {
+                CockpitView(
                     viewModel: viewModel,
                     calendarEvents: calendarEvents,
                     reminderItems: reminderItems,
@@ -53,15 +53,15 @@ struct DayView: View {
                 )
             }
 
-            Tab("Routine", systemImage: "infinity", value: AppTab.routines) {
+            Tab("Maintenance", systemImage: "wrench", value: AppTab.routines) {
                 RoutineView()
             }
 
-            Tab("Timeline", systemImage: "checklist", value: AppTab.timeline) {
+            Tab("Nav Log", systemImage: "checklist", value: AppTab.timeline) {
                 TimelineView(onDismiss: {})
             }
 
-            // Day tab (FlightPlanView) retired in favor of the "Flight" (Paper) tab above, but
+            // Day tab (FlightPlanView) retired in favor of the "Cockpit" tab above, but
             // left here commented out rather than deleted in case it's worth reviving.
             // Tab("Day", systemImage: "airplane", value: AppTab.flightDeck) {
             //     FlightPlanView(
@@ -74,15 +74,12 @@ struct DayView: View {
             //     )
             // }
         }
-        .onAppear {
-            if activeTab == .focus { activeTab = .paperPlan }
-        }
         #if os(macOS)
         .overlay(alignment: .topLeading) {
             // Hidden buttons so Cmd+1–3 switch tabs on macOS.
             // opacity(0) keeps keyboard shortcuts active; hidden() would disable them.
             VStack {
-                Button("") { activeTab = .paperPlan }.keyboardShortcut("1", modifiers: .command)
+                Button("") { activeTab = .cockpit }.keyboardShortcut("1", modifiers: .command)
                 Button("") { activeTab = .routines }.keyboardShortcut("2", modifiers: .command)
                 Button("") { activeTab = .timeline }.keyboardShortcut("3", modifiers: .command)
             }
@@ -99,6 +96,7 @@ struct DayView: View {
             ModelContainer.deduplicateItems(in: modelContext)
             ModelContainer.deduplicateInstances(in: modelContext)
             ModelContainer.deduplicateCategories(in: modelContext)
+            ModelContainer.deduplicateDays(in: modelContext)
             await watchForCalendarDayChange()
         }
         .task(id: viewModel.selectedDate) {
@@ -116,6 +114,7 @@ struct DayView: View {
                 ModelContainer.deduplicateItems(in: modelContext)
                 ModelContainer.deduplicateInstances(in: modelContext)
                 ModelContainer.deduplicateCategories(in: modelContext)
+                ModelContainer.deduplicateDays(in: modelContext)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .EKEventStoreChanged)) { _ in
@@ -158,6 +157,7 @@ struct DayView: View {
                     ModelContainer.deduplicateItems(in: modelContext)
                     ModelContainer.deduplicateInstances(in: modelContext)
                     ModelContainer.deduplicateCategories(in: modelContext)
+                    ModelContainer.deduplicateDays(in: modelContext)
                 }
             )
         }

@@ -13,8 +13,8 @@ import Foundation
 struct ModelContainersTests {
 
     private func makeContext() throws -> ModelContext {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(for: PlanItem.self, PlanCategory.self, configurations: config)
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        let container = try ModelContainer(for: PlanItem.self, PlanCategory.self, Day.self, configurations: config)
         return ModelContext(container)
     }
 
@@ -266,5 +266,85 @@ struct ModelContainersTests {
         let items = try container.mainContext.fetch(FetchDescriptor<PlanItem>())
         #expect(!items.isEmpty)
         #expect(items.allSatisfy { $0.isTemplate })
+    }
+
+    // MARK: Day
+
+    private func fetchDays(_ context: ModelContext) throws -> [Day] {
+        try context.fetch(FetchDescriptor<Day>())
+    }
+
+    private func day(_ dayOfMonth: Int, hour: Int = 0) -> Date {
+        Calendar.current.date(from: DateComponents(year: 2026, month: 6, day: dayOfMonth, hour: hour))!
+    }
+
+    @Test("deduplicateDays keeps the most recently modified row for a calendar day")
+    func deduplicateDaysKeepsNewest() throws {
+        let context = try makeContext()
+        let older = Day(date: day(15, hour: 8), flightName: "Old", intention: "Old plan")
+        older.modifiedAt = Date(timeIntervalSinceReferenceDate: 1_000)
+        let newer = Day(date: day(15, hour: 20), flightName: "New", intention: "New plan")
+        newer.modifiedAt = Date(timeIntervalSinceReferenceDate: 2_000)
+        context.insert(older)
+        context.insert(newer)
+        try context.save()
+
+        ModelContainer.deduplicateDays(in: context)
+
+        let days = try fetchDays(context)
+        #expect(days.count == 1)
+        #expect(days.first?.flightName == "New")
+        #expect(days.first?.intention == "New plan")
+        #expect(days.first?.date == Calendar.current.startOfDay(for: day(15)))
+    }
+
+    @Test("deduplicateDays fills a blank field on the winner from an older row")
+    func deduplicateDaysFillsBlankFields() throws {
+        let context = try makeContext()
+        let older = Day(date: day(15), flightName: "Deep Work", intention: "Ship it")
+        older.modifiedAt = Date(timeIntervalSinceReferenceDate: 1_000)
+        let newer = Day(date: day(15), flightName: "  ", intention: "")
+        newer.modifiedAt = Date(timeIntervalSinceReferenceDate: 2_000)
+        context.insert(older)
+        context.insert(newer)
+        try context.save()
+
+        ModelContainer.deduplicateDays(in: context)
+
+        let days = try fetchDays(context)
+        #expect(days.count == 1)
+        #expect(days.first?.flightName == "Deep Work")
+        #expect(days.first?.intention == "Ship it")
+    }
+
+    @Test("deduplicateDays leaves rows for different calendar days untouched")
+    func deduplicateDaysLeavesDistinctDaysAlone() throws {
+        let context = try makeContext()
+        context.insert(Day(date: day(15), intention: "A"))
+        context.insert(Day(date: day(16), intention: "B"))
+        try context.save()
+
+        ModelContainer.deduplicateDays(in: context)
+
+        #expect(try fetchDays(context).count == 2)
+    }
+
+    @Test("deduplicateDays deletes blank rows, including every row of an all-blank duplicate group")
+    func deduplicateDaysDeletesBlankRows() throws {
+        let context = try makeContext()
+        // All-blank duplicate group for the 15th
+        context.insert(Day(date: day(15, hour: 8)))
+        context.insert(Day(date: day(15, hour: 20), flightName: "  ", intention: "\n"))
+        // Lone blank row for the 16th
+        context.insert(Day(date: day(16)))
+        // Customized row for the 17th survives
+        context.insert(Day(date: day(17), intention: "Keep me"))
+        try context.save()
+
+        ModelContainer.deduplicateDays(in: context)
+
+        let days = try fetchDays(context)
+        #expect(days.count == 1)
+        #expect(days.first?.intention == "Keep me")
     }
 }

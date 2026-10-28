@@ -14,7 +14,7 @@ extension ModelContainer {
             cloudKitDatabase: .private("iCloud.com.patmcg.DailyFlightPlan")
         )
         return try ModelContainer(
-            for: PlanItem.self, PlanCategory.self,
+            for: PlanItem.self, PlanCategory.self, Day.self,
             configurations: config
         )
     }
@@ -24,7 +24,7 @@ extension ModelContainer {
     static func inMemoryContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         return try ModelContainer(
-            for: PlanItem.self, PlanCategory.self,
+            for: PlanItem.self, PlanCategory.self, Day.self,
             configurations: config
         )
     }
@@ -88,6 +88,42 @@ extension ModelContainer {
 
         guard !toDelete.isEmpty else { return }
         for category in toDelete { context.delete(category) }
+        try? context.save()
+    }
+
+    /// Merges duplicate Day rows for the same calendar day, which can appear when two devices
+    /// each lazily create a row before syncing (CloudKit forbids unique constraints).
+    /// The most recently modified row wins; any of its blank fields are filled from the next most
+    /// recent row that has a value, so an edit made on one device isn't lost to an empty row.
+    /// If the merged row has nothing customized, it is deleted too.
+    @MainActor
+    static func deduplicateDays(in context: ModelContext) {
+        let all = (try? context.fetch(FetchDescriptor<Day>())) ?? []
+        let groups = Dictionary(grouping: all) { Day.normalized($0.date) }
+        var toDelete = [Day]()
+
+        for (date, group) in groups {
+            let newestFirst = group.sorted { $0.modifiedAt > $1.modifiedAt }
+            guard let canonical = newestFirst.first else { continue }
+            for other in newestFirst.dropFirst() {
+                if canonical.flightName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    canonical.flightName = other.flightName
+                }
+                if canonical.intention.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    canonical.intention = other.intention
+                }
+                toDelete.append(other)
+            }
+            // A row with nothing customized carries no information, so don't keep it either.
+            if canonical.isBlank {
+                toDelete.append(canonical)
+            } else {
+                canonical.date = date
+            }
+        }
+
+        guard !toDelete.isEmpty else { return }
+        for day in toDelete { context.delete(day) }
         try? context.save()
     }
 

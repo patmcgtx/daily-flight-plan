@@ -459,7 +459,7 @@ struct FlightPlanView: View {
                         }
                         if !routinePills.isEmpty {
                             HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "infinity")
+                                Image(systemName: "wrench")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .frame(width: 16)
@@ -806,7 +806,7 @@ struct FlightPlanView: View {
                     Image(systemName: "flag.fill").font(.caption).foregroundStyle(.orange)
                 }
                 if item.isRecurring {
-                    Image(systemName: "infinity").font(.caption2).foregroundStyle(.secondary)
+                    Image(systemName: "wrench").font(.caption2).foregroundStyle(.secondary)
                 }
             }
         }

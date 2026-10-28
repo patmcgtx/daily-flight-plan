@@ -1,5 +1,5 @@
 //
-//  PaperPlanStyle.swift
+//  CockpitStyle.swift
 //  DailyFlightPlan
 //
 import SwiftUI
@@ -9,11 +9,11 @@ import UIKit
 import AppKit
 #endif
 
-/// Color/font tokens for the "Paper Plan" design-sprint tab — a filed-flight-plan, typewritten
+/// Color/font tokens for the "Cockpit" tab — a filed-flight-plan, typewritten
 /// look (monospaced type, flat borders, highlighter-yellow accents). Deliberately separate from
 /// `DFPTheme`: these are fixed values for one experimental tab, not a user-selectable theme
 /// applied app-wide. Colors below adapt to light/dark automatically ("Paper Night").
-enum PaperPlanStyle {
+enum CockpitStyle {
 
     static let background = adaptive(light: rgb(0xE9, 0xE5, 0xDA), dark: rgb(0x0A, 0x0D, 0x12))
     static let surface = adaptive(light: rgb(0xF8, 0xF7, 0xF1), dark: rgb(0x12, 0x17, 0x1D))

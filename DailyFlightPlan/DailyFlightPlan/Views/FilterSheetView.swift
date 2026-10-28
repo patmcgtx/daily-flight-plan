@@ -70,7 +70,7 @@ struct FilterSheetView: View {
                     Label("Show Completed", systemImage: "checkmark")
                 }
                 Toggle(isOn: $showRecurring) {
-                    Label("Routines", systemImage: "infinity")
+                    Label("Routines", systemImage: "wrench")
                 }
                 Toggle(isOn: $showCalendarEvents) {
                     Label("Calendar Events", systemImage: "calendar")
@@ -80,7 +80,7 @@ struct FilterSheetView: View {
                 }
             }
         case .timeline:
-            Section("Timeline") {
+            Section("Nav Log") {
                 Toggle(isOn: Binding(
                     get: { showCompletedOnly },
                     set: { newValue in
@@ -100,7 +100,7 @@ struct FilterSheetView: View {
                     Label("Missed Only", systemImage: "clock.badge.exclamationmark")
                 }
             }
-        case .routines, .focus, .paperPlan:
+        case .routines, .cockpit:
             EmptyView()
         }
     }

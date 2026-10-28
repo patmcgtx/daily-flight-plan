@@ -1,16 +1,16 @@
 //
-//  PaperPlanView.swift
+//  CockpitView.swift
 //  DailyFlightPlan
 //
 // Design-sprint tab: identical functionality and layout to FlightPlanView, restyled with the
-// "Paper Plan" look (monospaced type, flat black borders, hard offset shadows, highlighter-yellow
-// accents) — see Theming/PaperPlanStyle.swift. Flagged items are called out with a yellow
+// "Cockpit" look (monospaced type, flat black borders, hard offset shadows, highlighter-yellow
+// accents) — see Theming/CockpitStyle.swift. Flagged items are called out with a yellow
 // highlighter behind the title instead of a flag icon.
 import SwiftUI
 import SwiftData
 import Flow
 
-struct PaperPlanView: View {
+struct CockpitView: View {
 
     var viewModel: DayViewModel
     var calendarEvents: [CalendarEvent] = []
@@ -21,6 +21,9 @@ struct PaperPlanView: View {
 
     @Query(filter: #Predicate<PlanItem> { $0.isTemplate == false })
     private var allItems: [PlanItem]
+
+    /// Custom flight names and intentions. Rows are created lazily on first edit.
+    @Query private var days: [Day]
 
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
     private var showFlaggedOnly: Bool = false
@@ -57,6 +60,11 @@ struct PaperPlanView: View {
     @State private var isShowingSearch = false
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isShowingExport = false
+    @FocusState private var isFlightNameFocused: Bool
+    @FocusState private var isDestinationFocused: Bool
+    /// What the flight name field shows. Mirrors the displayed flight number while unfocused;
+    /// while editing it holds the raw text so the field can be emptied without snapping back.
+    @State private var flightDraft: String = ""
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -68,7 +76,7 @@ struct PaperPlanView: View {
         NavigationStack {
             dayContent(for: viewModel.selectedDate)
                 .background {
-                    PaperPlanStyle.background.ignoresSafeArea()
+                    CockpitStyle.background.ignoresSafeArea()
                 }
                 .safeAreaInset(edge: .top) {
                     if isShowingSearch {
@@ -124,14 +132,14 @@ struct PaperPlanView: View {
                 .toolbarBackgroundVisibility(.hidden, for: .navigationBar, .tabBar)
                 #endif
         }
-        .tint(PaperPlanStyle.ink)
+        .tint(CockpitStyle.ink)
         .overlay(alignment: .bottomTrailing) {
             Button { isAddingItem = true } label: {
                 Image(systemName: "plus")
                     .font(.title2)
             }
             .buttonStyle(.glass)
-            .tint(PaperPlanStyle.highlighter)
+            .tint(CockpitStyle.highlighter)
             .frame(width: 52, height: 52)
             .clipShape(Circle())
             .padding(.trailing, 16)
@@ -154,7 +162,12 @@ struct PaperPlanView: View {
         .sheet(isPresented: $isShowingExport) {
             MarkdownExportView(
                 title: "Export Day Plan",
-                markdown: DayPlanMarkdownExporter.export(items: exportItems(for: viewModel.selectedDate), date: viewModel.selectedDate)
+                markdown: DayPlanMarkdownExporter.export(
+                    items: exportItems(for: viewModel.selectedDate),
+                    date: viewModel.selectedDate,
+                    flightNumber: displayedFlightNumber(for: viewModel.selectedDate),
+                    intention: existingDay(for: viewModel.selectedDate)?.intention ?? ""
+                )
             )
         }
         .onAppear { initializeExpandedSections() }
@@ -216,7 +229,7 @@ struct PaperPlanView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background {
-            PaperPlanStyle.background.ignoresSafeArea()
+            CockpitStyle.background.ignoresSafeArea()
         }
     }
 
@@ -238,14 +251,14 @@ struct PaperPlanView: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(PaperPlanStyle.ink)
+                .foregroundStyle(CockpitStyle.ink)
                 .frame(width: 40, height: 40)
         }
         .buttonStyle(.plain)
-        .background(PaperPlanStyle.surface)
-        .overlay(Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1.5))
+        .background(CockpitStyle.surface)
+        .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
         .background {
-            Rectangle().fill(PaperPlanStyle.shadow).offset(x: 2, y: 3)
+            Rectangle().fill(CockpitStyle.shadow).offset(x: 2, y: 3)
         }
     }
 
@@ -254,80 +267,201 @@ struct PaperPlanView: View {
         let isTomorrow = Calendar.current.isDateInTomorrow(date)
         let isYesterday = Calendar.current.isDateInYesterday(date)
         return VStack(spacing: 4) {
-            if isToday {
-                Text("Today")
-                    .font(PaperPlanStyle.mono(.caption, weight: .bold))
+            // Date sits above the weekday, alongside the Today/Tomorrow/Yesterday label if any
+            HStack(spacing: 6) {
+                Text(date.formatted(.dateTime.month(.abbreviated).day()))
+                    .font(CockpitStyle.mono(.subheadline))
                     .textCase(.uppercase)
-                    .foregroundStyle(PaperPlanStyle.inkOnHighlighter)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(PaperPlanStyle.highlighter)
-            } else if isTomorrow || isYesterday {
-                Text(isTomorrow ? "Tomorrow" : "Yesterday")
-                    .font(PaperPlanStyle.mono(.caption, weight: .bold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(PaperPlanStyle.muted)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .foregroundStyle(CockpitStyle.muted)
+                if isToday {
+                    Text("Today")
+                        .font(CockpitStyle.mono(.caption, weight: .bold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(CockpitStyle.inkOnHighlighter)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(CockpitStyle.highlighter)
+                } else if isTomorrow || isYesterday {
+                    Text(isTomorrow ? "Tomorrow" : "Yesterday")
+                        .font(CockpitStyle.mono(.caption, weight: .bold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(CockpitStyle.muted)
+                }
             }
             Text(date.formatted(.dateTime.weekday(.wide)))
-                .font(PaperPlanStyle.mono(.largeTitle, weight: .bold))
+                .font(CockpitStyle.mono(.largeTitle, weight: .bold))
                 .textCase(.uppercase)
-                .foregroundStyle(PaperPlanStyle.ink)
-            Text(date.formatted(.dateTime.month(.abbreviated).day()))
-                .font(PaperPlanStyle.mono(.subheadline))
-                .textCase(.uppercase)
-                .foregroundStyle(PaperPlanStyle.muted)
+                .foregroundStyle(CockpitStyle.ink)
         }
     }
 
-    /// A mock flight number — "DFP" (the form number from the mockup's masthead) plus the
-    /// date in YYYYMMDD — shown ahead of the date, filed-flight-plan style.
-    private func flightNumber(for date: Date) -> String {
-        let comps = Calendar.current.dateComponents([.year, .month, .day], from: date)
-        return "DFP \(comps.year ?? 0)\(String(format: "%02d", comps.month ?? 0))\(String(format: "%02d", comps.day ?? 0))"
+    // MARK: - Day details (flight name + intention)
+
+    /// The stored `Day` for `date`, from the `@Query` — fine for display, but may lag a render
+    /// behind a just-inserted row, so writes go through `dayForEditing(_:)` instead.
+    private func existingDay(for date: Date) -> Day? {
+        let key = Day.normalized(date)
+        return days.filter { Day.normalized($0.date) == key }.max { $0.modifiedAt < $1.modifiedAt }
+    }
+
+    /// The `Day` to write to for `date`, created on first use. Fetches from the context rather
+    /// than `days` so rapid consecutive edits can't insert a duplicate row.
+    private func dayForEditing(_ date: Date) -> Day {
+        if let existing = fetchedDay(for: date) { return existing }
+        let day = Day(date: date)
+        modelContext.insert(day)
+        return day
+    }
+
+    /// The newest stored `Day` for `date`, fetched straight from the context.
+    private func fetchedDay(for date: Date) -> Day? {
+        let start = Day.normalized(date)
+        let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start
+        let descriptor = FetchDescriptor<Day>(
+            predicate: #Predicate { $0.date >= start && $0.date < end },
+            sortBy: [SortDescriptor(\.modifiedAt, order: .reverse)]
+        )
+        return (try? modelContext.fetch(descriptor))?.first
+    }
+
+    private func displayedFlightNumber(for date: Date) -> String {
+        existingDay(for: date)?.displayFlightNumber ?? Day.defaultFlightNumber(for: date)
+    }
+
+    /// Stores `text` as the flight name for `date`. Blank text, or text equal to the default
+    /// number, is stored as "" so the name keeps tracking the default; a row left with nothing
+    /// customized is deleted rather than synced as an empty record.
+    private func commitFlightName(_ text: String, for date: Date) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isDefault = trimmed.isEmpty || trimmed == Day.defaultFlightNumber(for: date)
+        guard !isDefault else {
+            guard let day = existingDay(for: date) ?? fetchedDay(for: date) else { return }
+            day.setFlightName("")
+            if day.isBlank { modelContext.delete(day) }
+            return
+        }
+        dayForEditing(date).setFlightName(text)
+    }
+
+    /// The flight name caption, editable inline. It shows the default "DFP YYYYMMDD" number as
+    /// real text, so the user can tweak it (e.g. append a suffix) rather than retype the date.
+    private func flightNameField(for date: Date) -> some View {
+        let name = Binding(
+            get: { flightDraft },
+            set: {
+                flightDraft = String($0.prefix(Day.maxFlightNameLength))
+                commitFlightName(flightDraft, for: date)
+            }
+        )
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("Flight")
+                .font(CockpitStyle.mono(.caption2, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(CockpitStyle.muted)
+            TextField(
+                "", text: name,
+                prompt: Text(Day.defaultFlightNumber(for: date))
+                    .font(CockpitStyle.mono(.body, weight: .bold))
+                    .foregroundStyle(CockpitStyle.muted)
+            )
+            .font(CockpitStyle.mono(.body, weight: .bold))
+            .textCase(.uppercase)
+            .foregroundStyle(CockpitStyle.ink)
+            .textFieldStyle(.plain)
+            .focused($isFlightNameFocused)
+            .submitLabel(.done)
+            .onSubmit { isFlightNameFocused = false }
+            .accessibilityLabel("Flight name")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture { isFlightNameFocused = true }
+        .onChange(of: displayedFlightNumber(for: date), initial: true) { _, displayed in
+            if !isFlightNameFocused { flightDraft = displayed }
+        }
+        .onChange(of: isFlightNameFocused) { _, focused in
+            if !focused { flightDraft = displayedFlightNumber(for: date) }
+        }
+    }
+
+    /// "DESTINATION" label with a short, multi-line-capable note on what the day is for, shown
+    /// in the Flight Status card beside the progress box.
+    private func destinationField(for date: Date) -> some View {
+        let intention = Binding(
+            get: { existingDay(for: date)?.intention ?? "" },
+            set: { text in
+                // A vertical-axis field inserts a newline on Return; treat Return as "Done"
+                // instead — dismiss the keyboard and keep the text to a single paragraph.
+                if text.contains("\n") {
+                    isDestinationFocused = false
+                    dayForEditing(date).setIntention(
+                        text.replacingOccurrences(of: "\n", with: "")
+                    )
+                } else {
+                    dayForEditing(date).setIntention(text)
+                }
+            }
+        )
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("Destination")
+                .font(CockpitStyle.mono(.caption2, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(CockpitStyle.muted)
+            // The placeholder is a separate Text rather than the field's `prompt`, which
+            // truncates to one line instead of wrapping.
+            ZStack(alignment: .topLeading) {
+                if intention.wrappedValue.isEmpty {
+                    Text("What is this \(date.formatted(.dateTime.weekday(.wide))) for?")
+                        .font(CockpitStyle.mono(.caption2))
+                        .foregroundStyle(CockpitStyle.muted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                TextField("", text: intention, axis: .vertical)
+                    .font(CockpitStyle.mono(.caption2))
+                    .foregroundStyle(CockpitStyle.ink)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .focused($isDestinationFocused)
+                    .submitLabel(.done)
+                    .onSubmit { isDestinationFocused = false }
+                    .accessibilityLabel("Day destination")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func flightStatusCard(_ items: [PlanItem], date: Date) -> some View {
         let completed = items.filter { $0.status == .completed }.count
         let total = items.count
         let pct = total > 0 ? Double(completed) / Double(total) : 0
-        let statusText: String = {
-            if total == 0 { return "No items planned" }
-            if completed == total { return "All done!" }
-            return "Plan active"
-        }()
-
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 16) {
                 paperProgressBox(completed: completed, total: total, pct: pct)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Flight \(flightNumber(for: date))")
-                        .font(PaperPlanStyle.mono(.caption, weight: .bold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(PaperPlanStyle.muted)
-                    Text(statusText)
-                        .font(PaperPlanStyle.mono(.body, weight: .bold))
-                        .foregroundStyle(PaperPlanStyle.ink)
+                    flightNameField(for: date)
+                    destinationField(for: date)
                     if let nextUp = nextUpTime(items, referenceDate: date) {
                         Text("Next up at \(nextUp)")
-                            .font(PaperPlanStyle.mono(.caption))
-                            .foregroundStyle(PaperPlanStyle.muted)
+                            .font(CockpitStyle.mono(.caption))
+                            .foregroundStyle(CockpitStyle.muted)
                     }
                 }
                 Spacer()
             }
             .padding(14)
 
-            Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+            Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
 
             routeIntentionsLine()
                 .padding(14)
         }
-        .background(PaperPlanStyle.surface)
-        .overlay(Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1.5))
+        .background(CockpitStyle.surface)
+        .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
         .background {
-            Rectangle().fill(PaperPlanStyle.shadow).offset(x: 3, y: 4)
+            Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
         }
     }
 
@@ -337,20 +471,20 @@ struct PaperPlanView: View {
     private func routeIntentionsLine() -> some View {
         let sections = DaySection.allCases
         let label = Text("ROUTE:  ")
-            .font(PaperPlanStyle.mono(.caption2, weight: .bold))
-            .foregroundColor(PaperPlanStyle.muted)
+            .font(CockpitStyle.mono(.caption2, weight: .bold))
+            .foregroundColor(CockpitStyle.muted)
         let line = sections.enumerated().reduce(label) { partial, entry in
             let (index, section) = entry
             let isCurrent = section == viewModel.currentSection
 
             let segment = Text(section.displayName.uppercased())
-                .font(PaperPlanStyle.mono(.caption2, weight: isCurrent ? .bold : .regular))
-                .foregroundColor(isCurrent ? PaperPlanStyle.ink : PaperPlanStyle.muted)
+                .font(CockpitStyle.mono(.caption2, weight: isCurrent ? .bold : .regular))
+                .foregroundColor(isCurrent ? CockpitStyle.ink : CockpitStyle.muted)
 
             guard index > 0 else { return partial + segment }
             let arrow = Text(" \u{2192} ")
-                .font(PaperPlanStyle.mono(.caption2))
-                .foregroundColor(PaperPlanStyle.muted)
+                .font(CockpitStyle.mono(.caption2))
+                .foregroundColor(CockpitStyle.muted)
             return partial + arrow + segment
         }
 
@@ -362,19 +496,19 @@ struct PaperPlanView: View {
         let size: CGFloat = 60
         return ZStack {
             HStack(spacing: 0) {
-                Rectangle().fill(PaperPlanStyle.ink).frame(width: size * pct)
-                Rectangle().fill(PaperPlanStyle.border.opacity(0.25)).frame(width: size * (1 - pct))
+                Rectangle().fill(CockpitStyle.ink).frame(width: size * pct)
+                Rectangle().fill(CockpitStyle.border.opacity(0.25)).frame(width: size * (1 - pct))
             }
             .frame(width: size, height: size)
-            Rectangle().fill(PaperPlanStyle.surface).frame(width: size - 10, height: size - 10)
-            Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1).frame(width: size, height: size)
+            Rectangle().fill(CockpitStyle.surface).frame(width: size - 10, height: size - 10)
+            Rectangle().stroke(CockpitStyle.border, lineWidth: 1).frame(width: size, height: size)
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 Text("\(completed)")
-                    .font(PaperPlanStyle.mono(.title3, weight: .bold))
-                    .foregroundStyle(PaperPlanStyle.ink)
+                    .font(CockpitStyle.mono(.title3, weight: .bold))
+                    .foregroundStyle(CockpitStyle.ink)
                 Text("/\(total)")
-                    .font(PaperPlanStyle.mono(.caption2))
-                    .foregroundStyle(PaperPlanStyle.muted)
+                    .font(CockpitStyle.mono(.caption2))
+                    .foregroundStyle(CockpitStyle.muted)
             }
         }
         .frame(width: size, height: size)
@@ -403,13 +537,24 @@ struct PaperPlanView: View {
                     HStack(spacing: 14) {
                         briefingItem(icon: "clock", text: context.date.formatted(.dateTime.hour().minute()))
                         Rectangle()
-                            .fill(PaperPlanStyle.border.opacity(0.4))
+                            .fill(CockpitStyle.border.opacity(0.4))
                             .frame(width: 1, height: 14)
                         briefingItem(icon: "hourglass", text: remainingLabel(from: context.date))
                     }
                 }
                 Rectangle()
-                    .fill(PaperPlanStyle.border.opacity(0.4))
+                    .fill(CockpitStyle.border.opacity(0.4))
+                    .frame(width: 1, height: 14)
+            } else {
+                // Past and future days have no live clock/countdown, so show a day blurb instead.
+                briefingItem(
+                    icon: nil,
+                    text: date < Calendar.current.startOfDay(for: .now)
+                        ? "It's in the past"
+                        : "Future you"
+                )
+                Rectangle()
+                    .fill(CockpitStyle.border.opacity(0.4))
                     .frame(width: 1, height: 14)
             }
             briefingItem(
@@ -420,21 +565,25 @@ struct PaperPlanView: View {
         }
         .padding(.vertical, 10)
         .overlay(alignment: .top) {
-            Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+            Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
         }
         .overlay(alignment: .bottom) {
-            Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+            Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
         }
     }
 
-    private func briefingItem(icon: String, text: String) -> some View {
+    private func briefingItem(icon: String?, text: String) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.caption2)
-                .foregroundStyle(PaperPlanStyle.ink)
+            if let icon {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .foregroundStyle(CockpitStyle.ink)
+            }
             Text(text)
-                .font(PaperPlanStyle.mono(.caption))
-                .foregroundStyle(PaperPlanStyle.muted)
+                .font(CockpitStyle.mono(.caption))
+                .foregroundStyle(CockpitStyle.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 
@@ -585,16 +734,16 @@ struct PaperPlanView: View {
                 .buttonStyle(.plain)
                 .contentShape(Rectangle())
 
-                Rectangle().fill(PaperPlanStyle.border).frame(height: 1)
+                Rectangle().fill(CockpitStyle.border).frame(height: 1)
 
                 Button {
                     addingToSection = section
                     addingItemForDate = date
                 } label: {
                     Label("Add item", systemImage: "plus")
-                        .font(PaperPlanStyle.mono(.caption, weight: .semibold))
+                        .font(CockpitStyle.mono(.caption, weight: .semibold))
                         .textCase(.uppercase)
-                        .foregroundStyle(PaperPlanStyle.ink)
+                        .foregroundStyle(CockpitStyle.ink)
                         .padding(.horizontal, 16)
                         .padding(.top, 10)
                         .padding(.bottom, 2)
@@ -603,8 +752,8 @@ struct PaperPlanView: View {
 
                 if !hasContent {
                     Text("Nothing scheduled")
-                        .font(PaperPlanStyle.mono(.subheadline))
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .font(CockpitStyle.mono(.subheadline))
+                        .foregroundStyle(CockpitStyle.muted)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
                 } else {
@@ -613,7 +762,7 @@ struct PaperPlanView: View {
                             HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "calendar.day.timeline.left")
                                     .font(.caption)
-                                    .foregroundStyle(PaperPlanStyle.muted)
+                                    .foregroundStyle(CockpitStyle.muted)
                                     .frame(width: 16)
                                     .padding(.top, 7)
                                 HFlow(spacing: 8) {
@@ -629,9 +778,9 @@ struct PaperPlanView: View {
                         }
                         if !routinePills.isEmpty {
                             HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "infinity")
+                                Image(systemName: "wrench")
                                     .font(.caption)
-                                    .foregroundStyle(PaperPlanStyle.muted)
+                                    .foregroundStyle(CockpitStyle.muted)
                                     .frame(width: 16)
                                     .padding(.top, 7)
                                 HFlow(spacing: 8) {
@@ -646,16 +795,16 @@ struct PaperPlanView: View {
                             .padding(.bottom, 10)
                         }
                         if !pills.isEmpty && !deadlines.isEmpty {
-                            Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+                            Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
                         }
                         ForEach(deadlines) { item in
                             cardDeadlineRow(item)
                             if item.id != deadlines.last?.id {
-                                Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1).padding(.leading, 54)
+                                Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1).padding(.leading, 54)
                             }
                         }
                         if !events.isEmpty {
-                            if !allSectionItems.isEmpty { Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1) }
+                            if !allSectionItems.isEmpty { Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1) }
                             VStack(spacing: 0) {
                                 ForEach(events) { event in
                                     CalendarEventRow(event: event)
@@ -664,7 +813,7 @@ struct PaperPlanView: View {
                         }
                         if !reminders.isEmpty {
                             if !allSectionItems.isEmpty || !events.isEmpty {
-                                Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1)
+                                Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
                             }
                             VStack(spacing: 0) {
                                 ForEach(reminders) { reminder in
@@ -693,18 +842,18 @@ struct PaperPlanView: View {
                 .contentShape(Rectangle())
             }
         }
-        .background { Rectangle().fill(PaperPlanStyle.surface) }
+        .background { Rectangle().fill(CockpitStyle.surface) }
         .clipShape(Rectangle())
         .overlay {
             let isDropTargeted = dropTargetedSection == section
             Rectangle()
                 .stroke(
-                    isDropTargeted ? PaperPlanStyle.highlighter : PaperPlanStyle.border,
+                    isDropTargeted ? CockpitStyle.highlighter : CockpitStyle.border,
                     lineWidth: isDropTargeted ? 3 : isCurrent ? 2.5 : 1.5
                 )
         }
         .background {
-            Rectangle().fill(PaperPlanStyle.shadow).offset(x: 3, y: 4)
+            Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
         }
         .dropDestination(for: String.self) { dropItems, _ in
             guard let uuidString = dropItems.first else { return false }
@@ -744,16 +893,16 @@ struct PaperPlanView: View {
                 isCurrent: false, allDone: total > 0 && completed == total
             )
 
-            Rectangle().fill(PaperPlanStyle.border).frame(height: 1)
+            Rectangle().fill(CockpitStyle.border).frame(height: 1)
 
             Button {
                 addingItemForDate = date
                 isAddingItem = true
             } label: {
                 Label("Add item", systemImage: "plus")
-                    .font(PaperPlanStyle.mono(.caption, weight: .semibold))
+                    .font(CockpitStyle.mono(.caption, weight: .semibold))
                     .textCase(.uppercase)
-                    .foregroundStyle(PaperPlanStyle.ink)
+                    .foregroundStyle(CockpitStyle.ink)
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
                     .padding(.bottom, 2)
@@ -771,7 +920,7 @@ struct PaperPlanView: View {
                 .padding(.vertical, 10)
             }
             if !anyTimeReminders.isEmpty {
-                if !items.isEmpty { Rectangle().fill(PaperPlanStyle.border.opacity(0.4)).frame(height: 1) }
+                if !items.isEmpty { Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1) }
                 VStack(spacing: 0) {
                     ForEach(anyTimeReminders) { reminder in
                         ReminderItemRow(item: reminder)
@@ -780,15 +929,15 @@ struct PaperPlanView: View {
             }
         }
         .padding(.bottom, 4)
-        .background(PaperPlanStyle.surface)
+        .background(CockpitStyle.surface)
         .clipShape(Rectangle())
         .overlay {
             Rectangle()
-                .stroke(isOpenDropTargeted ? PaperPlanStyle.highlighter : PaperPlanStyle.border,
+                .stroke(isOpenDropTargeted ? CockpitStyle.highlighter : CockpitStyle.border,
                         lineWidth: isOpenDropTargeted ? 3 : 1.5)
         }
         .background {
-            Rectangle().fill(PaperPlanStyle.shadow).offset(x: 3, y: 4)
+            Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
         }
         .dropDestination(for: String.self) { dropItems, _ in
             guard let uuidString = dropItems.first else { return false }
@@ -816,11 +965,11 @@ struct PaperPlanView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(title)
-                        .font(PaperPlanStyle.mono(.title2, weight: .bold))
+                        .font(CockpitStyle.mono(.title2, weight: .bold))
                         .textCase(.uppercase)
-                        .foregroundStyle(isCurrent ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.ink.opacity(0.85))
+                        .foregroundStyle(isCurrent ? CockpitStyle.inkOnHighlighter : CockpitStyle.ink.opacity(0.85))
                         .padding(.horizontal, isCurrent ? 4 : 0)
-                        .background(isCurrent ? PaperPlanStyle.highlighter : Color.clear)
+                        .background(isCurrent ? CockpitStyle.highlighter : Color.clear)
                     Spacer()
                 }
 
@@ -828,13 +977,13 @@ struct PaperPlanView: View {
                     if isCurrent {
                         Circle().fill(.red).frame(width: 6, height: 6)
                         Text("NOW  ·")
-                            .font(PaperPlanStyle.mono(.caption, weight: .bold))
+                            .font(CockpitStyle.mono(.caption, weight: .bold))
                             .foregroundStyle(.red)
                     }
                     Text(subtitle)
-                        .font(PaperPlanStyle.mono(.caption))
+                        .font(CockpitStyle.mono(.caption))
                         .textCase(.uppercase)
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .foregroundStyle(CockpitStyle.muted)
                 }
             }
 
@@ -842,20 +991,20 @@ struct PaperPlanView: View {
 
             ZStack {
                 Circle()
-                    .stroke(PaperPlanStyle.border.opacity(0.25), lineWidth: 6)
+                    .stroke(CockpitStyle.border.opacity(0.25), lineWidth: 6)
                 if total > 0 {
                     Circle()
                         .trim(from: 0, to: pct)
                         .stroke(
-                            allDone ? Color.green : PaperPlanStyle.ink,
+                            allDone ? Color.green : CockpitStyle.ink,
                             style: StrokeStyle(lineWidth: 6, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(duration: 0.4), value: completed)
                 }
                 Text(hasOverdue ? "! \(completed)/\(total)" : "\(completed)/\(total)")
-                    .font(PaperPlanStyle.mono(.caption2, weight: .bold))
-                    .foregroundStyle(allDone && total > 0 ? Color.green : hasOverdue ? Color.orange : PaperPlanStyle.muted)
+                    .font(CockpitStyle.mono(.caption2, weight: .bold))
+                    .foregroundStyle(allDone && total > 0 ? Color.green : hasOverdue ? Color.orange : CockpitStyle.muted)
             }
             .frame(width: 56, height: 56)
         }
@@ -879,45 +1028,45 @@ struct PaperPlanView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
                     Text(section.displayName)
-                        .font(PaperPlanStyle.mono(.headline, weight: .bold))
+                        .font(CockpitStyle.mono(.headline, weight: .bold))
                         .textCase(.uppercase)
-                        .foregroundStyle(isCurrent ? PaperPlanStyle.inkOnHighlighter : PaperPlanStyle.ink)
+                        .foregroundStyle(isCurrent ? CockpitStyle.inkOnHighlighter : CockpitStyle.ink)
                         .padding(.horizontal, isCurrent ? 4 : 0)
-                        .background(isCurrent ? PaperPlanStyle.highlighter : Color.clear)
+                        .background(isCurrent ? CockpitStyle.highlighter : Color.clear)
                     Text("·")
-                        .font(PaperPlanStyle.mono(.caption))
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .font(CockpitStyle.mono(.caption))
+                        .foregroundStyle(CockpitStyle.muted)
                     Text(section.timeRangeLabel)
-                        .font(PaperPlanStyle.mono(.caption))
+                        .font(CockpitStyle.mono(.caption))
                         .textCase(.uppercase)
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .foregroundStyle(CockpitStyle.muted)
                     if isCurrent {
                         Circle().fill(.red).frame(width: 5, height: 5)
                         Text("NOW")
-                            .font(PaperPlanStyle.mono(.caption, weight: .bold))
+                            .font(CockpitStyle.mono(.caption, weight: .bold))
                             .foregroundStyle(.red)
                     }
                 }
 
                 if let summary {
                     Text(summary)
-                        .font(PaperPlanStyle.mono(.caption))
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .font(CockpitStyle.mono(.caption))
+                        .foregroundStyle(CockpitStyle.muted)
                         .lineLimit(2)
                 } else if isLoading {
                     loadingDotsView
                 } else if allDone && total > 0 {
                     Text("All done ✓")
-                        .font(PaperPlanStyle.mono(.caption))
+                        .font(CockpitStyle.mono(.caption))
                         .foregroundStyle(.green)
                 } else if total > 0 {
                     Text("\(total - completed) remaining")
-                        .font(PaperPlanStyle.mono(.caption))
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .font(CockpitStyle.mono(.caption))
+                        .foregroundStyle(CockpitStyle.muted)
                 } else {
                     Text("Nothing scheduled")
-                        .font(PaperPlanStyle.mono(.caption))
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .font(CockpitStyle.mono(.caption))
+                        .foregroundStyle(CockpitStyle.muted)
                 }
             }
 
@@ -925,14 +1074,14 @@ struct PaperPlanView: View {
 
             if total > 0 {
                 Text(allDone ? "✓ \(completed)/\(total)" : hasOverdue ? "! \(completed)/\(total)" : "\(completed)/\(total)")
-                    .font(PaperPlanStyle.mono(.caption2, weight: .bold))
+                    .font(CockpitStyle.mono(.caption2, weight: .bold))
                     .foregroundStyle(
                         hasFlagged
-                            ? PaperPlanStyle.inkOnHighlighter
-                            : (allDone ? .green : hasOverdue ? Color.orange : PaperPlanStyle.muted)
+                            ? CockpitStyle.inkOnHighlighter
+                            : (allDone ? .green : hasOverdue ? Color.orange : CockpitStyle.muted)
                     )
                     .padding(.horizontal, hasFlagged ? 4 : 0)
-                    .background(hasFlagged ? PaperPlanStyle.highlighter : Color.clear)
+                    .background(hasFlagged ? CockpitStyle.highlighter : Color.clear)
             }
         }
         .padding(16)
@@ -942,8 +1091,8 @@ struct PaperPlanView: View {
 
     private var loadingDotsView: some View {
         Text("···")
-            .font(PaperPlanStyle.mono(.caption))
-            .foregroundStyle(PaperPlanStyle.muted)
+            .font(CockpitStyle.mono(.caption))
+            .foregroundStyle(CockpitStyle.muted)
             .phaseAnimator([1.0, 0.3]) { view, opacity in
                 view.opacity(opacity)
             } animation: { _ in
@@ -964,7 +1113,7 @@ struct PaperPlanView: View {
                     }
                 } label: {
                     Image(systemName: "circle")
-                        .foregroundStyle(PaperPlanStyle.muted)
+                        .foregroundStyle(CockpitStyle.muted)
                         .font(.subheadline)
                 }
                 .buttonStyle(.plain)
@@ -972,33 +1121,33 @@ struct PaperPlanView: View {
             }
 
             Text(item.title)
-                .font(PaperPlanStyle.mono(.subheadline, weight: .semibold))
+                .font(CockpitStyle.mono(.subheadline, weight: .semibold))
                 .textCase(.uppercase)
                 .lineLimit(1)
                 .foregroundStyle(
                     item.isFlagged
-                        ? PaperPlanStyle.inkOnHighlighter
-                        : (item.status == .pending ? PaperPlanStyle.ink : PaperPlanStyle.muted)
+                        ? CockpitStyle.inkOnHighlighter
+                        : (item.status == .pending ? CockpitStyle.ink : CockpitStyle.muted)
                 )
-                .strikethrough(item.status != .pending, color: PaperPlanStyle.muted)
+                .strikethrough(item.status != .pending, color: CockpitStyle.muted)
                 .padding(.horizontal, item.isFlagged ? 3 : 0)
-                .background(item.isFlagged ? PaperPlanStyle.highlighter.opacity(0.8) : Color.clear)
+                .background(item.isFlagged ? CockpitStyle.highlighter.opacity(0.8) : Color.clear)
 
             if !item.notes.isEmpty {
                 Image(systemName: "note.text")
                     .font(.caption2)
-                    .foregroundStyle(PaperPlanStyle.muted)
+                    .foregroundStyle(CockpitStyle.muted)
             }
             if item.isRecurring && showRecurringBadge {
-                Image(systemName: "infinity")
+                Image(systemName: "wrench")
                     .font(.caption2)
-                    .foregroundStyle(PaperPlanStyle.muted)
+                    .foregroundStyle(CockpitStyle.muted)
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background {
-            Rectangle().stroke(PaperPlanStyle.border, lineWidth: 1)
+            Rectangle().stroke(CockpitStyle.border, lineWidth: 1)
         }
         .onTapGesture { itemToEdit = item }
         .contextMenu {
@@ -1039,14 +1188,14 @@ struct PaperPlanView: View {
                 ZStack {
                     Circle()
                         .stroke(
-                            item.status == .completed ? PaperPlanStyle.routeBlue : PaperPlanStyle.border.opacity(0.5),
+                            item.status == .completed ? CockpitStyle.routeBlue : CockpitStyle.border.opacity(0.5),
                             lineWidth: 1.5
                         )
                         .frame(width: 26, height: 26)
                     if item.status == .completed {
                         Image(systemName: "checkmark")
                             .font(.caption.bold())
-                            .foregroundStyle(PaperPlanStyle.routeBlue)
+                            .foregroundStyle(CockpitStyle.routeBlue)
                     }
                 }
             }
@@ -1057,23 +1206,23 @@ struct PaperPlanView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
-                    .font(PaperPlanStyle.mono(.body, weight: .semibold))
+                    .font(CockpitStyle.mono(.body, weight: .semibold))
                     .textCase(.uppercase)
                     .strikethrough(item.status == .completed)
                     .foregroundStyle(
                         item.isFlagged
-                            ? PaperPlanStyle.inkOnHighlighter
-                            : (item.status == .completed ? PaperPlanStyle.muted : PaperPlanStyle.ink)
+                            ? CockpitStyle.inkOnHighlighter
+                            : (item.status == .completed ? CockpitStyle.muted : CockpitStyle.ink)
                     )
                     .padding(.horizontal, item.isFlagged ? 3 : 0)
-                    .background(item.isFlagged ? PaperPlanStyle.highlighter.opacity(0.8) : Color.clear)
+                    .background(item.isFlagged ? CockpitStyle.highlighter.opacity(0.8) : Color.clear)
                 if let dl = item.deadline {
                     HStack(spacing: 3) {
                         Image(systemName: "clock").font(.caption2)
                         Text(dl, format: .dateTime.hour().minute())
-                            .font(PaperPlanStyle.mono(.caption2))
+                            .font(CockpitStyle.mono(.caption2))
                     }
-                    .foregroundStyle(PaperPlanStyle.muted)
+                    .foregroundStyle(CockpitStyle.muted)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1102,7 +1251,7 @@ struct PaperPlanView: View {
 #if DEBUG
 
 #Preview {
-    PaperPlanView(viewModel: DayViewModel(), onShowSettings: {}, onShowImport: {})
+    CockpitView(viewModel: DayViewModel(), onShowSettings: {}, onShowImport: {})
         .injectMockServices()
         .modelContainer(try! ModelContainer.inMemorySampleContainer())
 }

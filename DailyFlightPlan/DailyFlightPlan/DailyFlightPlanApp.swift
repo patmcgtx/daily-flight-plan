@@ -25,7 +25,7 @@ struct DailyFlightPlanApp: App {
         } catch {
             fatalError("Failed to initialize persistent model container: \(error)")
         }
-        Self.registerPaperPlanFontsIfNeeded()
+        Self.registerCockpitFontsIfNeeded()
     }
 
     private static var isHostingUnitTests: Bool {
@@ -33,10 +33,10 @@ struct DailyFlightPlanApp: App {
     }
 
     /// `Info.plist`'s `UIAppFonts` only registers fonts on iOS-family platforms — macOS ignores
-    /// it entirely, so IBM Plex Mono (used by the Flight tab's paper styling) needs explicit
+    /// it entirely, so IBM Plex Mono (used by the Cockpit tab's paper styling) needs explicit
     /// Core Text registration there instead, or `Font.custom` silently falls back to the system
     /// font on Mac.
-    private static func registerPaperPlanFontsIfNeeded() {
+    private static func registerCockpitFontsIfNeeded() {
         #if os(macOS)
         for name in ["IBMPlexMono-Regular", "IBMPlexMono-SemiBold", "IBMPlexMono-Bold"] {
             guard let url = Bundle.main.url(forResource: name, withExtension: "ttf") else { continue }

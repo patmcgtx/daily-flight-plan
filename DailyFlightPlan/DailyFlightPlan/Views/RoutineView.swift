@@ -72,7 +72,7 @@ struct RoutineView: View {
                     InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
                 }
             }
-            .navigationTitle("Routine")
+            .navigationTitle("Maintenance")
             .toolbar {
                 ToolbarItem(placement: .trailingBar) {
                     SearchToggleButton(

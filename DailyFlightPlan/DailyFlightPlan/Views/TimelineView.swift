@@ -206,7 +206,7 @@ struct TimelineView: View {
                 .sheet(item: $addItemRequest) { request in
                     ItemForm(date: request.date, section: request.section)
                 }
-                .navigationTitle("Timeline")
+                .navigationTitle("Nav Log")
                 .inlineNavigationTitle()
                 .toolbar {
                     if onDismiss == nil {
