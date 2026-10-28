@@ -7,6 +7,8 @@ this file only tracks what's still outstanding. **Open** is for defects that hav
 reproduced; a report that hasn't been reproduced yet goes in **Unverified Reports** instead, and
 only moves to **Open** once someone reproduces it.
 
+- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
+
 ## Unverified Reports
 
 Not yet reproduced — each entry needs the affected action, device/OS, and observed result filled
@@ -23,9 +25,6 @@ in (or confirmed) before it can be investigated as a real defect.
   intermittent. Hypothesis worth checking once reproduced: `@State private var activeTab`
   retaining a prior `.routines` value across scene restoration/relaunch instead of starting
   fresh at `.cockpit`. Reproduce reliably (and note device/OS) before moving to Open.
-
-- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
-
 
 ## Open
 
