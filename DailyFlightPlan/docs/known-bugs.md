@@ -8,8 +8,10 @@ reproduced; a report that hasn't been reproduced yet goes in **Unverified Report
 only moves to **Open** once someone reproduces it.
 
 ## Open
-* **Editing flight number automaticlaly moves curser** to the end of the text field afetr editin starts. Causes confusion and editing mistakes.
-- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
+* **❗️Editing flight number automaticlaly moves curser** to the end of the text field afetr editin starts. Causes confusion and editing mistakes.
+- **macOS hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
+- **❗️macOS next/prev day buttons sluggish**: It seems liek they just don't navigate, but usualyl they do afte a few seconds.
+- **❗️macOS filter/categories view disappears**: When you tap the filter button, the view often just doesn't appear.
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added
   to the Day-view section-summary prompt (`DayViewModel.generateSummaryIfNeeded`, Phase 0.1.14), the
   on-device model sometimes describes a still-*open* item as completed (the inverse of the original
