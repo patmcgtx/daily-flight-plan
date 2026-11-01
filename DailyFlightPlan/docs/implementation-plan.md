@@ -405,20 +405,20 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 *Partially addressed by Phase 0.1.19 (Flight Plan view): the swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.*
 - Based on what we've learned so far, let's create a brand new, cleaner focus view
 - **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
+- ❗️**"Push missed to now" button**: A button that pushes all mised items to the current tie segment - decide segment or all
+- **❗️**"Cancel missed" button**: A button that cancels all missed items - decide segment or all
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **✅ Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to
   yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient
   layout. Done in `CockpitView.dayLabelText(for:)`: the date and the relative-day label now
   share one `HStack` row above the weekday; the date stays muted and the label keeps its
   existing styling.
-- **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
-- **Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
+- **✅ Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
+- **✅ Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
   analogy.
-- **Auto-drop missed items?** When a day segment passes, items should automatically promote to "Open."
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
 - **Progress gauges?** Add an item progress vs time of day gauge, plus basic items complete vs. total items, and maybe a third?
-- Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
 - **Day intention note**: a short freeform text field on the Day view for what the user wants to
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
   tracked separately under Phase 1.2 (now cross-referenced there, not duplicated); pulled
@@ -439,20 +439,20 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - Refactor services and view models as we go — we want this stuff pristine and unit-testable
 
 ### Phase 2.6 - Import UX Refinements
-- **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
-- **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
-- **Add a flag toggle on import**: The import can't automatically know if this item should be
+- ❗️**Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
+- ❗️**Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
+- ❗️**Add a flag toggle on import**: The import can't automatically know if this item should be
   flagged, but make it easy.
-- **Add categorization on import**: Allow tagging items on import, automatically or manually.
+- **❗️**Add categorization on import**: Allow tagging items on import, automatically or manually.
 - **Import Calendar events as a plan item**: long-press a `CalendarEventRow` to import it as a `PlanItem`, the same way Reminders already can (see "Import Reminder as PlanItem" in Phase 0.1.14)
   — a Calendar event is read-only, so this turns it into something that can be checked off.
-- **Remove 'routine' options from import**: Routine import should be its own flow rather than
+- **❗️**Remove 'routine' options from import**: Routine import should be its own flow rather than
   cluttering a normal day import.
-- **Easier way to handle day segments**: Show segments in the import view and allow dragging and
+- **❗️**Easier way to handle day segments**: Show segments in the import view and allow dragging and
   dropping; provide a menu alternative for accessibility.
-- **Allow editing like a _normal_ list**: Support swipe-to-delete, animated deletions, and dragging
+- ****❗️**Allow editing like a _normal_ list**: Support swipe-to-delete, animated deletions, and dragging
   items between segments.
-- **Single-item AI quick-add** *(the one new-capability exception to this version's scope — see
+- ****❗️**Single-item AI quick-add** *(the one new-capability exception to this version's scope — see
   the Version 0.2 header note)*: a button on the Day view that takes free text and uses on-device
   Foundation Models to create one `PlanItem` — title/notes/date/deadlineTime/daySection/
   isRecurring/recurringWeekdays/isFlagged, reusing the `@Generable` struct shape originally
