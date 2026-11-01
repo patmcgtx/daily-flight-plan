@@ -441,8 +441,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 ### Phase 2.6 - Import UX Refinements
 - ❗️**Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
 - ❗️**Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
-- ❗️**Add a flag toggle on import**: The import can't automatically know if this item should be
-  flagged, but make it easy.
+- ❗️**Add a flag toggle on import**: The import can't automatically know if this item should be flagged, but make it easy.
+- ❗️**Auto-flag items import**: If they have "important", "urgent", or an emoji like ❗️, ‼️, 🚨, etc.
 - **❗️**Add categorization on import**: Allow tagging items on import, automatically or manually.
 - **Import Calendar events as a plan item**: long-press a `CalendarEventRow` to import it as a `PlanItem`, the same way Reminders already can (see "Import Reminder as PlanItem" in Phase 0.1.14)
   — a Calendar event is read-only, so this turns it into something that can be checked off.
