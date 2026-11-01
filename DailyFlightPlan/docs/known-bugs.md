@@ -9,6 +9,7 @@ only moves to **Open** once someone reproduces it.
 
 ## Open
 * **❗️Editing flight number automaticlaly moves curser** to the end of the text field afetr editin starts. Causes confusion and editing mistakes.
+- **❗️Flight number not syncing**: At lwast betwee iPhone and macOS. Also purpose/destination as well.
 - **macOS hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
 - **❗️macOS next/prev day buttons sluggish**: It seems liek they just don't navigate, but usualyl they do afte a few seconds.
 - **❗️macOS filter/categories view disappears**: When you tap the filter button, the view often just doesn't appear.
