@@ -402,28 +402,27 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   genuine redesign, not a reskin.
 
 ### Phase 2.5 — Day/Flight View Refinements
-*Partially addressed by Phase 0.1.19 (Flight Plan view): the swipe pager, card layout, Calendar/Reminders integration, and drag-and-drop are done. Remaining items below.*
-- Based on what we've learned so far, let's create a brand new, cleaner focus view
-- **Progress indicator**: rework this — it needs to be *in* the day view somewhere; possibly go horizontal
+- **Progress indicator tweak**: Color-code the main progress indicator based on status/time, e.g. green/yellow/red; use the same colors/calculation the segments
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **✅ Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to
   yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient
   layout. Done in `CockpitView.dayLabelText(for:)`: the date and the relative-day label now
   share one `HStack` row above the weekday; the date stays muted and the label keeps its
   existing styling.
-- **Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; the infinity icon approach works — consider a different layout altogether
-- **Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
+- **✅ Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; switched to a wrench icon that matches the Maintenance tab with a wrench icon.
+- **✅ Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
   analogy.
 - **Auto-drop missed items?** When a day segment passes, items should automatically promote to "Open."
+- **Search focus**: Consider hiding unmatched segments when search & filter are active.
+- **Clean up toolbar**: The toolbar could use a refresh
+- **Clean up filtering**: The filtering needs some UX updates
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
-- **Progress gauges?** Add an item progress vs time of day gauge, plus basic items complete vs. total items, and maybe a third?
-- Possibly more of an "accordion" view like iOS lock screen notifications ("show less" / "show more"), instead of a traditional expand/collapse view
-- **Day intention note**: a short freeform text field on the Day view for what the user wants to
+- **✅ Day intention note**: a short freeform text field on the Day view for what the user wants to
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
   tracked separately under Phase 1.2 (now cross-referenced there, not duplicated); pulled
   forward here since it's a small, self-contained addition.
-  - ✅ *Done (persisted; see [day-model-plan.md](plans/day-model-plan.md)):* the Flight Status
+  - *Done (persisted; see [day-model-plan.md](plans/day-model-plan.md)):* the Flight Status
     card has a tap-to-edit flight name (inline `TextField` in the "FLIGHT" caption, pre-filled
     with the computed `DFP YYYYMMDD` as real text so the date needn't be retyped; blank or
     unchanged text keeps tracking the default) and an editable "DESTINATION" field for the
@@ -432,11 +431,6 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     SwiftData model (CloudKit-synced) and appear in the Markdown day export header
     ("Flight:" / "Destination:"). Settings' "delete items" leaves `Day` rows alone, since its
     alert doesn't mention them.
-- **Cross-segment "completed so far" summary**: a day-wide rollup of everything completed across
-  all segments today, not just each section's own `completed/total` count — ties into the
-  "Reward when completing everything for today" idea above.
-- Remember: the goal of this view is to focus on what's important right now but have access to the rest of the day, as if you're flying an airplane!
-- Refactor services and view models as we go — we want this stuff pristine and unit-testable
 
 ### Phase 2.6 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
@@ -517,6 +511,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **Addition (decided during catch-up planning)**: scope beyond "match the paper aesthetic" is
   still open — revisit alongside Phase 2.8 for any shared styling components worth factoring out
   across the three tabs.
+- **Show only segments that actaully have a routine**:get rid of all those empty segments; it's a lot when combined with all the day combos.
 
 ---
 
@@ -544,7 +539,7 @@ Adds the features needed before wider release: user-configurable settings (Calen
 - **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
 - **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
 
-### Phase 3.4 — iPad Support
+### Phase 3.4 — iPad Extras
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
 - Verify `HFlow` pill layouts scale well on wider screens
 - Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)

@@ -7,7 +7,9 @@ this file only tracks what's still outstanding. **Open** is for defects that hav
 reproduced; a report that hasn't been reproduced yet goes in **Unverified Reports** instead, and
 only moves to **Open** once someone reproduces it.
 
-- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
+**Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
+
+**Filter view inaccessible on Mac**: On macOS, the filter view does not appear when tapped.
 
 ## Unverified Reports
 
