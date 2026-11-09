@@ -137,7 +137,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
   switcher is reintroduced somewhere
 - Calendar events from EventKit shown inline, with calendar color indicator
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
-- **Fresh start each day**: no automatic carry-forward — pending items stay on their original date unless you move them yourself; a dedicated missed-items review flow is planned (see Phase 2.7)
+- **Fresh start each day**: no automatic carry-forward — pending items stay on their original date unless you move them yourself; a dedicated missed-items review flow is planned (see Phase 2.8)
 - **Future date preview**: recurring habits for a future weekday appear ghosted in their section
 - iCloud sync via CloudKit (plan on Mac, execute on iPhone)
 
@@ -186,11 +186,11 @@ Version 0.1 (Phases 0.1.1–0.1.22) is feature-complete — core functionality i
 | 2.2 | ✅ Remove Comm tab (too buggy, superseded by Markdown Import) |
 | 2.3 | ✅ Global filter sheet + category management |
 | 2.4 | ✅ Paper Plan view — replaces Day tab as the primary view |
-| 2.5 | Day/Flight view refinements |
+| 2.5 | Day/Flight view refinements (consolidated timed-items list, toolbar rework: categories vs. view settings) |
 | 2.6 | Import UX refinements (flag duplicates, notes, tagging) |
-| 2.7 | Missed items review & pull-forward |
-| 2.8 | Nav Log / Timeline refinements + paper treatment |
-| 2.9 | Routine refinements + paper treatment |
+| 2.7 | Routine refinements + paper treatment |
+| 2.8 | Missed items review & pull-forward |
+| 2.9 | Nav Log / Timeline refinements + paper treatment |
 
 **Version 0.3** expands device support and adds missing features:
 
