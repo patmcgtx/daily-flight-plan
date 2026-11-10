@@ -1,15 +1,18 @@
 package com.patmcgtx.dailyflightplan.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.time.LocalDate
 
 /**
  * Per-calendar-day details the user can customize: the day's flight name and its intention
  * ("destination"). Rows are created lazily on first edit, so most days have no [Day] at all.
  * Items match a day by date, not by a relationship. [date] is the primary key, so unlike iOS
- * there's no duplicate-row cleanup.
+ * there's no duplicate-row cleanup. Also the Room entity for the `days` table.
  */
+@Entity(tableName = "days")
 data class Day(
-    val date: LocalDate,
+    @PrimaryKey val date: LocalDate,
     /** The user's custom flight name. Empty means "use the default `DFP YYYYMMDD` number". */
     val flightName: String = "",
     /** The day's intention note. Empty means none has been written. */

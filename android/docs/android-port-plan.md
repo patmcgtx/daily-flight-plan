@@ -88,7 +88,7 @@ section list is stale): first thing 0:00–7:29, morning 7:30–10:59, midday 11
 2. ✅ **Pure logic + tests** — `DaySection`, flight-number formatting, and the section-grouping /
    `nextUpcomingDeadline` / `outstandingFlaggedCount` helpers from `DayViewModel`. The iOS tests
    (`DaySectionTests`, `DayViewModelTests`, `DayTests`) are the specs.
-3. **Room layer** — entities, DAOs, in-memory database for tests.
+3. ✅ **Room layer** — entities, DAOs, in-memory database for tests.
 4. **Cockpit UI** — built bottom-up: pill, deadline row, section card, Flight Status card,
    briefing row, then the screen and day navigation.
 5. **Item form** — bottom sheet for add/edit, including section and deadline pickers.
@@ -105,7 +105,8 @@ in Android Studio for editing and previews. From `android/`:
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 export ANDROID_HOME=$HOME/Library/Android/sdk
 ./gradlew :app:assembleDebug      # build
-./gradlew :app:testDebugUnitTest  # unit tests
+./gradlew :app:testDebugUnitTest  # JVM unit tests (no device needed)
+./gradlew :app:connectedDebugAndroidTest  # DAO tests; needs a running emulator/device
 $ANDROID_HOME/emulator/emulator -avd Medium_Phone_API_37.0   # boot the emulator
 $ANDROID_HOME/platform-tools/adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
@@ -142,6 +143,27 @@ Notes and deviations:
 - `Day.withFlightName` caps at 24 Unicode code points, where iOS caps at 24 characters
   (grapheme clusters); they differ only for multi-code-point emoji/accents.
 - Tests use JUnit 5 rather than JUnit 4, which has no clean parameterized-test support.
-- Not ported on purpose: date navigation (`goToYesterday` etc., trivial — tested with the phase 4
+**Phase 3 (Room layer) done** — 120 JVM tests plus 14 instrumented DAO tests pass.
+
+- Room 2.8.5 via KSP 2.3.13 (works with AGP 9's built-in Kotlin). `PlanItem` and `Day` are
+  annotated directly as the entities (`plan_items`, `days`) rather than mapped to separate entity
+  classes, to avoid boilerplate for a local-only app. Revisit if sync is ever added.
+- `data/`: `Converters` (dates as epoch-day integers, times as second-of-day integers, enums by
+  name), `PlanItemDao`, `DayDao`, `AppDatabase` (version 1, `getInstance(context)`), and
+  `PlanRepository`. Schemas export to `app/schemas/` (committed) for future migration tests.
+- `PlanRepository` is the UI layer's one entry point. It depends on the DAO *interfaces*, so its
+  rules are tested on the JVM with fake DAOs (`PlanRepositoryTest`): status/flag changes,
+  defer-to-tomorrow, and the iOS day-edit rules (a flight name that's blank or equal to the
+  default is stored as "", and a `Day` left with nothing customized is deleted). Day edits are
+  serialized with a mutex.
+- Deviation from iOS: clearing the destination also deletes an otherwise-blank `Day` row; iOS only
+  did that for the flight name and left an empty row behind for the destination.
+- DAO SQL is tested for real in `app/src/androidTest/.../AppDatabaseTest.kt` (in-memory SQLite on
+  the emulator). Instrumented test names are camelCase sentences, since backticked names with
+  spaces aren't allowed there below minSdk 30; they use JUnit 4 (`AndroidJUnit4`).
+- Nothing in the UI uses the database yet; the app/`AppDatabase.getInstance` wiring happens in
+  phase 4.
+
+Not ported on purpose: date navigation (`goToYesterday` etc., trivial — tested with the phase 4
   view model), collapse state, search/status filters (post-v1), and everything tied to routines,
   calendar/reminders, or AI summaries.

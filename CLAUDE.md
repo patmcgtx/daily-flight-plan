@@ -26,8 +26,12 @@ your flight plan. Combines one-off and recurring tasks, organized by time-of-day
   `]` `/` in names — the JVM rejects them), and prefer `@ParameterizedTest` + `@MethodSource` over
   near-identical tests — mirroring the Swift Testing conventions below. See
   `android/app/src/test/.../model/DaySectionTest.kt` for the reference pattern. Inject the clock
-  (`DayContext(selectedDate, now)`) rather than reading the real one.
-- Build/test from `android/` with `./gradlew :app:testDebugUnitTest`, using Android Studio's
+  (`DayContext(selectedDate, now)`) rather than reading the real one. Test business rules on the
+  JVM against fake DAOs (`PlanRepository` takes the DAO interfaces); only the SQL itself goes in
+  instrumented tests (`src/androidTest`, JUnit 4, camelCase-sentence names since backticked names
+  with spaces aren't allowed there below minSdk 30).
+- Build/test from `android/` with `./gradlew :app:testDebugUnitTest` (JVM) and
+  `./gradlew :app:connectedDebugAndroidTest` (needs a running emulator), using Android Studio's
   bundled JDK as `JAVA_HOME` (see the plan doc).
 
 ## Reference architecture
