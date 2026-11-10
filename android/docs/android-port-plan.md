@@ -26,7 +26,8 @@ A native Android port of Daily Flight Plan, starting with a deliberately small f
 - AI summaries.
 - Markdown import/export.
 - Drag-and-drop between sections.
-- Search and filters (first follow-up after v1).
+- Search and the flagged/recurring filters (first follow-up after v1). The show-completed toggle
+  was pulled forward into phase 4; see Status.
 - Settings screen.
 
 ## Decisions
@@ -89,9 +90,10 @@ section list is stale): first thing 0:00–7:29, morning 7:30–10:59, midday 11
    `nextUpcomingDeadline` / `outstandingFlaggedCount` helpers from `DayViewModel`. The iOS tests
    (`DaySectionTests`, `DayViewModelTests`, `DayTests`) are the specs.
 3. ✅ **Room layer** — entities, DAOs, in-memory database for tests.
-4. **Cockpit UI** — built bottom-up: pill, deadline row, section card, Flight Status card,
+4. ✅ **Cockpit UI** — built bottom-up: pill, deadline row, section card, Flight Status card,
    briefing row, then the screen and day navigation.
-5. **Item form** — bottom sheet for add/edit, including section and deadline pickers.
+5. **Item form** — bottom sheet for add/edit, including section and deadline pickers, plus the
+   "+" button and each card's "Add item" link, and wiring item taps to open the form.
 6. **Polish** — emulator pass, dark mode, accessibility labels, empty states.
 
 Follow-ups after v1: search and filters, settings, categories, then routines and the timeline.
@@ -161,9 +163,53 @@ Notes and deviations:
 - DAO SQL is tested for real in `app/src/androidTest/.../AppDatabaseTest.kt` (in-memory SQLite on
   the emulator). Instrumented test names are camelCase sentences, since backticked names with
   spaces aren't allowed there below minSdk 30; they use JUnit 4 (`AndroidJUnit4`).
-- Nothing in the UI uses the database yet; the app/`AppDatabase.getInstance` wiring happens in
-  phase 4.
+- Nothing in the UI used the database until phase 4 wired it up.
 
-Not ported on purpose: date navigation (`goToYesterday` etc., trivial — tested with the phase 4
-  view model), collapse state, search/status filters (post-v1), and everything tied to routines,
-  calendar/reminders, or AI summaries.
+Not ported on purpose: search and the flagged/recurring filters (post-v1), and everything tied to
+routines, calendar/reminders, or AI summaries.
+
+**Phase 4 (Cockpit UI) done** — 193 JVM tests plus 14 instrumented DAO tests pass; verified by
+hand on the API 37 emulator in light and dark mode (expand/collapse, complete, long-press menu,
+show-completed, day navigation, editing the destination and seeing it persist).
+
+- Wiring: `DailyFlightPlanApp` owns the lazily-built `PlanRepository`; `MainActivity` creates the
+  `CockpitViewModel` from it and hands it to `AppShell`.
+- `CockpitViewModel` exposes one `StateFlow<CockpitUiState?>` (null until the first DB read). It
+  takes the repository, a `Clock`, and an injectable minute-tick `Flow`, so its tests are fully
+  deterministic (`CockpitViewModelTest`). `CockpitUiState` holds the selected date, the clock,
+  every item for the day, the `Day`, and the filter/expand state, and derives everything the
+  screen needs (`sections`, `openItems`, `progress`, `nextUp`, `priorityCount`).
+- New pure model code, all unit-tested: `Progress` + the status filter, `Briefing` (midnight
+  countdown that is correct across DST changes, plural labels, past/future blurb),
+  `SectionModel`/`DayContext.sectionModel` (what each card draws), `DayContext.relativeDay`,
+  `hasOverdue` and `timedRows`.
+- UI in `ui/cockpit/`: `PaperStyle` (`paperCard` modifier: flat fill, square border, hard offset
+  shadow), `ItemPill`, `DeadlineRow`, `SectionCard` (+ `CardHeader`, `ProgressRing`), `OpenCard`,
+  `FlightStatusCard` (progress box, editable flight name and destination, next up, route),
+  `BriefingRow` (live clock and countdown ticking each second), `DayLabel`, and `CockpitScreen`
+  (stateless `CockpitContent` + a `@Preview` fed by `SampleData`).
+- Day navigation uses the ← / → buttons plus a "go to today" button when away from today; the
+  expanded sections reset on every date change, and follow the current section as the clock moves
+  until the user expands or collapses one by hand.
+- Text fields keep a local draft and write to the database on every keystroke (as iOS does); the
+  draft is replaced by the stored value only when the field isn't focused.
+
+Deviations and additions:
+
+- **Missed timed items stay visible.** On iOS, a pending timed item whose time has passed today is
+  excluded from every section (and nothing renders the "missed" list), so it appears to
+  vanish — logged as an unverified report in the iOS `known-bugs.md`. Android keeps these items in
+  their section, with the time and "MISSED" in orange, and counts them as still pending
+  (`DayContext.timedRows`; the iOS-style `deadlineRows` is kept and tested). Revisit if iOS
+  turns out to hide them deliberately.
+- **A show-completed toggle (eye icon) was pulled forward from "filters".** iOS hides completed
+  items by default and offers a filter menu to reveal them; without any toggle, Android would
+  have no way to see completed items. It is in-memory only (resets on relaunch).
+- No AI summaries: a collapsed card shows "N remaining" / "All done ✓" / "Nothing scheduled".
+- No date-picker button yet (only ← / → and go-to-today), no drag-and-drop between sections, and
+  no "Add item" entry points — those arrive with the item form in phase 5.
+- Menus are Material `DropdownMenu`s restyled as square paper panels; tapping a pill currently does
+  nothing (it will open the edit form in phase 5).
+- To try the screen before the form exists, rows can be inserted into the app's database over adb
+  (pull `databases/daily-flight-plan.db`, add rows with `sqlite3`, push it back), or use the
+  Compose `@Preview` with `SampleData`.

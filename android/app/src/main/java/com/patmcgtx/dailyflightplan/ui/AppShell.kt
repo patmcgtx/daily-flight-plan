@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.patmcgtx.dailyflightplan.ui.cockpit.CockpitScreen
+import com.patmcgtx.dailyflightplan.ui.cockpit.CockpitViewModel
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTextStyle
 
@@ -38,7 +39,7 @@ enum class AppTab(val label: String, val icon: ImageVector) {
 }
 
 @Composable
-fun AppShell() {
+fun AppShell(cockpitViewModel: CockpitViewModel) {
     val colors = CockpitStyle.colors
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Cockpit) }
 
@@ -84,7 +85,7 @@ fun AppShell() {
     ) { innerPadding ->
         Box(Modifier.padding(innerPadding).fillMaxSize()) {
             when (selectedTab) {
-                AppTab.Cockpit -> CockpitScreen()
+                AppTab.Cockpit -> CockpitScreen(cockpitViewModel)
                 AppTab.Maintenance -> ComingSoonScreen(AppTab.Maintenance.label)
                 AppTab.NavLog -> ComingSoonScreen(AppTab.NavLog.label)
             }

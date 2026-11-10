@@ -26,6 +26,14 @@ in (or confirmed) before it can be investigated as a real defect.
   retaining a prior `.routines` value across scene restoration/relaunch instead of starting
   fresh at `.cockpit`. Reproduce reliably (and note device/OS) before moving to Open.
 
+- **Timed items may vanish from the Cockpit tab once their deadline passes today** (found by
+  reading the code while porting to Android; not yet reproduced in the app): a pending timed item
+  whose clock time has passed is excluded by `DayViewModel.deadlineRows`/`sectionPills` (via
+  `isMissed`), and `CockpitView` has no "Missed" area that renders
+  `DayViewModel.missedDeadlineItems` — so it appears to drop out of every section while still
+  counting toward the progress totals. Reproduce by adding a timed item for a few minutes ahead,
+  letting that time pass, and checking whether it is still visible on today's Cockpit.
+
 ## Open
 
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added

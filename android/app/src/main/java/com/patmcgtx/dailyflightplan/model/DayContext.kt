@@ -3,6 +3,9 @@ package com.patmcgtx.dailyflightplan.model
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
+
+enum class RelativeDay { Yesterday, Today, Tomorrow }
 
 /**
  * The pure, clock-dependent logic behind a day's screen — the Android counterpart of the
@@ -28,6 +31,24 @@ class DayContext(
             return DaySection.entries.takeWhile { it != current }
         }
 
+    /** How [selectedDate] relates to today, or null for any other day. */
+    val relativeDay: RelativeDay?
+        get() = when (ChronoUnit.DAYS.between(now.toLocalDate(), selectedDate)) {
+            0L -> RelativeDay.Today
+            1L -> RelativeDay.Tomorrow
+            -1L -> RelativeDay.Yesterday
+            else -> null
+        }
+
+    /**
+     * True when viewing today, [section]'s window has already ended, and [sectionItems] still
+     * contains a pending item.
+     */
+    fun hasOverdue(section: DaySection, sectionItems: List<PlanItem>): Boolean {
+        val nowMinutes = now.hour * 60 + now.minute
+        return isToday && nowMinutes > section.endMinutes && sectionItems.any { it.status == ItemStatus.Pending }
+    }
+
     /**
      * True only for pending items with a specific clock time that has now passed, while viewing
      * today. Section-assigned items without a deadline stay in their section regardless of time.
@@ -42,17 +63,20 @@ class DayContext(
         items.filter { it.daySection == section && !isDeadlineMissed(it) }
 
     /**
-     * Unsectioned items whose deadline falls within [section] (excluding missed ones), earliest
-     * first.
+     * Unsectioned items whose deadline falls within [section], earliest first — *including*
+     * missed ones, which the Android Cockpit keeps visible (see [isDeadlineMissed] for styling).
      */
-    fun deadlineRows(section: DaySection, items: List<PlanItem>): List<PlanItem> =
+    fun timedRows(section: DaySection, items: List<PlanItem>): List<PlanItem> =
         items
             .filter { item ->
                 val deadline = item.deadline
-                deadline != null && item.daySection == null && !isDeadlineMissed(item) &&
-                    DaySection.containing(deadline) == section
+                deadline != null && item.daySection == null && DaySection.containing(deadline) == section
             }
             .sortedBy { it.deadline }
+
+    /** Like [timedRows] but excluding missed items, as the iOS day view does. */
+    fun deadlineRows(section: DaySection, items: List<PlanItem>): List<PlanItem> =
+        timedRows(section, items).filterNot(::isDeadlineMissed)
 
     /** Pending items whose specific deadline has passed, earliest first. */
     fun missedDeadlineItems(items: List<PlanItem>): List<PlanItem> =
