@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.patmcgtx.dailyflightplan.model.PlanItem
 import com.patmcgtx.dailyflightplan.model.Progress
+import com.patmcgtx.dailyflightplan.model.spokenStatus
 
 /** The "Open" card: items with no section and no time. Shown only when there's something in it. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -22,6 +23,7 @@ fun OpenCard(items: List<PlanItem>, onAddItem: () -> Unit, actions: ItemActions,
             progress = Progress.of(items),
             isCurrent = false,
             hasOverdue = false,
+            description = "Open, no specific time, ${Progress.of(items).spokenStatus()}",
         )
         PaperRule(alpha = 1f)
         AddItemLink(onAddItem)

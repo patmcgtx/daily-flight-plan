@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -57,20 +58,23 @@ fun DeadlineRow(item: PlanItem, actions: ItemActions, isMissed: Boolean, modifie
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .itemSemantics(item, actions, allowDefer = false, isMissed = isMissed)
                 .combinedClickable(
+                    onClickLabel = "Edit ${item.title}",
                     onClick = { actions.onOpen(item) },
+                    onLongClickLabel = "Show actions",
                     onLongClick = { menuOpen = true },
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .heightIn(min = 56.dp)
+                .padding(start = 5.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-            val checkColor = if (completed) colors.routeBlue else colors.border.copy(alpha = 0.5f)
+            // A 48dp touch target around the 26dp visual circle.
             Box(
                 modifier = Modifier
-                    .size(26.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .border(1.5.dp, checkColor, CircleShape)
                     .clickable(role = Role.Checkbox) { actions.onToggleCompleted(item) }
                     .semantics {
                         contentDescription =
@@ -78,8 +82,14 @@ fun DeadlineRow(item: PlanItem, actions: ItemActions, isMissed: Boolean, modifie
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                if (completed) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = colors.routeBlue, modifier = Modifier.size(14.dp))
+                val checkColor = if (completed) colors.routeBlue else colors.border.copy(alpha = 0.5f)
+                Box(
+                    modifier = Modifier.size(26.dp).border(1.5.dp, checkColor, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (completed) {
+                        Icon(Icons.Filled.Check, contentDescription = null, tint = colors.routeBlue, modifier = Modifier.size(14.dp))
+                    }
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.weight(1f)) {
@@ -92,7 +102,7 @@ fun DeadlineRow(item: PlanItem, actions: ItemActions, isMissed: Boolean, modifie
                 )
                 item.deadline?.let { time ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        val timeColor = if (isMissed) PaperAccents.overdue else colors.muted
+                        val timeColor = if (isMissed) colors.overdue else colors.muted
                         Icon(Icons.Outlined.Schedule, contentDescription = null, tint = timeColor, modifier = Modifier.size(12.dp))
                         Text(
                             text = time.formatShort() + if (isMissed) " · MISSED" else "",

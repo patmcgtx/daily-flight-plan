@@ -23,6 +23,37 @@ data class SectionModel(
     val hasContent: Boolean get() = pills.isNotEmpty() || deadlines.isNotEmpty()
 }
 
+/** What a screen reader says for a section card header, e.g. "Morning, 7:30 – 11 AM, current section, 2 of 3 done, overdue". */
+fun SectionModel.accessibilitySummary(): String = buildList {
+    add(section.displayName)
+    add(section.timeRangeLabel)
+    if (isCurrent) add("current section")
+    add(progress.spokenStatus())
+    if (hasOverdue) add("overdue")
+    if (hasFlaggedPending) add("has flagged items")
+}.joinToString(", ")
+
+/** "nothing scheduled", "all 3 done", or "2 of 3 done". */
+fun Progress.spokenStatus(): String = when {
+    total == 0 -> "nothing scheduled"
+    isAllDone -> "all $total done"
+    else -> "$completed of $total done"
+}
+
+/**
+ * What a screen reader should add to an item's name, since color and strikethrough don't carry
+ * over: "Flagged", "Completed", "Missed", combined with commas; null for a plain pending item.
+ */
+fun PlanItem.accessibilityState(isMissed: Boolean = false): String? = buildList {
+    when (status) {
+        ItemStatus.Completed -> add("Completed")
+        ItemStatus.Canceled -> add("Canceled")
+        ItemStatus.Pending -> Unit
+    }
+    if (isFlagged) add("Flagged")
+    if (isMissed) add("Missed")
+}.takeIf { it.isNotEmpty() }?.joinToString(", ")
+
 /**
  * Builds the [SectionModel] for [section]. [visible] is what the status filter lets through (it
  * decides what's drawn); [raw] is every non-canceled item (it decides the counts), matching the

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,6 +27,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.patmcgtx.dailyflightplan.model.Day
 import com.patmcgtx.dailyflightplan.model.DaySection
 import com.patmcgtx.dailyflightplan.model.Progress
+import com.patmcgtx.dailyflightplan.model.spokenStatus
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTextStyle
 import java.time.LocalDate
@@ -92,15 +95,21 @@ fun FlightStatusCard(
 @Composable
 private fun ProgressBox(progress: Progress) {
     val colors = CockpitStyle.colors
-    Box(Modifier.size(60.dp), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(60.dp)) {
+    // At least 60dp square, but grows with the text so large font sizes never overflow the box.
+    Box(
+        Modifier
+            .defaultMinSize(minWidth = 60.dp, minHeight = 60.dp)
+            .clearAndSetSemantics { contentDescription = "Flight progress, ${progress.spokenStatus()}" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.matchParentSize()) {
             drawRect(colors.border.copy(alpha = 0.25f), size = size)
             drawRect(colors.ink, size = Size(size.width * progress.fraction, size.height))
             val inset = 5.dp.toPx()
             drawRect(colors.surface, topLeft = Offset(inset, inset), size = Size(size.width - 2 * inset, size.height - 2 * inset))
             drawRect(colors.border, size = size, style = Stroke(1.dp.toPx()))
         }
-        Row(verticalAlignment = Alignment.Bottom) {
+        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(10.dp)) {
             Text(
                 "${progress.completed}",
                 style = CockpitStyle.mono(CockpitTextStyle.Title3, FontWeight.Bold),

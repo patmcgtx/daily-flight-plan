@@ -94,7 +94,7 @@ section list is stale): first thing 0:00–7:29, morning 7:30–10:59, midday 11
    briefing row, then the screen and day navigation.
 5. ✅ **Item form** — bottom sheet for add/edit, including section and deadline pickers, plus the
    "+" button and each card's "Add item" link, and wiring item taps to open the form.
-6. **Polish** — emulator pass, dark mode, accessibility labels, empty states.
+6. ✅ **Polish** — emulator pass, dark mode, accessibility labels, empty states.
 
 Follow-ups after v1: search and filters, settings, categories, then routines and the timeline.
 
@@ -206,7 +206,8 @@ Deviations and additions:
   items by default and offers a filter menu to reveal them; without any toggle, Android would
   have no way to see completed items. It is in-memory only (resets on relaunch).
 - No AI summaries: a collapsed card shows "N remaining" / "All done ✓" / "Nothing scheduled".
-- No date-picker button yet (only ← / → and go-to-today) and no drag-and-drop between sections.
+- No drag-and-drop between sections. (The date-picker button this note once listed as missing
+  was added in phase 6.)
 - Menus are Material `DropdownMenu`s restyled as square paper panels.
 - To try the screen with sample data without the form, rows can be inserted into the app's
   database over adb (pull `databases/daily-flight-plan.db`, add rows with `sqlite3`, push it
@@ -245,3 +246,48 @@ Deviations and limits:
   is modal, so nothing else can change the item meanwhile today; if that ever changes (e.g. sync),
   the save should re-read the item first, or it would overwrite the newer status.
 - The form's UI is verified by hand, not by automated UI tests; there are no Compose UI tests yet.
+
+**Phase 6 (polish) done** — 257 JVM tests plus 42 instrumented tests (14 DAO, 28 Compose UI) pass;
+checked by hand on the API 37 emulator in light, dark, 2x font scale, and landscape.
+
+- **Launcher icon.** Replaced the placeholder with the iOS artwork, rebuilt as adaptive layers: the
+  full-colour airplane and flight path are cut out of the iOS art (using the silhouette of the iOS
+  "tinted" template), a sunburst background is regenerated (the iOS art has the airplane baked in),
+  and the tinted template doubles as the monochrome layer for Android 13+ themed icons. Layers are
+  `res/drawable-nodpi/ic_launcher_{background,foreground,monochrome}.png`. They were generated with
+  a throwaway script (not kept in the repo); regenerate from `icon-light-1024.png` /
+  `icon-tinted-1024.png` if the iOS icon changes.
+- **Contrast.** Measured, not assumed: the light-mode status colors failed WCAG (orange 2.3:1,
+  green 3.2:1, red 3.9:1 on the card). `done`, `overdue`, and `now` are now theme colors with
+  values that clear 4.5:1 in both themes, and `ContrastTest` fails if any text or border pair in
+  either palette drops below 4.5:1 (text) or 3:1 (borders/icons).
+- **Screen readers.** Section headers read as buttons with an expanded/collapsed state and a spoken
+  summary ("Morning, 7:30 – 11 AM, current section, 1 of 3 done, overdue, has flagged items")
+  instead of the cryptic ring and "!" badge. Item rows announce Flagged / Completed / Canceled /
+  Missed (color and strikethrough carried that alone before) and expose Complete, Flag, Cancel, and
+  Defer as custom accessibility actions, so nothing depends on a long-press. The day heading is a
+  heading with a full spoken date; the flight progress box is read in words; the segment chips are
+  proper radio items that report which is selected. The spoken text is pure and unit-tested
+  (`AccessibilityTextTest`).
+- **Touch targets.** Complete circles are 40dp, the timed-row check is 48dp, the day arrows and
+  "Add item" links are 48dp, and segment chips are 44dp tall. Compose already widens any small
+  tappable element to a 48dp hit area, so a touch-bounds check can't fail; the tests measure
+  layout size for the controls we size ourselves.
+- **Empty states.** A day with nothing on it points at the "+" button. An expanded card whose items
+  are all done and hidden says "All done ✓ — Completed items are hidden" instead of "Nothing
+  scheduled".
+- **Date picker.** A calendar button in the top bar jumps to any day (shares its dialog with the
+  item form via `ui/form/PaperPickers.kt`).
+- **Large fonts and wide screens.** At 2x font scale the progress box grows with its text, the
+  briefing strip stacks instead of clipping its third item, tab labels cap at 1.3x so "Maintenance"
+  stays on one line, and card headers wrap by whole pieces instead of mid-word. Content is capped
+  at 640dp and centered in landscape and on tablets.
+- **Compose UI tests** (`CockpitContentTest`, `ItemFormSheetTest`) assert the semantics above, the
+  main actions, the empty states, and the form's behavior. They need Espresso 3.7.0 pinned in the
+  catalog: the version Compose's test library pulls in calls `InputManager.getInstance()`, which
+  no longer exists on Android 37, and fails every Compose test.
+
+Known gaps after v1: the "NOW ·" separator can dangle at the end of a wrapped header line at large
+font sizes; there is no automated screenshot/visual regression testing; behavior with TalkBack
+itself was reasoned from the semantics tree and not listened to; and everything listed under "Out"
+at the top of this document is still to do.

@@ -9,14 +9,15 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.automirrored.outlined.NextPlan
 import androidx.compose.material.icons.automirrored.outlined.StickyNote2
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,19 +33,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.patmcgtx.dailyflightplan.model.ItemStatus
 import com.patmcgtx.dailyflightplan.model.PlanItem
+import com.patmcgtx.dailyflightplan.model.accessibilityState
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTextStyle
 
 /** What the user can do to an item from the Cockpit. All callbacks receive the item they came from. */
 data class ItemActions(
-    /** Opens the item for editing (wired up with the item form in plan phase 5). */
+    /** Opens the item for editing. */
     val onOpen: (PlanItem) -> Unit = {},
     val onComplete: (PlanItem) -> Unit = {},
     val onToggleCompleted: (PlanItem) -> Unit = {},
@@ -70,6 +77,32 @@ fun itemTitleColors(item: PlanItem): Pair<Color, Modifier> {
     return textColor to highlight
 }
 
+/**
+ * Screen-reader semantics for an item row: its state in words (the yellow highlight, strikethrough
+ * and orange time don't carry over), plus the long-press actions as custom accessibility actions,
+ * since a long-press menu is awkward with a screen reader.
+ */
+fun Modifier.itemSemantics(
+    item: PlanItem,
+    actions: ItemActions,
+    allowDefer: Boolean,
+    isMissed: Boolean = false,
+): Modifier = semantics {
+    item.accessibilityState(isMissed)?.let { stateDescription = it }
+    customActions = buildList {
+        when (item.status) {
+            ItemStatus.Pending -> add(CustomAccessibilityAction("Complete") { actions.onComplete(item); true })
+            ItemStatus.Completed -> add(CustomAccessibilityAction("Mark not complete") { actions.onToggleCompleted(item); true })
+            ItemStatus.Canceled -> Unit
+        }
+        add(CustomAccessibilityAction(if (item.isFlagged) "Remove flag" else "Flag") { actions.onToggleFlag(item); true })
+        if (item.status != ItemStatus.Canceled) {
+            add(CustomAccessibilityAction("Cancel item") { actions.onCancel(item); true })
+        }
+        if (allowDefer) add(CustomAccessibilityAction("Defer to tomorrow") { actions.onDefer(item); true })
+    }
+}
+
 /** An untimed item: a bordered chip with a complete circle, a flag highlight, and a long-press menu. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -77,36 +110,46 @@ fun ItemPill(item: PlanItem, actions: ItemActions, modifier: Modifier = Modifier
     val colors = CockpitStyle.colors
     var menuOpen by remember { mutableStateOf(false) }
     val (titleColor, titleHighlight) = itemTitleColors(item)
+    val pending = item.status == ItemStatus.Pending
 
     Box(modifier) {
         Row(
             modifier = Modifier
                 .border(1.dp, colors.border)
+                .itemSemantics(item, actions, allowDefer = true)
                 .combinedClickable(
+                    onClickLabel = "Edit ${item.title}",
                     onClick = { actions.onOpen(item) },
+                    onLongClickLabel = "Show actions",
                     onLongClick = { menuOpen = true },
                 )
-                .padding(horizontal = 10.dp, vertical = 6.dp),
+                // 40dp tall so the complete circle is a comfortable touch target.
+                .heightIn(min = 40.dp)
+                .padding(start = if (pending) 2.dp else 10.dp, end = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            if (item.status == ItemStatus.Pending) {
-                Icon(
-                    imageVector = Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = "Complete ${item.title}",
-                    tint = colors.muted,
+            if (pending) {
+                Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .clickable(role = Role.Button) { actions.onComplete(item) }
-                        .padding(2.dp),
-                )
+                        .clickable(role = Role.Button) { actions.onComplete(item) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.RadioButtonUnchecked,
+                        contentDescription = "Complete ${item.title}",
+                        tint = colors.muted,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
             }
             Text(
                 text = item.title.uppercase(),
                 style = CockpitStyle.mono(CockpitTextStyle.Subheadline, FontWeight.SemiBold),
                 color = titleColor,
-                textDecoration = if (item.status != ItemStatus.Pending) TextDecoration.LineThrough else null,
+                textDecoration = if (!pending) TextDecoration.LineThrough else null,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = titleHighlight,
@@ -157,7 +200,7 @@ fun ItemContextMenu(
 }
 
 @Composable
-private fun MenuEntry(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+private fun MenuEntry(text: String, icon: ImageVector, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(text, style = CockpitStyle.mono(CockpitTextStyle.Subheadline)) },
         leadingIcon = { Icon(icon, contentDescription = null) },

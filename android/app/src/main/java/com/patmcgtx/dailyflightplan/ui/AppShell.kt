@@ -17,6 +17,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -24,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.patmcgtx.dailyflightplan.ui.cockpit.CockpitScreen
@@ -47,6 +50,11 @@ fun AppShell(cockpitViewModel: CockpitViewModel) {
         containerColor = colors.background,
         bottomBar = {
             Box {
+                // Tab labels stay readable but don't grow past 1.3x, or "Maintenance" no longer fits its tab.
+                val density = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, fontScale = density.fontScale.coerceAtMost(1.3f)),
+                ) {
                 NavigationBar(containerColor = colors.surface, contentColor = colors.ink) {
                     AppTab.entries.forEach { tab ->
                         NavigationBarItem(
@@ -71,6 +79,7 @@ fun AppShell(cockpitViewModel: CockpitViewModel) {
                             ),
                         )
                     }
+                }
                 }
                 // Hairline rule along the top edge, like the paper cards' borders.
                 Box(

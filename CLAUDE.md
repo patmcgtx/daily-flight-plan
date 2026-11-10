@@ -29,7 +29,9 @@ your flight plan. Combines one-off and recurring tasks, organized by time-of-day
   (`DayContext(selectedDate, now)`) rather than reading the real one. Test business rules on the
   JVM against fake DAOs (`PlanRepository` takes the DAO interfaces); only the SQL itself goes in
   instrumented tests (`src/androidTest`, JUnit 4, camelCase-sentence names since backticked names
-  with spaces aren't allowed there below minSdk 30).
+  with spaces aren't allowed there below minSdk 30). Compose UI tests there assert what a screen
+  reader sees (content descriptions, state descriptions, custom actions) and touch-target sizes —
+  keep Espresso pinned in the version catalog or every Compose test fails on Android 37.
 - Build/test from `android/` with `./gradlew :app:testDebugUnitTest` (JVM) and
   `./gradlew :app:connectedDebugAndroidTest` (needs a running emulator), using Android Studio's
   bundled JDK as `JAVA_HOME` (see the plan doc).

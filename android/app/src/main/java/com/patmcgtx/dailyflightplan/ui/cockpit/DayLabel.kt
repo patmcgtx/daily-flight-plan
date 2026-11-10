@@ -19,15 +19,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.patmcgtx.dailyflightplan.model.Briefing
 import com.patmcgtx.dailyflightplan.model.RelativeDay
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTextStyle
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
+
+private val spokenDateFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
 
 /** The big weekday heading flanked by ← / → buttons that step a day at a time. */
 @Composable
@@ -46,7 +54,12 @@ fun DayLabel(
     ) {
         DayArrowButton(Icons.Filled.ChevronLeft, "Previous day", onPrevious)
         Column(
-            Modifier.weight(1f),
+            Modifier
+                .weight(1f)
+                .clearAndSetSemantics {
+                    heading()
+                    contentDescription = Briefing.dayDescription(date, relativeDay, spokenDateFormatter)
+                },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -82,7 +95,7 @@ fun DayLabel(
 private fun DayArrowButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(40.dp)
+            .size(48.dp)
             .paperCard(shadowOffset = DpOffset(2.dp, 3.dp))
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,

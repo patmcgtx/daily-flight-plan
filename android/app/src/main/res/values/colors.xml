@@ -1,5 +1,4 @@
 <resources>
     <!-- Window background shown before Compose draws; matches CockpitStyle.background. -->
     <color name="window_background">#E9E5DA</color>
-    <color name="ic_launcher_background">#F2ED37</color>
 </resources>

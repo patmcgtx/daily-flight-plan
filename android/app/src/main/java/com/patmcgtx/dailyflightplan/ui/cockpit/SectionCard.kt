@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,19 +31,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.patmcgtx.dailyflightplan.model.Progress
 import com.patmcgtx.dailyflightplan.model.SectionModel
+import com.patmcgtx.dailyflightplan.model.accessibilitySummary
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTextStyle
-
-/** Status colors that read on both the cream and the dark paper. */
-object PaperAccents {
-    val done = Color(0xFF2E9E4F)
-    val overdue = Color(0xFFF08C00)
-    val now = Color(0xFFE53935)
-}
 
 /** One day section: collapsed to a one-line summary, or expanded to its pills and timed rows. */
 @Composable
@@ -54,7 +54,6 @@ fun SectionCard(
     actions: ItemActions,
     modifier: Modifier = Modifier,
 ) {
-    val colors = CockpitStyle.colors
     Column(
         modifier
             .paperCard(borderWidth = if (model.isCurrent) 2.5.dp else 1.5.dp)
@@ -67,14 +66,15 @@ fun SectionCard(
                 progress = model.progress,
                 isCurrent = model.isCurrent,
                 hasOverdue = model.hasOverdue,
-                onClick = onToggle,
-                onClickLabel = "Collapse ${model.section.displayName}",
+                description = model.accessibilitySummary(),
+                expanded = true,
+                onToggle = onToggle,
             )
             PaperRule(alpha = 1f)
             AddItemLink(onAddItem)
             SectionBody(model, actions)
         } else {
-            CollapsedHeader(model, onClick = onToggle)
+            CollapsedHeader(model, onToggle = onToggle)
         }
     }
 }
@@ -86,7 +86,8 @@ fun AddItemLink(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier
             .clickable(role = Role.Button, onClickLabel = "Add item", onClick = onClick)
-            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 2.dp),
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -100,10 +101,12 @@ fun AddItemLink(onClick: () -> Unit, modifier: Modifier = Modifier) {
 private fun SectionBody(model: SectionModel, actions: ItemActions) {
     val colors = CockpitStyle.colors
     if (!model.hasContent) {
+        // Nothing to draw: either the card is truly empty, or everything in it is done and hidden.
+        val allDone = model.progress.isAllDone
         Text(
-            text = "Nothing scheduled",
+            text = if (allDone) "All done ✓  Completed items are hidden" else "Nothing scheduled",
             style = CockpitStyle.mono(CockpitTextStyle.Subheadline),
-            color = colors.muted,
+            color = if (allDone) colors.done else colors.muted,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
         )
         return
@@ -132,12 +135,17 @@ private fun SectionBody(model: SectionModel, actions: ItemActions) {
         if (model.pills.isNotEmpty() && model.deadlines.isNotEmpty()) PaperRule()
         model.deadlines.forEachIndexed { index, item ->
             DeadlineRow(item, actions, isMissed = item.id in model.missedItemIds)
-            if (index != model.deadlines.lastIndex) PaperRule(Modifier.padding(start = 54.dp))
+            if (index != model.deadlines.lastIndex) PaperRule(Modifier.padding(start = 56.dp))
         }
     }
 }
 
-/** Title, subtitle, and progress ring — the top of an expanded card. */
+/**
+ * Title, subtitle, and progress ring — the top of an expanded card. [description] is what a screen
+ * reader says in place of the visual pieces (the ring and "!" badge are cryptic when read aloud);
+ * a non-null [onToggle] makes the header a collapse button.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CardHeader(
     title: String,
@@ -145,15 +153,34 @@ fun CardHeader(
     progress: Progress,
     isCurrent: Boolean,
     hasOverdue: Boolean,
+    description: String,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-    onClickLabel: String? = null,
+    expanded: Boolean? = null,
+    onToggle: (() -> Unit)? = null,
 ) {
     val colors = CockpitStyle.colors
     Row(
         modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick) else Modifier)
+            .then(
+                if (onToggle != null) {
+                    Modifier.clickable(
+                        onClickLabel = if (expanded == true) "Collapse" else "Expand",
+                        role = Role.Button,
+                        onClick = onToggle,
+                    )
+                } else {
+                    Modifier
+                },
+            )
+            .clearAndSetSemantics {
+                contentDescription = description
+                if (expanded != null) stateDescription = if (expanded) "Expanded" else "Collapsed"
+                if (onToggle != null) {
+                    role = Role.Button
+                    onClick(label = if (expanded == true) "Collapse" else "Expand") { onToggle(); true }
+                }
+            }
             .padding(16.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -165,10 +192,14 @@ fun CardHeader(
                 color = if (isCurrent) CockpitStyle.inkOnHighlighter else colors.ink.copy(alpha = 0.85f),
                 modifier = if (isCurrent) Modifier.background(colors.highlighter).padding(horizontal = 4.dp) else Modifier,
             )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            FlowRow(
+                itemVerticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
                 if (isCurrent) {
-                    Box(Modifier.size(6.dp).clip(CircleShape).background(PaperAccents.now))
-                    Text("NOW  ·", style = CockpitStyle.mono(CockpitTextStyle.Caption, FontWeight.Bold), color = PaperAccents.now)
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(colors.now))
+                    Text("NOW  ·", style = CockpitStyle.mono(CockpitTextStyle.Caption, FontWeight.Bold), color = colors.now)
                 }
                 Text(subtitle.uppercase(), style = CockpitStyle.mono(CockpitTextStyle.Caption), color = colors.muted)
             }
@@ -181,10 +212,10 @@ fun CardHeader(
 @Composable
 fun ProgressRing(progress: Progress, hasOverdue: Boolean, modifier: Modifier = Modifier) {
     val colors = CockpitStyle.colors
-    val ringColor = if (progress.isAllDone) PaperAccents.done else colors.ink
+    val ringColor = if (progress.isAllDone) colors.done else colors.ink
     val labelColor = when {
-        progress.isAllDone -> PaperAccents.done
-        hasOverdue -> PaperAccents.overdue
+        progress.isAllDone -> colors.done
+        hasOverdue -> colors.overdue
         else -> colors.muted
     }
     Box(modifier.size(56.dp), contentAlignment = Alignment.Center) {
@@ -218,20 +249,32 @@ fun ProgressRing(progress: Progress, hasOverdue: Boolean, modifier: Modifier = M
 }
 
 /** The one-line header of a collapsed card. (The iOS AI summary is replaced by a plain status line.) */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CollapsedHeader(model: SectionModel, onClick: () -> Unit) {
+private fun CollapsedHeader(model: SectionModel, onToggle: () -> Unit) {
     val colors = CockpitStyle.colors
     val progress = model.progress
+    val description = model.accessibilitySummary()
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = "Expand ${model.section.displayName}", role = Role.Button, onClick = onClick)
+            .clickable(onClickLabel = "Expand", role = Role.Button, onClick = onToggle)
+            .clearAndSetSemantics {
+                contentDescription = description
+                stateDescription = "Collapsed"
+                role = Role.Button
+                onClick(label = "Expand") { onToggle(); true }
+            }
             .padding(16.dp),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            FlowRow(
+                itemVerticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
                 Text(
                     text = model.section.displayName.uppercase(),
                     style = CockpitStyle.mono(CockpitTextStyle.Headline, FontWeight.Bold),
@@ -241,12 +284,12 @@ private fun CollapsedHeader(model: SectionModel, onClick: () -> Unit) {
                 Text("·", style = CockpitStyle.mono(CockpitTextStyle.Caption), color = colors.muted)
                 Text(model.section.timeRangeLabel.uppercase(), style = CockpitStyle.mono(CockpitTextStyle.Caption), color = colors.muted)
                 if (model.isCurrent) {
-                    Box(Modifier.size(5.dp).clip(CircleShape).background(PaperAccents.now))
-                    Text("NOW", style = CockpitStyle.mono(CockpitTextStyle.Caption, FontWeight.Bold), color = PaperAccents.now)
+                    Box(Modifier.size(5.dp).clip(CircleShape).background(colors.now))
+                    Text("NOW", style = CockpitStyle.mono(CockpitTextStyle.Caption, FontWeight.Bold), color = colors.now)
                 }
             }
             val (status, statusColor) = when {
-                progress.isAllDone -> "All done ✓" to PaperAccents.done
+                progress.isAllDone -> "All done ✓" to colors.done
                 progress.total > 0 -> "${progress.total - progress.completed} remaining" to colors.muted
                 else -> "Nothing scheduled" to colors.muted
             }
@@ -255,8 +298,8 @@ private fun CollapsedHeader(model: SectionModel, onClick: () -> Unit) {
         if (progress.total > 0) {
             val badgeColor = when {
                 model.hasFlaggedPending -> CockpitStyle.inkOnHighlighter
-                progress.isAllDone -> PaperAccents.done
-                model.hasOverdue -> PaperAccents.overdue
+                progress.isAllDone -> colors.done
+                model.hasOverdue -> colors.overdue
                 else -> colors.muted
             }
             val prefix = when {

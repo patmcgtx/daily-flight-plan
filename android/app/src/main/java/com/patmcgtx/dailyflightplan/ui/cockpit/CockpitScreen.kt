@@ -12,30 +12,39 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.GpsFixed
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.patmcgtx.dailyflightplan.model.DaySection
 import com.patmcgtx.dailyflightplan.ui.form.ItemFormSheet
+import com.patmcgtx.dailyflightplan.ui.form.PaperDatePickerDialog
+import com.patmcgtx.dailyflightplan.ui.theme.CockpitTextStyle
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTheme
@@ -45,6 +54,7 @@ data class CockpitActions(
     val onPreviousDay: () -> Unit = {},
     val onNextDay: () -> Unit = {},
     val onToday: () -> Unit = {},
+    val onPickDate: (LocalDate) -> Unit = {},
     val onToggleShowCompleted: () -> Unit = {},
     val onToggleSection: (DaySection) -> Unit = {},
     val onFlightNameChange: (String) -> Unit = {},
@@ -64,6 +74,7 @@ fun CockpitScreen(viewModel: CockpitViewModel, modifier: Modifier = Modifier) {
             onPreviousDay = viewModel::goToYesterday,
             onNextDay = viewModel::goToTomorrow,
             onToday = viewModel::goToToday,
+            onPickDate = viewModel::navigate,
             onToggleShowCompleted = viewModel::toggleShowCompleted,
             onToggleSection = viewModel::toggleSection,
             onFlightNameChange = viewModel::setFlightName,
@@ -109,27 +120,33 @@ fun CockpitContent(state: CockpitUiState, actions: CockpitActions, modifier: Mod
                     .weight(1f)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .imePadding()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .imePadding(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                DayLabel(state.date, state.context.relativeDay, actions.onPreviousDay, actions.onNextDay)
-                FlightStatusCard(state, actions.onFlightNameChange, actions.onIntentionChange)
-                BriefingRow(state)
-                state.sections.forEach { model ->
-                    SectionCard(
-                        model = model,
-                        expanded = model.section in state.expandedSections,
-                        onToggle = { actions.onToggleSection(model.section) },
-                        onAddItem = { actions.onAddItem(model.section) },
-                        actions = actions.items,
-                    )
+                // Cards stay a readable width on tablets and in landscape instead of stretching edge to edge.
+                Column(
+                    Modifier.widthIn(max = 640.dp).fillMaxWidth().padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    DayLabel(state.date, state.context.relativeDay, actions.onPreviousDay, actions.onNextDay)
+                    FlightStatusCard(state, actions.onFlightNameChange, actions.onIntentionChange)
+                    BriefingRow(state)
+                    if (state.raw.isEmpty()) EmptyDayHint()
+                    state.sections.forEach { model ->
+                        SectionCard(
+                            model = model,
+                            expanded = model.section in state.expandedSections,
+                            onToggle = { actions.onToggleSection(model.section) },
+                            onAddItem = { actions.onAddItem(model.section) },
+                            actions = actions.items,
+                        )
+                    }
+                    if (state.openItems.isNotEmpty()) {
+                        OpenCard(state.openItems, onAddItem = { actions.onAddItem(null) }, actions = actions.items)
+                    }
+                    // Room so the last card can scroll clear of the add button.
+                    Spacer(Modifier.height(88.dp))
                 }
-                if (state.openItems.isNotEmpty()) {
-                    OpenCard(state.openItems, onAddItem = { actions.onAddItem(null) }, actions = actions.items)
-                }
-                // Room so the last card can scroll clear of the add button.
-                Spacer(Modifier.height(88.dp))
             }
         }
         AddItemButton(
@@ -158,11 +175,15 @@ private fun AddItemButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun TopActions(state: CockpitUiState, actions: CockpitActions) {
     val colors = CockpitStyle.colors
+    var showDatePicker by remember { mutableStateOf(false) }
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        IconButton(onClick = { showDatePicker = true }) {
+            Icon(Icons.Outlined.CalendarMonth, contentDescription = "Pick a date", tint = colors.ink)
+        }
         if (!state.context.isToday) {
             IconButton(onClick = actions.onToday) {
                 Icon(Icons.Outlined.GpsFixed, contentDescription = "Go to today", tint = colors.ink)
@@ -176,6 +197,25 @@ private fun TopActions(state: CockpitUiState, actions: CockpitActions) {
             )
         }
     }
+    if (showDatePicker) {
+        PaperDatePickerDialog(
+            initial = state.date,
+            onConfirm = { actions.onPickDate(it); showDatePicker = false },
+            onDismiss = { showDatePicker = false },
+        )
+    }
+}
+
+/** Shown on a day with nothing on it yet, pointing at the way to add the first item. */
+@Composable
+private fun EmptyDayHint() {
+    Text(
+        text = "Nothing on this flight plan yet. Tap + to add your first item.",
+        style = CockpitStyle.mono(CockpitTextStyle.Subheadline),
+        color = CockpitStyle.colors.muted,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+    )
 }
 
 @Preview(name = "Light", showBackground = true, heightDp = 1600)

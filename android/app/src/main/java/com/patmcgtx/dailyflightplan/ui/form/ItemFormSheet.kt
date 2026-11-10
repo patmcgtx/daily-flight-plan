@@ -1,6 +1,5 @@
 package com.patmcgtx.dailyflightplan.ui.form
 
-import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,17 +12,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -31,10 +29,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,7 +45,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -64,10 +58,8 @@ import com.patmcgtx.dailyflightplan.ui.cockpit.PaperRule
 import com.patmcgtx.dailyflightplan.ui.cockpit.formatShort
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTextStyle
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -200,7 +192,6 @@ private fun TitleAndNotes(form: ItemFormState, isNew: Boolean, onChange: (ItemFo
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailsSection(form: ItemFormState, onChange: (ItemFormState) -> Unit) {
     var showDatePicker by remember { mutableStateOf(false) }
@@ -222,29 +213,13 @@ private fun DetailsSection(form: ItemFormState, onChange: (ItemFormState) -> Uni
     }
 
     if (showDatePicker) {
-        // The picker works in UTC midnights, so convert through epoch days to avoid time-zone drift.
-        val state = rememberDatePickerState(initialSelectedDateMillis = form.date.toEpochDay() * MILLIS_PER_DAY)
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        onChange(form.copy(date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()))
-                    }
-                    showDatePicker = false
-                }) { Text("OK", style = CockpitStyle.mono(CockpitTextStyle.Subheadline, FontWeight.Bold)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("CANCEL", style = CockpitStyle.mono(CockpitTextStyle.Subheadline), color = CockpitStyle.colors.muted)
-                }
-            },
-            shape = RectangleShape,
-        ) { DatePicker(state = state) }
+        PaperDatePickerDialog(
+            initial = form.date,
+            onConfirm = { onChange(form.copy(date = it)); showDatePicker = false },
+            onDismiss = { showDatePicker = false },
+        )
     }
 }
-
-private const val MILLIS_PER_DAY = 86_400_000L
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -283,38 +258,12 @@ private fun ScheduleSection(form: ItemFormState, onChange: (ItemFormState) -> Un
     }
 
     if (showTimePicker) {
-        TimeDialog(
+        PaperTimePickerDialog(
             initial = form.deadline,
             onConfirm = { onChange(form.copy(deadline = it)); showTimePicker = false },
             onDismiss = { showTimePicker = false },
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TimeDialog(initial: LocalTime, onConfirm: (LocalTime) -> Unit, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val state = rememberTimePickerState(
-        initialHour = initial.hour,
-        initialMinute = initial.minute,
-        is24Hour = DateFormat.is24HourFormat(context),
-    )
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RectangleShape,
-        confirmButton = {
-            TextButton(onClick = { onConfirm(LocalTime.of(state.hour, state.minute)) }) {
-                Text("OK", style = CockpitStyle.mono(CockpitTextStyle.Subheadline, FontWeight.Bold))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("CANCEL", style = CockpitStyle.mono(CockpitTextStyle.Subheadline), color = CockpitStyle.colors.muted)
-            }
-        },
-        text = { TimePicker(state = state) },
-    )
 }
 
 // region Building blocks
@@ -422,8 +371,10 @@ private fun PaperChip(label: String, selected: Boolean, onClick: () -> Unit) {
         Modifier
             .border(1.dp, colors.border)
             .background(if (selected) colors.highlighter else androidx.compose.ui.graphics.Color.Transparent)
-            .clickable(role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             label.uppercase(),

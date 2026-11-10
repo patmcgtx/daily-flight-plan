@@ -26,6 +26,10 @@ data class CockpitColors(
     val highlighter: Color,
     val routeBlue: Color,
     val shadow: Color,
+    /** Status text/ring colors. Each theme's value meets 4.5:1 against its surface (see `ContrastTest`). */
+    val done: Color,
+    val overdue: Color,
+    val now: Color,
 )
 
 val LightCockpitColors = CockpitColors(
@@ -37,6 +41,9 @@ val LightCockpitColors = CockpitColors(
     highlighter = Color(0xFFF2ED37),
     routeBlue = Color(0xFF51699A),
     shadow = Color.Black.copy(alpha = 0.18f),
+    done = Color(0xFF1B7A3B),
+    overdue = Color(0xFFA85600),
+    now = Color(0xFFC62828),
 )
 
 val DarkCockpitColors = CockpitColors(
@@ -48,6 +55,9 @@ val DarkCockpitColors = CockpitColors(
     highlighter = Color(0xFFF1C84C),
     routeBlue = Color(0xFF7FA9DC),
     shadow = Color.Black.copy(alpha = 0.18f),
+    done = Color(0xFF4CC46E),
+    overdue = Color(0xFFF5A524),
+    now = Color(0xFFFF6B6B),
 )
 
 val LocalCockpitColors = staticCompositionLocalOf { LightCockpitColors }

@@ -19,6 +19,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.patmcgtx.dailyflightplan.model.Briefing
@@ -42,23 +43,35 @@ private fun rememberTickingTime(): State<ZonedDateTime> = produceState(ZonedDate
  */
 @Composable
 fun BriefingRow(state: CockpitUiState, modifier: Modifier = Modifier) {
+    // Three items side by side only fit at normal font sizes; at large sizes they stack instead of clipping.
+    val stacked = LocalDensity.current.fontScale > 1.3f
     Column(modifier.fillMaxWidth()) {
         PaperRule()
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        @Composable
+        fun Items() {
             if (state.context.isToday) {
                 val time by rememberTickingTime()
                 BriefingItem(Icons.Outlined.Schedule, time.toLocalTime().formatShort())
-                PaperVerticalRule()
+                if (!stacked) PaperVerticalRule()
                 BriefingItem(Icons.Outlined.HourglassBottom, Briefing.remainingLabel(time))
             } else {
                 BriefingItem(null, Briefing.dayBlurb(state.date, state.now.toLocalDate()))
             }
-            PaperVerticalRule()
+            if (!stacked) PaperVerticalRule()
             BriefingItem(Icons.Outlined.AutoAwesome, Briefing.priorityLabel(state.priorityCount))
+        }
+        if (stacked) {
+            Column(
+                Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) { Items() }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) { Items() }
         }
         PaperRule()
     }

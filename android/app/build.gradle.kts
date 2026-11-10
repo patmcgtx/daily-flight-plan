@@ -64,8 +64,14 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    // DAO tests run on a device/emulator against a real in-memory SQLite database.
+    // DAO tests run on a device/emulator against a real in-memory SQLite database; Compose UI tests
+    // check the Cockpit screen's semantics (what a screen reader sees) and touch targets.
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.core.ktx)
+    // Compose's test library pulls in an Espresso too old to run on Android 37; pin a newer one.
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
