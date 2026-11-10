@@ -39,6 +39,7 @@ A native Android port of Daily Flight Plan, starting with a deliberately small f
 | State | `ViewModel` + `StateFlow` | `@Observable` ViewModels |
 | DI | Plain constructor injection (no Hilt yet) | `@Environment` + `@Entry` |
 | Fonts | IBM Plex Mono `.ttf` in `res/font` | Bundled fonts |
+| Unit tests | JUnit 5 (Jupiter) with `@ParameterizedTest` | Swift Testing |
 
 - **Package / application ID:** `com.patmcgtx.dailyflightplan`
 - **minSdk 26** (`java.time` without desugaring); compileSdk/targetSdk to match the installed
@@ -64,9 +65,12 @@ Day                          // per-day customizations; created lazily on first 
     flightName: String       // "" means the default "DFP YYYYMMDD"
     intention: String        // the day's "destination" note
 
-enum DaySection: FIRST_THING, MORNING, MIDDAY, AFTERNOON, EVENING, BEDTIME
-enum ItemStatus: PENDING, COMPLETED, CANCELED
+enum DaySection: FirstThing, Morning, Midday, Afternoon, Evening, Bedtime
+enum ItemStatus: Pending, Completed, Canceled
 ```
+
+(`Day` has no `modifiedAt`, unlike iOS, since it only existed to pick a winner among duplicate
+rows.)
 
 Deliberately omitted from the iOS model: `sourceID`, `template`, `instances`,
 `recurringWeekdays`, `isTemplate`, `reminderIdentifier`, `categories`. Add them back via Room
@@ -81,7 +85,7 @@ section list is stale): first thing 0:00–7:29, morning 7:30–10:59, midday 11
 
 1. ✅ **Scaffold** — Empty Compose project in `android/`, 3-tab shell with placeholders, theme
    tokens ported from `Theming/CockpitStyle.swift`, bundled font, light/dark.
-2. **Pure logic + tests** — `DaySection`, flight-number formatting, and the section-grouping /
+2. ✅ **Pure logic + tests** — `DaySection`, flight-number formatting, and the section-grouping /
    `nextUpcomingDeadline` / `outstandingFlaggedCount` helpers from `DayViewModel`. The iOS tests
    (`DaySectionTests`, `DayViewModelTests`, `DayTests`) are the specs.
 3. **Room layer** — entities, DAOs, in-memory database for tests.
@@ -123,3 +127,21 @@ Notes and deviations:
 - Icons come from `material-icons-extended`. The launcher icon is a placeholder (black airplane on
   highlighter yellow); replace it per `DailyFlightPlan/docs/app-icon.md` later.
 - The iOS `architecture.md` lists stale section times; `DaySection.swift` is the source of truth.
+
+**Phase 2 (pure logic + tests) done** — 96 JUnit tests pass (`./gradlew :app:testDebugUnitTest`).
+
+- New code is in `app/src/main/java/.../model/`: `DaySection`, `ItemStatus`, `PlanItem` (plain
+  data class for now; Room annotations arrive in phase 3), `Day`, and `DayContext`.
+- `DayContext(selectedDate, now)` is the stateless counterpart of the iOS `DayViewModel`'s logic:
+  `isToday`, `currentSection`, `pastSections`, `isDeadlineMissed`, `sectionPills`, `deadlineRows`,
+  `missedDeadlineItems`, `anyTimeItems`, `nextUpcomingDeadline`, `outstandingFlaggedCount`. Both
+  the date and the clock are injected, so tests never depend on the wall clock (the iOS tests
+  mix a fixed clock with the real "today"). The phase 4 view model will wrap it with a live clock.
+- Deadlines are `LocalTime` on the item's `date` (iOS stores a full `Date`), so "deferring to
+  tomorrow" only changes `date`.
+- `Day.withFlightName` caps at 24 Unicode code points, where iOS caps at 24 characters
+  (grapheme clusters); they differ only for multi-code-point emoji/accents.
+- Tests use JUnit 5 rather than JUnit 4, which has no clean parameterized-test support.
+- Not ported on purpose: date navigation (`goToYesterday` etc., trivial — tested with the phase 4
+  view model), collapse state, search/status filters (post-v1), and everything tied to routines,
+  calendar/reminders, or AI summaries.

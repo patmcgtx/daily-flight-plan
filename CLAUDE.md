@@ -21,9 +21,14 @@ your flight plan. Combines one-off and recurring tasks, organized by time-of-day
   truth for look, feel, and behavior. Everything above describes the iOS app unless stated.
 - After completing an Android phase, mark it ✅ in `android/docs/android-port-plan.md` and note
   deviations — not in the iOS `implementation-plan.md`.
-- Android tests use JUnit with plain-English backtick names (e.g.
-  ``fun `containing resolves the correct section at each boundary minute`()``), and prefer
-  parameterized cases over near-identical tests — mirroring the Swift Testing conventions below.
+- Android tests use JUnit 5 with plain-English backtick names (e.g.
+  ``fun `Containing resolves the correct section at each boundary minute`()``; avoid `.` `:` `[`
+  `]` `/` in names — the JVM rejects them), and prefer `@ParameterizedTest` + `@MethodSource` over
+  near-identical tests — mirroring the Swift Testing conventions below. See
+  `android/app/src/test/.../model/DaySectionTest.kt` for the reference pattern. Inject the clock
+  (`DayContext(selectedDate, now)`) rather than reading the real one.
+- Build/test from `android/` with `./gradlew :app:testDebugUnitTest`, using Android Studio's
+  bundled JDK as `JAVA_HOME` (see the plan doc).
 
 ## Reference architecture
 Mirror the MapsPlus app: https://github.com/patmcgtx/mapplus
