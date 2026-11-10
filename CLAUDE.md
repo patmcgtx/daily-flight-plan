@@ -13,6 +13,17 @@ your flight plan. Combines one-off and recurring tasks, organized by time-of-day
 - **Known bugs**: `DailyFlightPlan/docs/known-bugs.md` — specific, reproducible defects (Open);
   entries are removed outright once fixed rather than moved to a "Fixed" section; separate from
   the roadmap/phase narrative in the build plan
+- **Android port plan**: `android/docs/android-port-plan.md` — scope, stack, data model, and
+  phases for the native Android app (Kotlin + Jetpack Compose + Room) in `android/`
+
+## Android port
+- Lives in `android/` (package `com.patmcgtx.dailyflightplan`); the iOS app stays the source of
+  truth for look, feel, and behavior. Everything above describes the iOS app unless stated.
+- After completing an Android phase, mark it ✅ in `android/docs/android-port-plan.md` and note
+  deviations — not in the iOS `implementation-plan.md`.
+- Android tests use JUnit with plain-English backtick names (e.g.
+  ``fun `containing resolves the correct section at each boundary minute`()``), and prefer
+  parameterized cases over near-identical tests — mirroring the Swift Testing conventions below.
 
 ## Reference architecture
 Mirror the MapsPlus app: https://github.com/patmcgtx/mapplus
