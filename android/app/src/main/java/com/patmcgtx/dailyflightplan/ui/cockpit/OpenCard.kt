@@ -14,7 +14,7 @@ import com.patmcgtx.dailyflightplan.model.Progress
 /** The "Open" card: items with no section and no time. Shown only when there's something in it. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun OpenCard(items: List<PlanItem>, actions: ItemActions, modifier: Modifier = Modifier) {
+fun OpenCard(items: List<PlanItem>, onAddItem: () -> Unit, actions: ItemActions, modifier: Modifier = Modifier) {
     Column(modifier.paperCard()) {
         CardHeader(
             title = "Open",
@@ -24,10 +24,11 @@ fun OpenCard(items: List<PlanItem>, actions: ItemActions, modifier: Modifier = M
             hasOverdue = false,
         )
         PaperRule(alpha = 1f)
+        AddItemLink(onAddItem)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 14.dp),
         ) {
             items.forEach { ItemPill(it, actions) }
         }

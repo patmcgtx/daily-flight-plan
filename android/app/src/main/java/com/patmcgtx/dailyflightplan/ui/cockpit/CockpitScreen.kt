@@ -14,7 +14,10 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.GpsFixed
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -25,10 +28,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.patmcgtx.dailyflightplan.model.DaySection
+import com.patmcgtx.dailyflightplan.ui.form.ItemFormSheet
+import java.time.temporal.ChronoUnit
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitStyle
 import com.patmcgtx.dailyflightplan.ui.theme.CockpitTheme
 
@@ -41,6 +49,8 @@ data class CockpitActions(
     val onToggleSection: (DaySection) -> Unit = {},
     val onFlightNameChange: (String) -> Unit = {},
     val onIntentionChange: (String) -> Unit = {},
+    /** Opens a blank form; the section presets its segment (null means Open). */
+    val onAddItem: (DaySection?) -> Unit = {},
     val items: ItemActions = ItemActions(),
 )
 
@@ -48,6 +58,7 @@ data class CockpitActions(
 @Composable
 fun CockpitScreen(viewModel: CockpitViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val formTarget by viewModel.formTarget.collectAsStateWithLifecycle()
     val actions = remember(viewModel) {
         CockpitActions(
             onPreviousDay = viewModel::goToYesterday,
@@ -57,7 +68,9 @@ fun CockpitScreen(viewModel: CockpitViewModel, modifier: Modifier = Modifier) {
             onToggleSection = viewModel::toggleSection,
             onFlightNameChange = viewModel::setFlightName,
             onIntentionChange = viewModel::setIntention,
+            onAddItem = viewModel::openNewItemForm,
             items = ItemActions(
+                onOpen = viewModel::openEditForm,
                 onComplete = viewModel::complete,
                 onToggleCompleted = viewModel::toggleCompleted,
                 onToggleFlag = viewModel::toggleFlag,
@@ -73,6 +86,14 @@ fun CockpitScreen(viewModel: CockpitViewModel, modifier: Modifier = Modifier) {
         Box(modifier.fillMaxSize().background(CockpitStyle.colors.background))
     } else {
         CockpitContent(current, actions, modifier)
+        formTarget?.let { target ->
+            ItemFormSheet(
+                target = target,
+                defaultTime = current.now.toLocalTime().truncatedTo(ChronoUnit.MINUTES),
+                onSave = viewModel::saveItem,
+                onDismiss = viewModel::dismissForm,
+            )
+        }
     }
 }
 
@@ -80,33 +101,56 @@ fun CockpitScreen(viewModel: CockpitViewModel, modifier: Modifier = Modifier) {
 @Composable
 fun CockpitContent(state: CockpitUiState, actions: CockpitActions, modifier: Modifier = Modifier) {
     val colors = CockpitStyle.colors
-    Column(modifier.fillMaxSize().background(colors.background)) {
-        TopActions(state, actions)
-        Column(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            DayLabel(state.date, state.context.relativeDay, actions.onPreviousDay, actions.onNextDay)
-            FlightStatusCard(state, actions.onFlightNameChange, actions.onIntentionChange)
-            BriefingRow(state)
-            state.sections.forEach { model ->
-                SectionCard(
-                    model = model,
-                    expanded = model.section in state.expandedSections,
-                    onToggle = { actions.onToggleSection(model.section) },
-                    actions = actions.items,
-                )
+    Box(modifier.fillMaxSize().background(colors.background)) {
+        Column(Modifier.fillMaxSize()) {
+            TopActions(state, actions)
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                DayLabel(state.date, state.context.relativeDay, actions.onPreviousDay, actions.onNextDay)
+                FlightStatusCard(state, actions.onFlightNameChange, actions.onIntentionChange)
+                BriefingRow(state)
+                state.sections.forEach { model ->
+                    SectionCard(
+                        model = model,
+                        expanded = model.section in state.expandedSections,
+                        onToggle = { actions.onToggleSection(model.section) },
+                        onAddItem = { actions.onAddItem(model.section) },
+                        actions = actions.items,
+                    )
+                }
+                if (state.openItems.isNotEmpty()) {
+                    OpenCard(state.openItems, onAddItem = { actions.onAddItem(null) }, actions = actions.items)
+                }
+                // Room so the last card can scroll clear of the add button.
+                Spacer(Modifier.height(88.dp))
             }
-            if (state.openItems.isNotEmpty()) {
-                OpenCard(state.openItems, actions.items)
-            }
-            Spacer(Modifier.height(40.dp))
         }
+        AddItemButton(
+            onClick = { actions.onAddItem(null) },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp),
+        )
+    }
+}
+
+/** The floating "+": a square highlighter-yellow key with a hard shadow, like everything else here. */
+@Composable
+private fun AddItemButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .size(56.dp)
+            .paperCard(fill = CockpitStyle.colors.highlighter)
+            .clickable(role = Role.Button, onClickLabel = "Add item", onClick = onClick)
+            .semantics { contentDescription = "Add item" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Outlined.Add, contentDescription = null, tint = CockpitStyle.inkOnHighlighter)
     }
 }
 

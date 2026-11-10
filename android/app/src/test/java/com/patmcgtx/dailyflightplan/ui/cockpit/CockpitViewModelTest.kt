@@ -5,6 +5,8 @@ import com.patmcgtx.dailyflightplan.data.FakePlanItemDao
 import com.patmcgtx.dailyflightplan.data.PlanRepository
 import com.patmcgtx.dailyflightplan.model.Day
 import com.patmcgtx.dailyflightplan.model.DaySection
+import com.patmcgtx.dailyflightplan.model.ItemFormState
+import com.patmcgtx.dailyflightplan.model.ItemFormTarget
 import com.patmcgtx.dailyflightplan.model.ItemStatus
 import com.patmcgtx.dailyflightplan.model.PlanItem
 import java.time.Clock
@@ -269,6 +271,91 @@ class CockpitViewModelTest {
         add("C", status = ItemStatus.Canceled)
         assertEquals(1, viewModel.state().progress.completed)
         assertEquals(2, viewModel.state().progress.total)
+    }
+
+    // endregion
+
+    // region Item form
+
+    private fun CockpitViewModel.blankForm(date: LocalDate = today) =
+        ItemFormState.forNew(date, defaultTime = LocalTime.of(9, 0))
+
+    @Test
+    fun `No form is open at first`() = runTest {
+        assertNull(viewModel().formTarget.value)
+    }
+
+    @Test
+    fun `openNewItemForm targets the selected day and the given section`() = runTest {
+        val viewModel = viewModel()
+        viewModel.goToTomorrow()
+        viewModel.openNewItemForm(DaySection.Evening)
+        assertEquals(ItemFormTarget.New(tomorrow, DaySection.Evening), viewModel.formTarget.value)
+        viewModel.openNewItemForm()
+        assertEquals(ItemFormTarget.New(tomorrow, null), viewModel.formTarget.value)
+    }
+
+    @Test
+    fun `openEditForm targets the item and dismissForm closes it`() = runTest {
+        val viewModel = viewModel()
+        val item = add()
+        viewModel.openEditForm(item)
+        assertEquals(ItemFormTarget.Edit(item), viewModel.formTarget.value)
+        viewModel.dismissForm()
+        assertNull(viewModel.formTarget.value)
+    }
+
+    @Test
+    fun `Saving a new form adds the item and closes the form`() = runTest {
+        val viewModel = viewModel()
+        viewModel.openNewItemForm(DaySection.Evening)
+        viewModel.saveItem(viewModel.blankForm().copy(title = "  Cook  ", daySection = DaySection.Evening))
+
+        assertNull(viewModel.formTarget.value)
+        val saved = viewModel.state().items.single()
+        assertEquals("Cook", saved.title)
+        assertEquals(DaySection.Evening, saved.daySection)
+        assertEquals(today, saved.date)
+    }
+
+    @Test
+    fun `Saving a new form with another date puts the item on that day`() = runTest {
+        val viewModel = viewModel()
+        viewModel.openNewItemForm()
+        viewModel.saveItem(viewModel.blankForm(date = tomorrow).copy(title = "Later"))
+
+        assertEquals(emptyList<PlanItem>(), viewModel.state().items)
+        viewModel.goToTomorrow()
+        assertEquals("Later", viewModel.state().items.single().title)
+    }
+
+    @Test
+    fun `Saving an edit updates the item in place and keeps its status`() = runTest {
+        val viewModel = viewModel()
+        val item = add("Old", status = ItemStatus.Completed)
+        viewModel.openEditForm(item)
+        viewModel.saveItem(ItemFormState.from(item, LocalTime.NOON).copy(title = "New", isFlagged = true))
+
+        assertNull(viewModel.formTarget.value)
+        assertEquals(1, itemDao.all.size)
+        assertEquals(item.copy(title = "New", isFlagged = true), itemDao.get(item.id))
+    }
+
+    @Test
+    fun `Saving a blank title saves nothing and leaves the form open`() = runTest {
+        val viewModel = viewModel()
+        viewModel.openNewItemForm()
+        viewModel.saveItem(viewModel.blankForm().copy(title = "   "))
+
+        assertEquals(emptyList<PlanItem>(), itemDao.all)
+        assertEquals(ItemFormTarget.New(today, null), viewModel.formTarget.value)
+    }
+
+    @Test
+    fun `Saving with no form open does nothing`() = runTest {
+        val viewModel = viewModel()
+        viewModel.saveItem(viewModel.blankForm().copy(title = "Orphan"))
+        assertEquals(emptyList<PlanItem>(), itemDao.all)
     }
 
     // endregion

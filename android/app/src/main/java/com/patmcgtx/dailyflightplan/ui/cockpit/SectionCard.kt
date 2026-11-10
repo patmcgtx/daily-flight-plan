@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ViewTimeline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -49,6 +50,7 @@ fun SectionCard(
     model: SectionModel,
     expanded: Boolean,
     onToggle: () -> Unit,
+    onAddItem: () -> Unit,
     actions: ItemActions,
     modifier: Modifier = Modifier,
 ) {
@@ -69,10 +71,27 @@ fun SectionCard(
                 onClickLabel = "Collapse ${model.section.displayName}",
             )
             PaperRule(alpha = 1f)
+            AddItemLink(onAddItem)
             SectionBody(model, actions)
         } else {
             CollapsedHeader(model, onClick = onToggle)
         }
+    }
+}
+
+/** "+ ADD ITEM" at the top of an expanded card. */
+@Composable
+fun AddItemLink(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = CockpitStyle.colors
+    Row(
+        modifier
+            .clickable(role = Role.Button, onClickLabel = "Add item", onClick = onClick)
+            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(Icons.Outlined.Add, contentDescription = null, tint = colors.ink, modifier = Modifier.size(14.dp))
+        Text("ADD ITEM", style = CockpitStyle.mono(CockpitTextStyle.Caption, FontWeight.SemiBold), color = colors.ink)
     }
 }
 

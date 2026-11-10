@@ -92,7 +92,7 @@ section list is stale): first thing 0:00–7:29, morning 7:30–10:59, midday 11
 3. ✅ **Room layer** — entities, DAOs, in-memory database for tests.
 4. ✅ **Cockpit UI** — built bottom-up: pill, deadline row, section card, Flight Status card,
    briefing row, then the screen and day navigation.
-5. **Item form** — bottom sheet for add/edit, including section and deadline pickers, plus the
+5. ✅ **Item form** — bottom sheet for add/edit, including section and deadline pickers, plus the
    "+" button and each card's "Add item" link, and wiring item taps to open the form.
 6. **Polish** — emulator pass, dark mode, accessibility labels, empty states.
 
@@ -206,10 +206,42 @@ Deviations and additions:
   items by default and offers a filter menu to reveal them; without any toggle, Android would
   have no way to see completed items. It is in-memory only (resets on relaunch).
 - No AI summaries: a collapsed card shows "N remaining" / "All done ✓" / "Nothing scheduled".
-- No date-picker button yet (only ← / → and go-to-today), no drag-and-drop between sections, and
-  no "Add item" entry points — those arrive with the item form in phase 5.
-- Menus are Material `DropdownMenu`s restyled as square paper panels; tapping a pill currently does
-  nothing (it will open the edit form in phase 5).
-- To try the screen before the form exists, rows can be inserted into the app's database over adb
-  (pull `databases/daily-flight-plan.db`, add rows with `sqlite3`, push it back), or use the
-  Compose `@Preview` with `SampleData`.
+- No date-picker button yet (only ← / → and go-to-today) and no drag-and-drop between sections.
+- Menus are Material `DropdownMenu`s restyled as square paper panels.
+- To try the screen with sample data without the form, rows can be inserted into the app's
+  database over adb (pull `databases/daily-flight-plan.db`, add rows with `sqlite3`, push it
+  back), or use the Compose `@Preview` with `SampleData`.
+
+**Phase 5 (item form) done** — 220 JVM tests plus 14 instrumented DAO tests pass; verified by hand
+on the emulator by creating, editing, and moving items entirely through the UI (no seeded data),
+including the time and date pickers and rotating the device with the form open.
+
+- `model/ItemFormState` holds the form's fields and rules, and is unit-tested
+  (`ItemFormStateTest`, ported from the iOS `ItemFormViewModelTests` minus routines/categories):
+  a blank title can't be saved; the title is trimmed and notes kept as typed; a timed item has no
+  section and its time is cut to the minute; an untimed item has no time; an edit keeps the item's
+  id and status. `ItemFormTarget` says which form is open (`New(date, section?)` or `Edit(item)`).
+- `CockpitViewModel` owns `formTarget` (so the open form survives rotation) with
+  `openNewItemForm`, `openEditForm`, `dismissForm`, and `saveItem`; saving with no form open, or
+  with a blank title, does nothing.
+- `ui/form/ItemFormSheet`: a Material `ModalBottomSheet` in the paper style with title, notes,
+  date, flagged, a "specific time" switch (time picker) or a segment chooser (Open plus the six
+  sections). The draft lives in the composable via `rememberSaveable` with a custom saver, so typing
+  is instant and a half-filled form survives rotation. A new item's title is focused on open.
+- Entry points: the yellow "+" key (Open segment), each expanded card's "+ ADD ITEM" (preselects
+  that segment) and the Open card's link, and tapping any pill or timed row (edit).
+- The Material color scheme is now fully derived from the Cockpit tokens (`CockpitTheme`), so the
+  date picker, time picker, switches, and sheet match instead of showing Material's default purple.
+- New items default to Open on the day being viewed; a new timed item's time defaults to the
+  current time.
+
+Deviations and limits:
+
+- The date and time pickers are the stock Material ones (themed, but in Roboto rather than
+  Plex Mono); the iOS app uses its native graphical pickers.
+- There is no delete in the form, as on iOS; "Cancel Item" in the long-press menu is how an item
+  goes away. Canceled items stay in the database and show again with the eye toggle.
+- An edit saves the item as it was when the form opened, with the form's fields applied. The sheet
+  is modal, so nothing else can change the item meanwhile today; if that ever changes (e.g. sync),
+  the save should re-read the item first, or it would overwrite the newer status.
+- The form's UI is verified by hand, not by automated UI tests; there are no Compose UI tests yet.

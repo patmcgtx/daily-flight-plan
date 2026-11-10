@@ -6,6 +6,8 @@ import com.patmcgtx.dailyflightplan.data.PlanRepository
 import com.patmcgtx.dailyflightplan.model.Day
 import com.patmcgtx.dailyflightplan.model.DayContext
 import com.patmcgtx.dailyflightplan.model.DaySection
+import com.patmcgtx.dailyflightplan.model.ItemFormState
+import com.patmcgtx.dailyflightplan.model.ItemFormTarget
 import com.patmcgtx.dailyflightplan.model.ItemStatus
 import com.patmcgtx.dailyflightplan.model.PlanItem
 import com.patmcgtx.dailyflightplan.model.Progress
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -98,6 +101,37 @@ class CockpitViewModel(
                 ?: defaultExpanded(data.date, now),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    // region Item form
+
+    private val _formTarget = MutableStateFlow<ItemFormTarget?>(null)
+
+    /** The add/edit form currently open, if any. It lives here so it survives rotation. */
+    val formTarget: StateFlow<ItemFormTarget?> = _formTarget.asStateFlow()
+
+    /** Opens a blank form for the selected day, optionally preset to [section]. */
+    fun openNewItemForm(section: DaySection? = null) {
+        _formTarget.value = ItemFormTarget.New(selectedDate.value, section)
+    }
+
+    fun openEditForm(item: PlanItem) {
+        _formTarget.value = ItemFormTarget.Edit(item)
+    }
+
+    fun dismissForm() {
+        _formTarget.value = null
+    }
+
+    /** Saves [form] as a new item or as an edit of the open item, then closes the form. A blank title saves nothing. */
+    fun saveItem(form: ItemFormState) {
+        val target = _formTarget.value ?: return
+        val existing = (target as? ItemFormTarget.Edit)?.item
+        val item = form.toPlanItem(existing) ?: return
+        _formTarget.value = null
+        launch { if (existing == null) repository.addItem(item) else repository.updateItem(item) }
+    }
+
+    // endregion
 
     // region Date navigation
 
