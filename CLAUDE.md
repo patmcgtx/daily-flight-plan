@@ -15,6 +15,9 @@ your flight plan. Combines one-off and recurring tasks, organized by time-of-day
   the roadmap/phase narrative in the build plan
 - **Android port plan**: `android/docs/android-port-plan.md` — scope, stack, data model, and
   phases for the native Android app (Kotlin + Jetpack Compose + Room) in `android/`
+- **Android architecture**: `android/docs/architecture.md` — folder structure, data models,
+  repository, view model, and UI composition for the Android app (the iOS counterpart is
+  `DailyFlightPlan/docs/architecture.md`)
 
 ## Android port
 - Lives in `android/` (package `com.patmcgtx.dailyflightplan`); the iOS app stays the source of

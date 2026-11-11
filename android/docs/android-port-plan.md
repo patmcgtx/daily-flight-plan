@@ -2,7 +2,8 @@
 
 A native Android port of Daily Flight Plan, starting with a deliberately small first version
 ("v1"). The iOS app remains the source of truth for look, feel, and behavior; see
-`DailyFlightPlan/docs/architecture.md` for how the iOS app is built.
+`DailyFlightPlan/docs/architecture.md` for how the iOS app is built and `architecture.md` in this
+folder for how the Android app is built.
 
 ## v1 scope
 
