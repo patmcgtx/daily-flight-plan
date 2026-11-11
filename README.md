@@ -1,6 +1,6 @@
 # Daily Flight Plan
 
-A daily planning and execution app for iOS, inspired by an airplane flight plan checklist. Today is your trip; this is your checklist.
+A daily planning and execution app for iOS, with an early native Android port, inspired by an airplane flight plan checklist. Today is your trip; this is your checklist.
 
 > “Finish every day and be done with it!”
 > — Ralph Waldo Emerson
@@ -11,6 +11,14 @@ See this app's [plan and progress](DailyFlightPlan/docs/implementation-plan.md).
   <img src="DailyFlightPlan/docs/images/main-light-framed.png" alt="Daily Flight Plan, light mode" width="280">
   &nbsp;&nbsp;
   <img src="DailyFlightPlan/docs/images/main-dark-framed.png" alt="Daily Flight Plan, dark mode (Paper Night)" width="280">
+</p>
+
+## Now on Android
+
+An early native Android port (Kotlin, Jetpack Compose, Room) lives in [`android/`](android/README.md): the same design and layering, built from this app's design docs and tests. v1 is deliberately small: the Cockpit tab with local storage, plus accessibility work (measured color contrast, screen-reader support, large fonts). Sync, routines, calendar and AI are out for now.
+
+<p align="center">
+  <img src="android/docs/images/ios-vs-android-light.png" alt="Daily Flight Plan on iOS and Android side by side" width="640">
 </p>
 
 ## Goals
@@ -65,6 +73,8 @@ I turned a Day One routine I'd refined for years into a native iOS app: a Figma 
 
 **5. The flight plan.** Looking for a stronger visual style, I found it in the real FAA flight plan. After another Figma pass with its AI "Make" feature, I redesigned the main screen as a filed paper plan: monospaced type, hard borders, a yellow highlighter and a dark "Paper Night" mode.
 
+**6. The Android port.** To see how well the architecture travels, I ported a small v1 to Kotlin and Jetpack Compose in six phases, using this app's docs and tests as the spec: scaffold and theme, pure logic with tests, a Room layer, the Cockpit UI, the item form, and a polish pass. The iOS test suites became the specs for the Android ones (JUnit 5). I chose a native port over Kotlin Multiplatform, Flutter, or React Native because the iOS app stays SwiftUI and SwiftData. Along the way I measured color contrast instead of assuming it, and fixed three light-mode status colors that failed WCAG. See [`android/`](android/README.md) and the [port plan](android/docs/android-port-plan.md).
+
 **[Read the full story](DailyFlightPlan/docs/story.md)**, or browse the paper trail: the [original spec](DailyFlightPlan/docs/project-spec-prompt.md), [architecture](DailyFlightPlan/docs/architecture.md) and [implementation plan](DailyFlightPlan/docs/implementation-plan.md).
 
 ## Concept
@@ -80,6 +90,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - **IBM Plex Mono** — bundled custom font for the Cockpit tab's filed-flight-plan paper aesthetic
 - **`@Observable @MainActor` ViewModels** — no Combine
 - **Protocol-based services** injected via `@Environment` + `@Entry`
+- **Android port (early)** — Kotlin, Jetpack Compose, Room, `ViewModel` with `StateFlow`, JUnit 5 (see [`android/`](android/README.md))
 
 ## Features (current)
 
