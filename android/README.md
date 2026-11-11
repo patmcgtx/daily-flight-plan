@@ -3,9 +3,9 @@
 An early native Android port of [Daily Flight Plan](../README.md), built in Kotlin and Jetpack Compose. The iOS app stays the source of truth for look, feel, and behavior; this port keeps the same layering and the same design, and it is deliberately small.
 
 <p align="center">
-  <img src="docs/images/android-light.png" alt="Daily Flight Plan on Android, light mode" width="260">
+  <img src="docs/images/ios-vs-android-light.png" alt="Daily Flight Plan on Android, light mode" width="260">
   &nbsp;&nbsp;
-  <img src="docs/images/android-dark.png" alt="Daily Flight Plan on Android, dark mode (Paper Night)" width="260">
+  <img src="docs/images/ios-vs-android-dark.png" alt="Daily Flight Plan on Android, dark mode (Paper Night)" width="260">
 </p>
 
 <!-- Optional: a side-by-side of iOS and Android, and a short demo GIF.
