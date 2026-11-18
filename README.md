@@ -198,21 +198,21 @@ Version 0.1 (Phases 0.1.1–0.1.22) is feature-complete — core functionality i
 | 2.3 | ✅ Global filter sheet + category management |
 | 2.4 | ✅ Paper Plan view — replaces Day tab as the primary view |
 | 2.5 | Day/Flight view refinements (consolidated timed-items list, toolbar rework: categories vs. view settings) |
-| 2.6 | Import UX refinements (flag duplicates, notes, tagging) |
-| 2.7 | Routine refinements + paper treatment |
-| 2.8 | Missed items review & pull-forward |
-| 2.9 | Nav Log / Timeline refinements + paper treatment |
+| 2.6 | Local notifications |
+| 2.7 | Import UX refinements (flag duplicates, notes, tagging) |
+| 2.8 | Routine refinements + paper treatment |
+| 2.9 | Missed items review & pull-forward |
+| 2.10 | Nav Log / Timeline refinements + paper treatment |
 
 **Version 0.3** expands device support and adds missing features:
 
 | Phase | Description |
 |-------|-------------|
 | 3.1 | Settings (calendar/reminders selection, section boundaries) |
-| 3.2 | Local notifications |
-| 3.3 | Rich item content (web links, photo attachments) |
-| 3.4 | iPad support (adaptive layout, Stage Manager, keyboard nav) |
-| 3.5 | Sharing & export (Markdown export shipped ahead of schedule; share scope/format still open) |
-| 3.6 | Projects support (spike — does this replace or complement categories?) |
+| 3.2 | Rich item content (web links, photo attachments) |
+| 3.3 | iPad support (adaptive layout, Stage Manager, keyboard nav) |
+| 3.4 | Sharing & export (Markdown export shipped ahead of schedule; share scope/format still open) |
+| 3.5 | Projects support (spike — does this replace or complement categories?) |
 
 **Version 1.0** is the core-features-complete milestone:
 
