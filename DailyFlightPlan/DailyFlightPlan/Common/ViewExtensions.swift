@@ -17,6 +17,23 @@ extension View {
     }
 }
 
+/// Applies `.textCase(.uppercase)` unless the user turned UPPERCASE off in the Cockpit's View menu.
+private struct CockpitUppercaseModifier: ViewModifier {
+    @AppStorage(AppStorageKeys.uppercaseText.rawValue)
+    private var uppercaseText: Bool = true
+
+    func body(content: Content) -> some View {
+        content.textCase(uppercaseText ? .uppercase : nil)
+    }
+}
+
+extension View {
+    /// Uppercases text in the Cockpit's paper style, honoring the "UPPERCASE" view option.
+    func cockpitUppercase() -> some View {
+        modifier(CockpitUppercaseModifier())
+    }
+}
+
 extension ToolbarItemPlacement {
     /// `.topBarTrailing` on iOS/iPadOS; `.automatic` on macOS.
     static var trailingBar: ToolbarItemPlacement {

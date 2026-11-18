@@ -49,5 +49,8 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// picker (dismissible; on by default)
     case showCategorySelectorExplanation
 
+    /// View option: render Cockpit labels in UPPERCASE (on by default)
+    case uppercaseText
+
     var id: String { rawValue }
 }

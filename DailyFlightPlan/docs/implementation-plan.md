@@ -410,7 +410,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   their day section (leaning no, to avoid duplicates), and how all-day events and
   already-passed items are handled (leaning toward all-day events pinned first, passed items
   dimmed rather than hidden).
-- **Toolbar rework — separate categories from view settings** *(priority — do second)*:
+- **✅ Toolbar rework — separate categories from view settings** *(priority — do second)*:
   split the Cockpit toolbar's current single filter entry point into two distinct controls.
   - **Categories selection**: its own toolbar button, opening the existing category selection
     flow (Phase 2.3's `CategoriesSelectFlow`) and nothing else.
@@ -421,6 +421,15 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     the filter sheet keeps whatever doesn't fit a quick toggle. Also a view option to toggle UPPERCASEd items on/off.
   - Replaces the earlier generic "Clean up toolbar" bullet; coordinate with "Clean up
     filtering" below.
+  - *Done:* `CategoriesToolbarButton` (a `tag` icon opening `CategoriesSelectFlow` alone in a
+    popover) and `CockpitViewMenu` (a `camera.filters` `Menu` with Flagged Only, Completed,
+    Maintenance, Calendar Events, Reminders, and UPPERCASE toggles) replace the Cockpit's
+    `FilterToolbarButton`. Both icons accent-fill when non-default. **Deviations:** the menu
+    toggles share the existing `@AppStorage` keys rather than going through `DayViewModel`;
+    `FilterToolbarButton`/`FilterSheetView` remain for Routine and Timeline. The new
+    `uppercaseText` key drives a `cockpitUppercase()` modifier (`ViewExtensions.swift`) that
+    replaced every hard-coded `.textCase(.uppercase)` in `CockpitView`; `CategoryCapsule`'s own
+    uppercasing is unchanged.
 - **Progress indicator tweak**: Color-code the main progress indicator based on status/time, e.g. green/yellow/red; use the same colors/calculation the segments
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **✅ Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to
