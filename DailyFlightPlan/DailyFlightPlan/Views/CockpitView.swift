@@ -40,6 +40,9 @@ struct CockpitView: View {
     @AppStorage(AppStorageKeys.showReminderItems.rawValue)
     private var showReminderItems: Bool = true
 
+    @AppStorage(AppStorageKeys.uppercaseText.rawValue)
+    private var uppercaseText: Bool = true
+
     @AppStorage(AppStorageKeys.theme.rawValue)
     private var theme: DFPTheme = .cupertino
 
@@ -85,47 +88,35 @@ struct CockpitView: View {
                 }
                 .inlineNavigationTitle()
                 .toolbar {
+                    // One compact leading control (rather than two buttons) frees toolbar width
+                    // so the trailing items, including the View menu, aren't pushed into the
+                    // system overflow menu.
                     ToolbarItem(placement: .leadingBar) {
-                        Button { onShowSettings() } label: {
-                            Image(systemName: "gearshape")
+                        Menu {
+                            Button { onShowSettings() } label: {
+                                Label("Developer", systemImage: "hammer")
+                            }
+                            Button { onShowImport() } label: {
+                                Label("Import", systemImage: "square.and.arrow.down")
+                            }
+                            Button { isShowingExport = true } label: {
+                                Label("Export", systemImage: "square.and.arrow.up")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
                         }
-                        .accessibilityLabel("Settings")
-                    }
-
-                    ToolbarItem(placement: .leadingBar) {
-                        Button { onShowImport() } label: {
-                            Image(systemName: "arrow.down.doc")
-                        }
-                        .accessibilityLabel("Import Items")
+                        .accessibilityLabel("More")
                     }
 
                     ToolbarItemGroup(placement: .trailingBar) {
-                        DatePickerToolbarButton(
-                            selectedDate: Binding(
-                                get: { viewModel.selectedDate },
-                                set: { newDate in
-                                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.navigate(to: newDate) }
-                                }
-                            ),
-                            isToday: viewModel.isToday,
-                            onSelectToday: {
-                                withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
-                            }
-                        )
-
                         SearchToggleButton(
                             isShowingSearch: $isShowingSearch, searchText: $searchText,
                             isFocused: $isSearchFieldFocused
                         )
 
-                        FilterToolbarButton(activeTab: .flightDeck)
+                        CockpitViewMenu()
 
-                        Button {
-                            isShowingExport = true
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        .accessibilityLabel("Export Day Plan")
+                        CategoriesToolbarButton()
                     }
                 }
                 #if os(iOS)
@@ -238,8 +229,23 @@ struct CockpitView: View {
             dayArrowButton(systemImage: "chevron.left") {
                 withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToYesterday() }
             }
-            dayLabelText(for: date)
-                .frame(maxWidth: .infinity)
+            DatePickerButton(
+                selectedDate: Binding(
+                    get: { viewModel.selectedDate },
+                    set: { newDate in
+                        withAnimation(.easeInOut(duration: 0.3)) { viewModel.navigate(to: newDate) }
+                    }
+                ),
+                isToday: viewModel.isToday,
+                onSelectToday: {
+                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
+                }
+            ) {
+                dayLabelText(for: date)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel("Choose Date")
             dayArrowButton(systemImage: "chevron.right") {
                 withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToTomorrow() }
             }
@@ -271,12 +277,12 @@ struct CockpitView: View {
             HStack(spacing: 6) {
                 Text(date.formatted(.dateTime.month(.abbreviated).day()))
                     .font(CockpitStyle.mono(.subheadline))
-                    .textCase(.uppercase)
+                    .cockpitUppercase()
                     .foregroundStyle(CockpitStyle.muted)
                 if isToday {
                     Text("Today")
                         .font(CockpitStyle.mono(.caption, weight: .bold))
-                        .textCase(.uppercase)
+                        .cockpitUppercase()
                         .foregroundStyle(CockpitStyle.inkOnHighlighter)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -284,13 +290,13 @@ struct CockpitView: View {
                 } else if isTomorrow || isYesterday {
                     Text(isTomorrow ? "Tomorrow" : "Yesterday")
                         .font(CockpitStyle.mono(.caption, weight: .bold))
-                        .textCase(.uppercase)
+                        .cockpitUppercase()
                         .foregroundStyle(CockpitStyle.muted)
                 }
             }
             Text(date.formatted(.dateTime.weekday(.wide)))
                 .font(CockpitStyle.mono(.largeTitle, weight: .bold))
-                .textCase(.uppercase)
+                .cockpitUppercase()
                 .foregroundStyle(CockpitStyle.ink)
         }
     }
@@ -356,7 +362,7 @@ struct CockpitView: View {
         return VStack(alignment: .leading, spacing: 2) {
             Text("Flight")
                 .font(CockpitStyle.mono(.caption2, weight: .bold))
-                .textCase(.uppercase)
+                .cockpitUppercase()
                 .foregroundStyle(CockpitStyle.muted)
             TextField(
                 "", text: name,
@@ -365,7 +371,7 @@ struct CockpitView: View {
                     .foregroundStyle(CockpitStyle.muted)
             )
             .font(CockpitStyle.mono(.body, weight: .bold))
-            .textCase(.uppercase)
+            .cockpitUppercase()
             .foregroundStyle(CockpitStyle.ink)
             .textFieldStyle(.plain)
             .focused($isFlightNameFocused)
@@ -405,7 +411,7 @@ struct CockpitView: View {
         return VStack(alignment: .leading, spacing: 2) {
             Text("Destination")
                 .font(CockpitStyle.mono(.caption2, weight: .bold))
-                .textCase(.uppercase)
+                .cockpitUppercase()
                 .foregroundStyle(CockpitStyle.muted)
             // The placeholder is a separate Text rather than the field's `prompt`, which
             // truncates to one line instead of wrapping.
@@ -477,7 +483,7 @@ struct CockpitView: View {
             let (index, section) = entry
             let isCurrent = section == viewModel.currentSection
 
-            let segment = Text(section.displayName.uppercased())
+            let segment = Text(uppercaseText ? section.displayName.uppercased() : section.displayName)
                 .font(CockpitStyle.mono(.caption2, weight: isCurrent ? .bold : .regular))
                 .foregroundColor(isCurrent ? CockpitStyle.ink : CockpitStyle.muted)
 
@@ -742,7 +748,7 @@ struct CockpitView: View {
                 } label: {
                     Label("Add item", systemImage: "plus")
                         .font(CockpitStyle.mono(.caption, weight: .semibold))
-                        .textCase(.uppercase)
+                        .cockpitUppercase()
                         .foregroundStyle(CockpitStyle.ink)
                         .padding(.horizontal, 16)
                         .padding(.top, 10)
@@ -901,7 +907,7 @@ struct CockpitView: View {
             } label: {
                 Label("Add item", systemImage: "plus")
                     .font(CockpitStyle.mono(.caption, weight: .semibold))
-                    .textCase(.uppercase)
+                    .cockpitUppercase()
                     .foregroundStyle(CockpitStyle.ink)
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
@@ -966,7 +972,7 @@ struct CockpitView: View {
                 HStack(spacing: 6) {
                     Text(title)
                         .font(CockpitStyle.mono(.title2, weight: .bold))
-                        .textCase(.uppercase)
+                        .cockpitUppercase()
                         .foregroundStyle(isCurrent ? CockpitStyle.inkOnHighlighter : CockpitStyle.ink.opacity(0.85))
                         .padding(.horizontal, isCurrent ? 4 : 0)
                         .background(isCurrent ? CockpitStyle.highlighter : Color.clear)
@@ -982,7 +988,7 @@ struct CockpitView: View {
                     }
                     Text(subtitle)
                         .font(CockpitStyle.mono(.caption))
-                        .textCase(.uppercase)
+                        .cockpitUppercase()
                         .foregroundStyle(CockpitStyle.muted)
                 }
             }
@@ -1029,7 +1035,7 @@ struct CockpitView: View {
                 HStack(spacing: 5) {
                     Text(section.displayName)
                         .font(CockpitStyle.mono(.headline, weight: .bold))
-                        .textCase(.uppercase)
+                        .cockpitUppercase()
                         .foregroundStyle(isCurrent ? CockpitStyle.inkOnHighlighter : CockpitStyle.ink)
                         .padding(.horizontal, isCurrent ? 4 : 0)
                         .background(isCurrent ? CockpitStyle.highlighter : Color.clear)
@@ -1038,7 +1044,7 @@ struct CockpitView: View {
                         .foregroundStyle(CockpitStyle.muted)
                     Text(section.timeRangeLabel)
                         .font(CockpitStyle.mono(.caption))
-                        .textCase(.uppercase)
+                        .cockpitUppercase()
                         .foregroundStyle(CockpitStyle.muted)
                     if isCurrent {
                         Circle().fill(.red).frame(width: 5, height: 5)
@@ -1122,7 +1128,7 @@ struct CockpitView: View {
 
             Text(item.title)
                 .font(CockpitStyle.mono(.subheadline, weight: .semibold))
-                .textCase(.uppercase)
+                .cockpitUppercase()
                 .lineLimit(1)
                 .foregroundStyle(
                     item.isFlagged
@@ -1207,7 +1213,7 @@ struct CockpitView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
                     .font(CockpitStyle.mono(.body, weight: .semibold))
-                    .textCase(.uppercase)
+                    .cockpitUppercase()
                     .strikethrough(item.status == .completed)
                     .foregroundStyle(
                         item.isFlagged

@@ -7,7 +7,11 @@ this file only tracks what's still outstanding. **Open** is for defects that hav
 reproduced; a report that hasn't been reproduced yet goes in **Unverified Reports** instead, and
 only moves to **Open** once someone reproduces it.
 
-- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet recorded; not yet root-caused.
+- **Mac hang/crash on the Timeline view**: the macOS build hangs or crashes while using the
+  Timeline tab. Exact trigger, macOS version, and whether it's a hang vs. a crash are not yet
+  recorded; not yet root-caused.
+
+- **Filter view inaccessible on Mac**: on macOS, the filter view does not appear when tapped.
 
 ## Unverified Reports
 
@@ -64,7 +68,7 @@ in (or confirmed) before it can be investigated as a real defect.
   — pass reliably). Not yet root-caused; found while running the full suite during unrelated
   Markdown-export work.
 
-- **Cockpit tab's date-picker sheet looks undersized on macOS**: `DatePickerToolbarButton`
+- **Cockpit tab's date-picker sheet looks undersized on macOS**: `DatePickerButton`
   presents via `.sheet` on macOS (`.popover` attached to a toolbar button there never opens at
   all — a separate issue, worked around by branching to `.sheet`), with the content frame fixed
   to `width: 300` and no height constraint so the sheet sizes to the native graphical

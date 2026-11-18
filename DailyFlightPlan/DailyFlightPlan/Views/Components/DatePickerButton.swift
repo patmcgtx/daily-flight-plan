@@ -1,17 +1,19 @@
 //
-//  DatePickerToolbarButton.swift
+//  DatePickerButton.swift
 //  DailyFlightPlan
 //
 import SwiftUI
 
-/// A toolbar button that opens a popover with a "Today" shortcut above a graphical date picker.
+/// A button (with a caller-supplied label) that opens a popover with a "Today" shortcut above a
+/// graphical date picker.
 /// Callers own what "select a date" and "go to today" actually mean (e.g. `DayViewModel.navigate(to:)`
 /// vs. `goToToday()`, which also tracks animation direction) — this view just presents the picker.
-struct DatePickerToolbarButton: View {
+struct DatePickerButton<ButtonLabel: View>: View {
 
     @Binding var selectedDate: Date
     let isToday: Bool
     let onSelectToday: () -> Void
+    @ViewBuilder let label: () -> ButtonLabel
 
     @State private var isShowingDatePicker = false
 
@@ -19,7 +21,7 @@ struct DatePickerToolbarButton: View {
         Button {
             isShowingDatePicker = true
         } label: {
-            Image(systemName: "calendar")
+            label()
         }
         .accessibilityLabel("Choose Date")
         // `.popover` attached to a toolbar button is unreliable on macOS (NSToolbarItem-backed
