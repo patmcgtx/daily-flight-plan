@@ -26,11 +26,10 @@ struct CockpitViewMenu: View {
     @AppStorage(AppStorageKeys.uppercaseText.rawValue)
     private var uppercaseText: Bool = true
 
-    /// True when anything that narrows or reveals items differs from its default. The UPPERCASE
-    /// option is cosmetic, so it doesn't count.
+    /// True when any option differs from its default.
     private var isNonDefault: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
-            || !showCalendarEvents || !showReminderItems
+            || !showCalendarEvents || !showReminderItems || !uppercaseText
     }
 
     var body: some View {
@@ -57,7 +56,10 @@ struct CockpitViewMenu: View {
                 Label("UPPERCASE", systemImage: "textformat")
             }
         } label: {
-            Image(systemName: "line.3.horizontal.decrease")
+            // Filled circle + accent color when anything differs from its default
+            Image(systemName: isNonDefault
+                ? "line.3.horizontal.decrease.circle.fill"
+                : "line.3.horizontal.decrease.circle")
                 .foregroundStyle(isNonDefault ? Color.accentColor : Color.primary)
         }
         .accessibilityLabel("View Options")
