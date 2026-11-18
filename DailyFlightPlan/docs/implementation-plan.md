@@ -88,7 +88,7 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - **Deferred**: reminder list selection UI — moved to Phase 3.1 (Settings)
 
 ### ✅ Phase 0.1.9 — Workflow Refinements
-- **Spillover** *(removed in Phase 2.8 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
+- **Spillover** *(removed in Phase 2.9 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
 - **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their past calendar events appear in a non-section "Past" area at the top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
 - **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the missed time.
 - **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
@@ -293,7 +293,7 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
 ## Version 0.2 — UX Refinements (not release-ready)
 
 Improves existing features based on real use. No new capabilities — better UX on the four main
-views that need the most work. **One narrow exception**: Phase 2.6's AI quick-add bullet adds a
+views that need the most work. **One narrow exception**: Phase 2.7's AI quick-add bullet adds a
 small new entry point (single-item creation via on-device Foundation Models), carved out
 explicitly because it's small enough in scope and risk to ship alongside import refinements rather
 than waiting for a dedicated Version 0.3 feature phase — see that bullet for why.
@@ -450,7 +450,13 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     ("Flight:" / "Destination:"). Settings' "delete items" leaves `Day` rows alone, since its
     alert doesn't mention them.
 
-### Phase 2.6 - Import UX Refinements
+### Phase 2.6 — Local Notifications
+- Request notification permission on first use of a deadline item
+- Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
+- Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
+- Notification times respect custom day section boundaries from Phase 3.1 (Settings), once that ships
+
+### Phase 2.7 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
 - **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
 - **Add a flag toggle on import**: The import can't automatically know if this item should be
@@ -477,16 +483,16 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   This keeps only that second part: one button, one text field, one `@Generable` call, no
   conversation, no tab, no streaming.
 
-### Phase 2.7 — Routine Refinements / paper treatment
+### Phase 2.8 — Routine Refinements / paper treatment
 - **Give `RoutineView` the "paper" treatment**: adopt `CockpitStyle`/patterns from `CockpitView`
-  (Phase 2.4) so Routine matches the Cockpit tab's (and, once Phase 2.9 lands, Timeline's) visual
+  (Phase 2.4) so Routine matches the Cockpit tab's (and, once Phase 2.10 lands, Timeline's) visual
   language, rather than being the only tab still on the old card style.
 - **Addition (decided during catch-up planning)**: scope beyond "match the paper aesthetic" is
-  still open — revisit alongside Phase 2.9 for any shared styling components worth factoring out
+  still open — revisit alongside Phase 2.10 for any shared styling components worth factoring out
   across the three tabs.
 - **Show only segments that actaully have a routine**:get rid of all those empty segments; it's a lot when combined with all the day combos.
 
-### Phase 2.8 — Missed Items Review & Pull-Forward
+### Phase 2.9 — Missed Items Review & Pull-Forward
 **Note**: this phase replaces the automatic "Spillover" behavior from Phase 0.1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
 
 - Entry point: a way to review pending items left behind on past days — modeled on the Markdown Import flow (Phase 0.1.21)'s paste → review-list → commit shape, but sourced from existing overdue items instead of pasted text
@@ -496,7 +502,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - Surface a lightweight indicator (badge on the Day tab, or a banner in Flight Plan view) when missed items exist, so the review flow is discoverable without being forced
 - Consider whether this should also run automatically prompt-on-launch after a detected gap (e.g. "You were away N days — review N missed items?") vs. purely user-initiated via a toolbar button
 
-### Phase 2.9 — Timeline Refinements
+### Phase 2.10 — Timeline Refinements
 - **✅ The Nav Log should show *all* days, past, present, and future** — a time machine of sorts; starts on today (`ScrollViewReader` scrolls to today's section on appear)
 - **✅ Past days show a history of what was completed (and canceled)** — all non-template items, including materialized routine instances, for any past day within the loaded window
 - **Deviation**: future days show only one-off scheduled items, **not** projected recurring items — routines could still change before the date arrives, so a "ghost" preview would be misleading; revisit if we want a non-interactive preview later
@@ -535,7 +541,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 
 ## Version 0.3 — Settings & Device Expansion
 
-Adds the features needed before wider release: user-configurable settings (Calendar/Reminders selection, section time boundaries), local notifications for deadline items, rich item content (web links and photos), and a full iPad layout with adaptive split view.
+Adds the features needed before wider release: user-configurable settings (Calendar/Reminders selection, section time boundaries), rich item content (web links and photos), and a full iPad layout with adaptive split view.
 
 ### Phase 3.1 — Settings
 - `SettingsView` navigated to from ⚙ button
@@ -547,30 +553,24 @@ Adds the features needed before wider release: user-configurable settings (Calen
 - **✅ Rename "Night" → "Bedtime"**: `DaySection` already has no `.night` case — the six cases are firstThing/morning/midday/afternoon/evening/bedtime; making section names fully user-editable alongside their time boundaries remains open
 - Any other preferences surfaced here as phases are completed
 
-### Phase 3.2 — Local Notifications
-- Request notification permission on first use of a deadline item
-- Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
-- Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 3.1 (Settings)
-
-### Phase 3.3 — Rich Item Content
+### Phase 3.2 — Rich Item Content
 - **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
 - **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
 
-### Phase 3.4 — iPad Extras
+### Phase 3.3 — iPad Extras
 - Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
 - Verify `HFlow` pill layouts scale well on wider screens
 - Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
 - Test with Stage Manager and multitasking split views
 - Pointer/cursor hover states for trackpad users
 
-### Phase 3.5 — Sharing & Export
+### Phase 3.4 — Sharing & Export
 A general look at sharing across the app, rather than one-off share buttons per view.
-- **Per-day share icon in the Timeline view** *(originally tracked in Phase 2.9, moved here)*: share a day's plan as text (or richer format — TBD) via the standard `ShareLink`/share sheet
+- **Per-day share icon in the Timeline view** *(originally tracked in Phase 2.10, moved here)*: share a day's plan as text (or richer format — TBD) via the standard `ShareLink`/share sheet
 - What else is worth sharing? A single item, a date range, search results, a whole routine/schedule from the Routine view — figure out the right scope(s) rather than just the one Timeline case
 - Decide on output format(s): plain text summary, Markdown, something richer (PDF? image?) — consider round-tripping with Markdown Import (Phase 0.1.21) for a plain-text/Markdown format, since that's already a supported input format
 - Standard `ShareLink` throughout rather than bespoke share-sheet plumbing per view
-- See also the "Web links" item in Phase 3.3 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
+- See also the "Web links" item in Phase 3.2 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
 - ✅ *(implemented ahead of this phase being fully scoped)* Routine-tab export: a toolbar button
   renders every routine item as Markdown — grouped by schedule (`## Every Day`/`Weekdays`/
   `Weekends`/custom, same as the schedule cards), then by day segment as a `###` subsection
@@ -592,7 +592,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
   keyed off the heading levels) that reconstructs one template per `####` block — its weekday
   pattern from the enclosing `##` schedule name, its day segment from the enclosing `###` name,
   and its flagged/categories/notes fields from that block's `- ` lines — not just a reuse of the
-  existing title-only fallback parser. Also gives Routine the paste-to-import flow that Phase 2.6
+  existing title-only fallback parser. Also gives Routine the paste-to-import flow that Phase 2.7
   already flagged belongs on its own, separate from the Day view's import.
 - ✅ *(implemented ahead of this phase being fully scoped)* Day (Cockpit) export: the same
   pattern as the Routine export above, but for the currently selected day's items — grouped by day
@@ -610,7 +610,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
   out — no `@Query`/`@Environment` dependency) so it's unit-testable without a `ModelContainer`;
   covered by `RoutineMarkdownExporterTests`/`DayPlanMarkdownExporterTests`.
 
-### Phase 3.6 — Projects support
+### Phase 3.5 — Projects support
 - Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.
 - Does this work with or replace categories? In theory, you could use a category as a project.
 - So maybe categories instead of projects, but fuller/dedicated category management?
@@ -627,8 +627,8 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
 - **Routine tab**: general UX audit and fix *(originally tracked in Phase 2.1)*
 - **Timeline tab**: general UX audit and fix
 - **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
-- **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 2.9)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase 1.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
-- **Per-filter "only" option**: generalize the Timeline Missed/Flagged isolate-style toggles (see Phase 2.9) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders, category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
+- **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 2.10)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase 1.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
+- **Per-filter "only" option**: generalize the Timeline Missed/Flagged isolate-style toggles (see Phase 2.10) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders, category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
   specifically need this most, then decide how general to make the underlying mechanism.
 - **Mac menu bar integration + window minimum size** *(moved here from Phase 0.1.18)*: proper menu bar items (not just the hidden `Cmd+1`–`Cmd+4` tab-switch buttons) and a sensible minimum window size for the macOS build.
 - **Per-section add button**: add a small `+` button on each segment of the Day view (header or content area) so the user can add an item directly into that segment without going through the main Add form and re-selecting the segment. (Timeline already has this for today and future days — see Phase 2.9.)
@@ -682,7 +682,7 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
 - Fix all compile-time warnings 
 - Fix all runtime warnings.
 - Confirm cross-device syncing is working as expected and bug-free
-- **Timeline browsing view still loads everything in memory** *(moved here from Phase 2.9)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
+- **Timeline browsing view still loads everything in memory** *(moved here from Phase 2.10)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
 
 ### Phase 1.4 — Tech Debt
 - **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see
@@ -742,7 +742,7 @@ Platform expansion beyond iPhone and Mac — Siri integration for voice entry an
 
 ### Other Device Support
 - Foldable iPhone ("Duo") support: resizable windows and layouts that adapt to the fold/split
-  screen (see also iPad support in Phase 3.4)
+  screen (see also iPad support in Phase 3.3)
 - Apple Watch, Widgets, and Siri are covered by the sections below
 
 ### Siri & AI
