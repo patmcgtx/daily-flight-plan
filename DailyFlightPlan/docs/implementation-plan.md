@@ -430,6 +430,10 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     `uppercaseText` key drives a `cockpitUppercase()` modifier (`ViewExtensions.swift`) that
     replaced every hard-coded `.textCase(.uppercase)` in `CockpitView`; `CategoryCapsule`'s own
     uppercasing is unchanged.
+    Follow-up to declutter: Export Day Plan moved into a leading "More" menu (with Settings and
+    Import), and the toolbar date picker was removed in favor of tapping the date heading
+    (`DatePickerToolbarButton` generalized and renamed `DatePickerButton`, taking a label closure).
+    The trailing toolbar is now Search, View, and Categories.
 - **Progress indicator tweak**: Color-code the main progress indicator based on status/time, e.g. green/yellow/red; use the same colors/calculation the segments
 - **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
 - **✅ Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to

@@ -94,10 +94,13 @@ struct CockpitView: View {
                     ToolbarItem(placement: .leadingBar) {
                         Menu {
                             Button { onShowSettings() } label: {
-                                Label("Settings", systemImage: "gearshape")
+                                Label("Developer", systemImage: "hammer")
                             }
                             Button { onShowImport() } label: {
-                                Label("Import Items", systemImage: "arrow.down.doc")
+                                Label("Import", systemImage: "square.and.arrow.down")
+                            }
+                            Button { isShowingExport = true } label: {
+                                Label("Export", systemImage: "square.and.arrow.up")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
@@ -106,34 +109,14 @@ struct CockpitView: View {
                     }
 
                     ToolbarItemGroup(placement: .trailingBar) {
-                        DatePickerToolbarButton(
-                            selectedDate: Binding(
-                                get: { viewModel.selectedDate },
-                                set: { newDate in
-                                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.navigate(to: newDate) }
-                                }
-                            ),
-                            isToday: viewModel.isToday,
-                            onSelectToday: {
-                                withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
-                            }
-                        )
-
                         SearchToggleButton(
                             isShowingSearch: $isShowingSearch, searchText: $searchText,
                             isFocused: $isSearchFieldFocused
                         )
 
-                        CategoriesToolbarButton()
-
                         CockpitViewMenu()
 
-                        Button {
-                            isShowingExport = true
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        .accessibilityLabel("Export Day Plan")
+                        CategoriesToolbarButton()
                     }
                 }
                 #if os(iOS)
@@ -246,8 +229,23 @@ struct CockpitView: View {
             dayArrowButton(systemImage: "chevron.left") {
                 withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToYesterday() }
             }
-            dayLabelText(for: date)
-                .frame(maxWidth: .infinity)
+            DatePickerButton(
+                selectedDate: Binding(
+                    get: { viewModel.selectedDate },
+                    set: { newDate in
+                        withAnimation(.easeInOut(duration: 0.3)) { viewModel.navigate(to: newDate) }
+                    }
+                ),
+                isToday: viewModel.isToday,
+                onSelectToday: {
+                    withAnimation(.easeInOut(duration: 0.3)) { viewModel.goToToday() }
+                }
+            ) {
+                dayLabelText(for: date)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel("Choose Date")
             dayArrowButton(systemImage: "chevron.right") {
                 withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToTomorrow() }
             }

@@ -66,7 +66,7 @@ in (or confirmed) before it can be investigated as a real defect.
   — pass reliably). Not yet root-caused; found while running the full suite during unrelated
   Markdown-export work.
 
-- **Cockpit tab's date-picker sheet looks undersized on macOS**: `DatePickerToolbarButton`
+- **Cockpit tab's date-picker sheet looks undersized on macOS**: `DatePickerButton`
   presents via `.sheet` on macOS (`.popover` attached to a toolbar button there never opens at
   all — a separate issue, worked around by branching to `.sheet`), with the content frame fixed
   to `width: 300` and no height constraint so the sheet sizes to the native graphical
