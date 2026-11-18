@@ -13,6 +13,31 @@ your flight plan. Combines one-off and recurring tasks, organized by time-of-day
 - **Known bugs**: `DailyFlightPlan/docs/known-bugs.md` — specific, reproducible defects (Open);
   entries are removed outright once fixed rather than moved to a "Fixed" section; separate from
   the roadmap/phase narrative in the build plan
+- **Android port plan**: `android/docs/android-port-plan.md` — scope, stack, data model, and
+  phases for the native Android app (Kotlin + Jetpack Compose + Room) in `android/`
+- **Android architecture**: `android/docs/architecture.md` — folder structure, data models,
+  repository, view model, and UI composition for the Android app (the iOS counterpart is
+  `DailyFlightPlan/docs/architecture.md`)
+
+## Android port
+- Lives in `android/` (package `com.patmcgtx.dailyflightplan`); the iOS app stays the source of
+  truth for look, feel, and behavior. Everything above describes the iOS app unless stated.
+- After completing an Android phase, mark it ✅ in `android/docs/android-port-plan.md` and note
+  deviations — not in the iOS `implementation-plan.md`.
+- Android tests use JUnit 5 with plain-English backtick names (e.g.
+  ``fun `Containing resolves the correct section at each boundary minute`()``; avoid `.` `:` `[`
+  `]` `/` in names — the JVM rejects them), and prefer `@ParameterizedTest` + `@MethodSource` over
+  near-identical tests — mirroring the Swift Testing conventions below. See
+  `android/app/src/test/.../model/DaySectionTest.kt` for the reference pattern. Inject the clock
+  (`DayContext(selectedDate, now)`) rather than reading the real one. Test business rules on the
+  JVM against fake DAOs (`PlanRepository` takes the DAO interfaces); only the SQL itself goes in
+  instrumented tests (`src/androidTest`, JUnit 4, camelCase-sentence names since backticked names
+  with spaces aren't allowed there below minSdk 30). Compose UI tests there assert what a screen
+  reader sees (content descriptions, state descriptions, custom actions) and touch-target sizes —
+  keep Espresso pinned in the version catalog or every Compose test fails on Android 37.
+- Build/test from `android/` with `./gradlew :app:testDebugUnitTest` (JVM) and
+  `./gradlew :app:connectedDebugAndroidTest` (needs a running emulator), using Android Studio's
+  bundled JDK as `JAVA_HOME` (see the plan doc).
 
 ## Reference architecture
 Mirror the MapsPlus app: https://github.com/patmcgtx/mapplus
