@@ -275,6 +275,27 @@ struct DayAgendaTests {
         #expect(progress.total == 0)
     }
 
+    // MARK: Drop rules
+
+    @Test("canMove refuses an open item dropped on an ended segment, and nothing else", arguments: [
+        (status: ItemStatus.pending, target: DaySection?.some(.morning), expected: false),
+        (status: ItemStatus.pending, target: DaySection?.some(.midday), expected: false),
+        (status: ItemStatus.pending, target: DaySection?.some(.afternoon), expected: true),   // current
+        (status: ItemStatus.pending, target: DaySection?.some(.evening), expected: true),     // later
+        (status: ItemStatus.pending, target: DaySection?.none, expected: true),               // Open
+        (status: ItemStatus.completed, target: DaySection?.some(.morning), expected: true),   // done stays
+    ])
+    func canMove(status: ItemStatus, target: DaySection?, expected: Bool) {
+        let subject = item(daySection: .evening, status: status)
+        #expect(viewModel().canMove(subject, to: target) == expected)
+    }
+
+    @Test("canMove accepts any drop when not viewing today, since no segment has ended")
+    func canMoveOnOtherDays() {
+        let subject = item(daySection: .evening)
+        #expect(viewModel(viewingToday: false).canMove(subject, to: .morning))
+    }
+
     // MARK: Segment content
 
     @Test("hasContent is true for a segment holding an untimed item, a completed timed item, an ended event, or a completed reminder", arguments: [

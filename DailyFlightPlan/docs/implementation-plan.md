@@ -425,7 +425,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
       header tint; the items inside are italic too.
     - *Layout:* plan items are the same flow-layout pills as the segments, draggable onto any
       segment (italic, with the time they were due); Reminders are read-only so stay as rows
-      below. Dropping onto an already-ended segment leaves an open item in Passed.
+      below. Dropping an open item onto an already-ended segment is refused (it would just
+      count as passed again); the drag springs back.
     - *AI summary:* while collapsed, the header shows a one-line on-device summary of what's
       left (like a collapsed segment), with the loading dots while it generates. It regenerates
       when the contents change; state lives in `DayViewModel` (`passedSummary`) alongside the
@@ -715,6 +716,17 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
 - **Fix all `docs/known-bugs.md` entries** before this phase is considered done
 - **Make Calendar and Reminders access read-only**: no need for read/write access anymore
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
+- **Bounce-back animation for refused drops**: dragging an open item (e.g. out of the Cockpit's
+  Passed area) onto an already-ended segment is refused in `CockpitView.handlePillDrop` via
+  `DayViewModel.canMove`, but the pill still animates as if it landed in the segment before
+  reappearing in Passed — the destination accepts the drop at the system level and only declines
+  it in the action closure. The polish is to refuse up front so the pill springs back to where it
+  started. First attempt (tracking the dragged item with `onDragSessionUpdated`, then returning
+  `DropConfiguration(operation: .cancel)` from `dropConfiguration` on ended segments) built fine
+  but felt off on device and was rolled back; next candidates are disabling ended-segment
+  destinations with `dropDestination(for:isEnabled:action:)` while an open item is dragged, or
+  moving the segments to a `DropDelegate` whose `dropUpdated` proposes `.cancel`. Needs on-device
+  testing; watch for flicker from re-rendering mid-drag and for a changed default drag badge.
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Future Plans.

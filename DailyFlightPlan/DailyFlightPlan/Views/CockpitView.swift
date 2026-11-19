@@ -703,15 +703,19 @@ struct CockpitView: View {
         }
     }
 
-    private func handlePillDrop(uuidString: String, targetSection: DaySection?) {
+    /// Returns false only when the drop is refused (an open item onto an already-ended segment),
+    /// so the drag springs back instead of the item reappearing in Passed.
+    private func handlePillDrop(uuidString: String, targetSection: DaySection?) -> Bool {
         guard let uuid = UUID(uuidString: uuidString),
-              let item = allItems.first(where: { $0.uuid == uuid }) else { return }
-        guard item.daySection != targetSection || item.deadline != nil else { return }
+              let item = allItems.first(where: { $0.uuid == uuid }) else { return true }
+        guard viewModel.canMove(item, to: targetSection) else { return false }
+        guard item.daySection != targetSection || item.deadline != nil else { return true }
         withAnimation(.spring(duration: 0.3)) {
             item.daySection = targetSection
             item.deadline = nil
         }
         try? modelContext.save()
+        return true
     }
 
     // MARK: - Section card
@@ -887,8 +891,7 @@ struct CockpitView: View {
         }
         .dropDestination(for: String.self) { dropItems, _ in
             guard let uuidString = dropItems.first else { return false }
-            handlePillDrop(uuidString: uuidString, targetSection: section)
-            return true
+            return handlePillDrop(uuidString: uuidString, targetSection: section)
         } isTargeted: { targeted in
             dropTargetedSection = targeted ? section : nil
         }
@@ -971,8 +974,7 @@ struct CockpitView: View {
         }
         .dropDestination(for: String.self) { dropItems, _ in
             guard let uuidString = dropItems.first else { return false }
-            handlePillDrop(uuidString: uuidString, targetSection: nil)
-            return true
+            return handlePillDrop(uuidString: uuidString, targetSection: nil)
         } isTargeted: { targeted in
             isOpenDropTargeted = targeted
         }

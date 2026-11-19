@@ -118,6 +118,14 @@ extension DayViewModel {
             || !reminderItemsForSection(section, from: agenda.sectionReminders).isEmpty
     }
 
+    /// Whether dropping `item` onto `section` (nil = Open) should be accepted. An open item
+    /// dropped on a segment that has already ended would immediately count as passed again, so
+    /// that drop is refused rather than shuffling the item back into Passed.
+    func canMove(_ item: PlanItem, to section: DaySection?) -> Bool {
+        guard let section, item.status == .pending else { return true }
+        return !isSectionOver(section)
+    }
+
     /// When `entry` starts, for the "in 42 min" countdown on the next upcoming entry.
     func startTime(of entry: DayEntry) -> Date {
         switch entry {

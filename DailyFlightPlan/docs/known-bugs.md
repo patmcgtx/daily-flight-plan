@@ -32,16 +32,6 @@ in (or confirmed) before it can be investigated as a real defect.
 
 ## Open
 
-- **Dragging a Passed item onto an ended segment shows it twice in Passed**: on the Cockpit
-  tab, drag a pill out of the Passed card onto a segment that has already ended. `handlePillDrop`
-  gives the item that segment and clears its deadline, so it correctly stays in Passed (still open
-  in a segment that's over), but it then appears twice in the list. Reproduced on device; not yet
-  root-caused. Reading the code turned up no second `PlanItem` being created
-  (`handlePillDrop`, `materializeRecurringInstances`, and `deduplicateInstances` don't add one),
-  so check whether the duplicate is a second row in `agenda.passed` or a view-level artifact of the
-  pill changing in place inside the `HFlow` (its time label disappears and it re-sorts). Dropping
-  on the current or a later segment moves the item out of Passed as intended.
-
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added
   to the Day-view section-summary prompt (`DayViewModel.generateSummaryIfNeeded`, Phase 0.1.14), the
   on-device model sometimes describes a still-*open* item as completed (the inverse of the original
