@@ -1031,27 +1031,47 @@ struct CockpitView: View {
             if case .planItem(let item) = entry { return item }
             return nil
         }
+        let reminders = entries.compactMap { entry -> ReminderItem? in
+            if case .reminder(let reminder) = entry { return reminder }
+            return nil
+        }
+        let contentSignature = viewModel.contentSignature(items: planItems, events: [], reminders: reminders)
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.spring(duration: 0.3)) { isPassedExpanded.toggle() }
             } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.badge.exclamationmark")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(Color.orange)
-                    Text("Passed")
-                        .font(CockpitStyle.mono(.headline, weight: .bold))
-                        .italic()
-                        .cockpitUppercase()
-                        .foregroundStyle(Color.orange)
-                    Spacer()
-                    Text("! \(progress.completed)/\(progress.total)")
-                        .font(CockpitStyle.mono(.caption2, weight: .bold))
-                        .foregroundStyle(Color.orange)
-                    Image(systemName: isPassedExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption.bold())
-                        .foregroundStyle(CockpitStyle.muted)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.badge.exclamationmark")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(Color.orange)
+                        Text("Passed")
+                            .font(CockpitStyle.mono(.headline, weight: .bold))
+                            .italic()
+                            .cockpitUppercase()
+                            .foregroundStyle(Color.orange)
+                        Spacer()
+                        Text("! \(progress.completed)/\(progress.total)")
+                            .font(CockpitStyle.mono(.caption2, weight: .bold))
+                            .foregroundStyle(Color.orange)
+                        Image(systemName: isPassedExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption.bold())
+                            .foregroundStyle(CockpitStyle.muted)
+                    }
+                    // Like a collapsed segment, the one-line AI summary stands in for the list.
+                    if !isPassedExpanded {
+                        if let summary = viewModel.passedSummary {
+                            Text(summary)
+                                .font(CockpitStyle.mono(.caption))
+                                .italic()
+                                .foregroundStyle(CockpitStyle.muted)
+                                .lineLimit(2)
+                        } else if viewModel.isLoadingPassedSummary {
+                            loadingDotsView
+                        }
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
                 .background(Color.orange.opacity(0.12))
                 .contentShape(Rectangle())
@@ -1076,9 +1096,25 @@ struct CockpitView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                 }
-                ForEach(entries) { entry in
+                if !planItems.isEmpty {
                     Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
-                    agendaRow(entry, isPassed: true)
+                    // Same flow layout and drag-and-drop as the segments, so a passed item can
+                    // be dropped straight onto the segment it should move to.
+                    HFlow(spacing: 8) {
+                        ForEach(planItems) { item in
+                            paperPill(item, isPassed: true)
+                                .draggable(item.uuid.uuidString)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                }
+                // Reminders are read-only, so they stay as rows rather than draggable pills.
+                ForEach(entries) { entry in
+                    if case .reminder(let reminder) = entry {
+                        Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                        ReminderItemRow(item: reminder)
+                    }
                 }
             }
         }
@@ -1101,6 +1137,12 @@ struct CockpitView: View {
         } message: {
             Text("Reminders in this list aren't affected.")
         }
+        .onAppear {
+            viewModel.refreshPassedSummaryIfNeeded(items: planItems, reminders: reminders)
+        }
+        .onChange(of: contentSignature) { _, _ in
+            viewModel.refreshPassedSummaryIfNeeded(items: planItems, reminders: reminders)
+        }
     }
 
     private func passedActionButton(
@@ -1118,13 +1160,12 @@ struct CockpitView: View {
         .buttonStyle(.plain)
     }
 
-    /// One row of Up Next or Passed, in each source's existing row style. Passed plan items also
-    /// get "Move to Now" in their context menu.
+    /// One row of Up Next, in each source's existing row style.
     @ViewBuilder
-    private func agendaRow(_ entry: DayEntry, isPassed: Bool = false) -> some View {
+    private func agendaRow(_ entry: DayEntry) -> some View {
         switch entry {
         case .planItem(let item):
-            cardDeadlineRow(item, isPassed: isPassed)
+            cardDeadlineRow(item)
         case .calendarEvent(let event):
             CalendarEventRow(event: event)
         case .reminder(let reminder):
@@ -1305,7 +1346,9 @@ struct CockpitView: View {
 
     /// A flagged item is called out with a highlighter-yellow background behind its title
     /// instead of a flag icon — the one deliberate behavior swap for this design sprint.
-    private func paperPill(_ item: PlanItem, showRecurringBadge: Bool = true) -> some View {
+    private func paperPill(
+        _ item: PlanItem, showRecurringBadge: Bool = true, isPassed: Bool = false
+    ) -> some View {
         HStack(spacing: 5) {
             if item.status == .pending {
                 Button {
@@ -1319,6 +1362,13 @@ struct CockpitView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Complete \(item.title)")
+            }
+
+            // A passed pill keeps the time it was due, which the segments' pills never show.
+            if isPassed, let deadline = item.deadline {
+                Text(deadline, format: .dateTime.hour().minute())
+                    .font(CockpitStyle.mono(.caption2))
+                    .foregroundStyle(CockpitStyle.muted)
             }
 
             Text(item.title)
@@ -1350,8 +1400,14 @@ struct CockpitView: View {
         .background {
             Rectangle().stroke(CockpitStyle.border, lineWidth: 1)
         }
+        .italic(isPassed)
         .onTapGesture { itemToEdit = item }
         .contextMenu {
+            if isPassed {
+                Button { moveToNow([item]) } label: {
+                    Label("Move to Now", systemImage: "arrow.uturn.forward")
+                }
+            }
             Button {
                 item.isFlagged.toggle()
                 try? modelContext.save()
@@ -1378,7 +1434,7 @@ struct CockpitView: View {
         }
     }
 
-    private func cardDeadlineRow(_ item: PlanItem, isPassed: Bool = false) -> some View {
+    private func cardDeadlineRow(_ item: PlanItem) -> some View {
         HStack(spacing: 14) {
             Button {
                 withAnimation(.spring(duration: 0.2)) {
@@ -1431,14 +1487,8 @@ struct CockpitView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .contentShape(Rectangle())
-        .italic(isPassed)
         .contextMenu {
             Button { itemToEdit = item } label: { Label("Edit", systemImage: "pencil") }
-            if isPassed {
-                Button { moveToNow([item]) } label: {
-                    Label("Move to Now", systemImage: "arrow.uturn.forward")
-                }
-            }
             Button {
                 item.isFlagged.toggle()
                 try? modelContext.save()

@@ -24,6 +24,14 @@ final class DayViewModel {
     // otherwise it can clobber a newer in-flight (or already-completed) generation.
     private var summaryGenerations: [DaySection: UUID] = [:]
 
+    // The Cockpit's Passed area has its own one-line summary, mirroring the per-section state
+    // above (see "Passed-area summary" below).
+    private(set) var passedSummary: String?
+    private(set) var isLoadingPassedSummary = false
+    private var passedSummaryTask: Task<Void, Never>?
+    private var passedContentSignature: String?
+    private var passedSummaryGeneration: UUID?
+
     /// `currentTime` defaults to the real clock but can be injected for deterministic testing.
     init(currentTime: Date = .now) {
         self.currentTime = currentTime
@@ -337,6 +345,76 @@ func startLiveClock() {
         sectionSummaries = [:]
         sectionContentSignatures = [:]
         loadingSummarySections = []
+        clearPassedSummary()
+    }
+
+    // MARK: Passed-area summary
+
+    /// Clear the Passed summary and cancel any in-flight task, allowing regeneration.
+    func clearPassedSummary() {
+        passedSummaryTask?.cancel()
+        passedSummaryTask = nil
+        passedSummary = nil
+        passedContentSignature = nil
+        isLoadingPassedSummary = false
+    }
+
+    /// Short phrases describing what is in the Passed area, oldest first, for the summary
+    /// prompt: timed entries carry the time they were due, untimed ones just their title.
+    func passedSummaryParts(items: [PlanItem], reminders: [ReminderItem]) -> [String] {
+        func label(_ title: String, at time: Date?) -> String {
+            guard let time else { return title }
+            return "\(title) at \(time.formatted(.dateTime.hour().minute()))"
+        }
+        let itemParts = items.map { label($0.title, at: $0.deadline) }
+        let reminderParts = reminders.map { label($0.title, at: $0.dueDate) }
+        return Array((itemParts + reminderParts).prefix(8))
+    }
+
+    /// Regenerates the Passed summary if what's in the area has changed since the last one
+    /// (items moved, completed, canceled, or newly passed), then generates it if needed.
+    func refreshPassedSummaryIfNeeded(items: [PlanItem], reminders: [ReminderItem]) {
+        let signature = contentSignature(items: items, events: [], reminders: reminders)
+        if let previous = passedContentSignature, previous != signature {
+            clearPassedSummary()
+        }
+        passedContentSignature = signature
+        generatePassedSummaryIfNeeded(items: items, reminders: reminders)
+    }
+
+    /// Generates a one-line AI summary of the Passed area. Skips if already cached or in flight.
+    func generatePassedSummaryIfNeeded(items: [PlanItem], reminders: [ReminderItem]) {
+        guard passedSummary == nil, passedSummaryTask == nil else { return }
+        guard !items.isEmpty || !reminders.isEmpty else { return }
+        guard SystemLanguageModel.default.availability == .available else { return }
+
+        let prompt = passedSummaryParts(items: items, reminders: reminders).joined(separator: "; ")
+        let generation = UUID()
+        passedSummaryGeneration = generation
+        isLoadingPassedSummary = true
+        passedSummaryTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                // A canceled predecessor must not clobber a newer generation's state.
+                if self.passedSummaryGeneration == generation {
+                    self.passedSummaryTask = nil
+                    self.isLoadingPassedSummary = false
+                }
+            }
+
+            guard !Task.isCancelled else { return }
+
+            let session = LanguageModelSession(
+                instructions: "Summarize listed items in under 10 words. They are overdue — their time or part of the day has already passed and they are still open. Use very short phrases joined by · (middle dot). Be factual and concise. Output a single line only — no newlines, no bullet points, no lists."
+            )
+            if let response = try? await session.respond(to: prompt),
+               !Task.isCancelled, self.passedSummaryGeneration == generation {
+                self.passedSummary = response.content
+                    .components(separatedBy: .newlines)
+                    .joined(separator: " · ")
+                    .trimmingCharacters(in: .whitespaces)
+            }
+        }
     }
 
     /// A string that changes whenever the set or state of items/events/reminders feeding a

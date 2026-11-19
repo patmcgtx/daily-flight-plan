@@ -275,6 +275,31 @@ struct DayAgendaTests {
         #expect(progress.total == 0)
     }
 
+    // MARK: Passed summary prompt
+
+    @Test("passedSummaryParts labels timed entries with the time they were due and leaves untimed ones as plain titles")
+    func passedSummaryPartsLabelsTimes() {
+        let viewModel = viewModel()
+        let timed = PlanItem(title: "Call Sam", deadline: time(9, 30))
+        let untimed = PlanItem(title: "Water plants", daySection: .morning)
+        let due = ReminderItem(
+            id: "r", title: "Pay rent", notes: nil, dueDate: time(8), listTitle: "List",
+            listColor: .blue, isCompleted: false
+        )
+        let parts = viewModel.passedSummaryParts(items: [timed, untimed], reminders: [due])
+        #expect(parts == [
+            "Call Sam at \(time(9, 30).formatted(.dateTime.hour().minute()))",
+            "Water plants",
+            "Pay rent at \(time(8).formatted(.dateTime.hour().minute()))",
+        ])
+    }
+
+    @Test("passedSummaryParts keeps the prompt short by capping the number of entries")
+    func passedSummaryPartsAreCapped() {
+        let many = (0..<12).map { PlanItem(title: "Item \($0)", daySection: .morning) }
+        #expect(viewModel().passedSummaryParts(items: many, reminders: []).count == 8)
+    }
+
     // MARK: Countdown
 
     @Test("countdownLabel reads 'now' once started and rounds partial minutes up", arguments: [

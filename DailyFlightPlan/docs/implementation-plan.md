@@ -423,6 +423,13 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     with the Phase 2.9 review flow, which should share these row actions.
     - *Look:* orange italic title with a clock-alert icon, orange border and a faint orange
       header tint; the items inside are italic too.
+    - *Layout:* plan items are the same flow-layout pills as the segments, draggable onto any
+      segment (italic, with the time they were due); Reminders are read-only so stay as rows
+      below. Dropping onto an already-ended segment leaves an open item in Passed.
+    - *AI summary:* while collapsed, the header shows a one-line on-device summary of what's
+      left (like a collapsed segment), with the loading dots while it generates. It regenerates
+      when the contents change; state lives in `DayViewModel` (`passedSummary`) alongside the
+      per-segment summaries rather than inside them.
     - *Counter:* "! 3/10" like the segment headers — completed over everything that has come
       due (the open entries here plus completed items and Reminders whose time or segment has
       ended, which went back to their segment). Uses the unfiltered lists, like the segments.

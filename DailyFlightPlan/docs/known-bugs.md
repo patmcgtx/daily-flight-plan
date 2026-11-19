@@ -30,15 +30,17 @@ in (or confirmed) before it can be investigated as a real defect.
   retaining a prior `.routines` value across scene restoration/relaunch instead of starting
   fresh at `.cockpit`. Reproduce reliably (and note device/OS) before moving to Open.
 
-- **Timed items may vanish from the Cockpit tab once their deadline passes today** (found by
-  reading the code while porting to Android; not yet reproduced in the app): a pending timed item
-  whose clock time has passed is excluded by `DayViewModel.deadlineRows`/`sectionPills` (via
-  `isMissed`), and `CockpitView` has no "Missed" area that renders
-  `DayViewModel.missedDeadlineItems` — so it appears to drop out of every section while still
-  counting toward the progress totals. Reproduce by adding a timed item for a few minutes ahead,
-  letting that time pass, and checking whether it is still visible on today's Cockpit.
-
 ## Open
+
+- **Dragging a Passed item onto an ended segment shows it twice in Passed**: on the Cockpit
+  tab, drag a pill out of the Passed card onto a segment that has already ended. `handlePillDrop`
+  gives the item that segment and clears its deadline, so it correctly stays in Passed (still open
+  in a segment that's over), but it then appears twice in the list. Reproduced on device; not yet
+  root-caused. Reading the code turned up no second `PlanItem` being created
+  (`handlePillDrop`, `materializeRecurringInstances`, and `deduplicateInstances` don't add one),
+  so check whether the duplicate is a second row in `agenda.passed` or a view-level artifact of the
+  pill changing in place inside the `HFlow` (its time label disappears and it re-sorts). Dropping
+  on the current or a later segment moves the item out of Passed as intended.
 
 - **AI summary still occasionally misreports item status**: since the `(done)` marker was added
   to the Day-view section-summary prompt (`DayViewModel.generateSummaryIfNeeded`, Phase 0.1.14), the
