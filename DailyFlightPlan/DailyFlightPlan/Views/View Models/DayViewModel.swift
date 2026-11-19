@@ -139,8 +139,9 @@ func startLiveClock() {
         return deadline < currentTime
     }
 
-    /// Item was assigned to a day section that has ended, with no specific deadline → shown in "Any Time".
-    private func isSectionMissed(_ item: PlanItem) -> Bool {
+    /// Item was assigned to a day section that has ended, with no specific deadline. The Cockpit
+    /// shows these in its Past area as Missed (see `DayViewModel+Agenda.swift`).
+    func isSectionMissed(_ item: PlanItem) -> Bool {
         guard isToday, item.status == .pending, item.deadline == nil,
               let section = item.daySection,
               let sectionEnd = Calendar.current.date(

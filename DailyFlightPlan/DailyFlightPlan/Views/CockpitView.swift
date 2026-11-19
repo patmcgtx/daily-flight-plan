@@ -58,6 +58,7 @@ struct CockpitView: View {
     @State private var expandedSections: Set<DaySection> = []
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
+    @State private var isPassedExpanded = false
 
     @State private var searchText: String = ""
     @State private var isShowingSearch = false
@@ -189,6 +190,11 @@ struct CockpitView: View {
         )
         let items = activeItems(for: date)
         let raw = rawItems(for: date)
+        // Timed entries that aren't over live in Up Next, and anything still open once its time
+        // or segment ended in Passed. The sections hold the rest: untimed items, plus ended
+        // calendar events and completed items.
+        let agenda = viewModel.agenda(items: items, events: visibleEvents, reminders: visibleReminders)
+        let rawSectionItems = viewModel.sectionItems(from: raw)
 
         ScrollView {
             VStack(spacing: 16) {
@@ -198,15 +204,23 @@ struct CockpitView: View {
 
                 briefingRow(raw, date: date)
 
+                if !agenda.upcoming.isEmpty {
+                    upNextCard(agenda.upcoming)
+                }
+
                 ForEach(DaySection.allCases) { section in
+                    // Passed sits right before the current segment, after the ended ones.
+                    if section == viewModel.currentSection && !agenda.passed.isEmpty {
+                        passedCard(agenda.passed)
+                    }
                     sectionCard(
-                        section, date: date, items: items, raw: raw,
-                        events: viewModel.calendarEventsForSection(section, from: visibleEvents),
-                        reminders: viewModel.reminderItemsForSection(section, from: visibleReminders)
+                        section, date: date, items: agenda.sectionItems, raw: rawSectionItems,
+                        events: viewModel.calendarEventsForSection(section, from: agenda.sectionEvents),
+                        reminders: viewModel.reminderItemsForSection(section, from: agenda.sectionReminders)
                     )
                 }
 
-                let openItems = viewModel.anyTimeItems(from: items)
+                let openItems = viewModel.anyTimeItems(from: agenda.sectionItems)
                 let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
                 if !openItems.isEmpty || !anyTimeReminders.isEmpty {
                     openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
@@ -666,12 +680,15 @@ struct CockpitView: View {
             let visibleReminders = searchFiltered(reminders:
                 showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
             )
-            let selectedItems = activeItems(for: viewModel.selectedDate)
+            let agenda = viewModel.agenda(
+                items: activeItems(for: viewModel.selectedDate),
+                events: visibleEvents, reminders: visibleReminders
+            )
             expandedSections = Set(DaySection.allCases.filter { section in
-                let items = viewModel.sectionPills(section, from: selectedItems)
-                           + viewModel.deadlineRows(section, from: selectedItems)
-                let events = viewModel.calendarEventsForSection(section, from: visibleEvents)
-                let reminders = viewModel.reminderItemsForSection(section, from: visibleReminders)
+                let items = viewModel.sectionPills(section, from: agenda.sectionItems)
+                           + viewModel.deadlineRows(section, from: agenda.sectionItems)
+                let events = viewModel.calendarEventsForSection(section, from: agenda.sectionEvents)
+                let reminders = viewModel.reminderItemsForSection(section, from: agenda.sectionReminders)
                 return !items.isEmpty || !events.isEmpty || !reminders.isEmpty
             })
         } else {
@@ -955,6 +972,115 @@ struct CockpitView: View {
         .animation(.easeInOut(duration: 0.15), value: isOpenDropTargeted)
     }
 
+    // MARK: - Up Next / Past
+
+    /// Every timed commitment for the day in one chronological list. On today the soonest
+    /// entry is flagged with a highlighter bar and a countdown; other days just list the day's
+    /// schedule.
+    private func upNextCard(_ entries: [DayEntry]) -> some View {
+        let isToday = viewModel.isToday
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Text(isToday ? "Up Next" : "Scheduled")
+                    .font(CockpitStyle.mono(.title2, weight: .bold))
+                    .cockpitUppercase()
+                    .foregroundStyle(CockpitStyle.ink.opacity(0.85))
+                Spacer()
+                if isToday, let next = entries.first {
+                    Text(viewModel.countdownLabel(for: next))
+                        .font(CockpitStyle.mono(.caption, weight: .bold))
+                        .cockpitUppercase()
+                        .foregroundStyle(CockpitStyle.inkOnHighlighter)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(CockpitStyle.highlighter)
+                }
+            }
+            .padding(16)
+
+            ForEach(entries) { entry in
+                Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                agendaRow(entry)
+                    .overlay(alignment: .leading) {
+                        if isToday && entry.id == entries.first?.id {
+                            Rectangle().fill(CockpitStyle.highlighter).frame(width: 4)
+                        }
+                    }
+            }
+        }
+        .padding(.bottom, 4)
+        .background(CockpitStyle.surface)
+        .clipShape(Rectangle())
+        .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
+        .background {
+            Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
+        }
+    }
+
+    /// Collapsed by default, shown right before the current segment: open timed items and
+    /// reminders whose time has gone, plus open items (routines included) left behind once their
+    /// day section ended. Calendar events never land here.
+    private func passedCard(_ entries: [DayEntry]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.spring(duration: 0.3)) { isPassedExpanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text("Passed · \(entries.count)")
+                        .font(CockpitStyle.mono(.headline, weight: .bold))
+                        .cockpitUppercase()
+                        .foregroundStyle(CockpitStyle.ink)
+                    Spacer()
+                    Image(systemName: isPassedExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.bold())
+                        .foregroundStyle(CockpitStyle.muted)
+                }
+                .padding(16)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Passed, \(entries.count) items")
+            .accessibilityHint(isPassedExpanded ? "Collapse" : "Expand")
+
+            if isPassedExpanded {
+                ForEach(entries) { entry in
+                    Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                    agendaRow(entry, isPassed: true)
+                }
+            }
+        }
+        .padding(.bottom, isPassedExpanded ? 4 : 0)
+        .background(CockpitStyle.surface)
+        .clipShape(Rectangle())
+        .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
+        .background {
+            Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
+        }
+    }
+
+    /// One row of Up Next or Passed, in each source's existing row style. Passed plan items also
+    /// get "Move to Now" in their context menu.
+    @ViewBuilder
+    private func agendaRow(_ entry: DayEntry, isPassed: Bool = false) -> some View {
+        switch entry {
+        case .planItem(let item):
+            cardDeadlineRow(item, isPassed: isPassed)
+        case .calendarEvent(let event):
+            CalendarEventRow(event: event)
+        case .reminder(let reminder):
+            ReminderItemRow(item: reminder)
+        }
+    }
+
+    /// Gives a passed item back to the current section (untimed) so it's live again.
+    private func moveToNow(_ item: PlanItem) {
+        withAnimation(.spring(duration: 0.3)) {
+            item.daySection = viewModel.currentSection
+            item.deadline = nil
+        }
+        try? modelContext.save()
+    }
+
     // MARK: - Card headers
 
     private func cardHeader(
@@ -1183,7 +1309,7 @@ struct CockpitView: View {
         }
     }
 
-    private func cardDeadlineRow(_ item: PlanItem) -> some View {
+    private func cardDeadlineRow(_ item: PlanItem, isPassed: Bool = false) -> some View {
         HStack(spacing: 14) {
             Button {
                 withAnimation(.spring(duration: 0.2)) {
@@ -1238,6 +1364,11 @@ struct CockpitView: View {
         .contentShape(Rectangle())
         .contextMenu {
             Button { itemToEdit = item } label: { Label("Edit", systemImage: "pencil") }
+            if isPassed {
+                Button { moveToNow(item) } label: {
+                    Label("Move to Now", systemImage: "arrow.uturn.forward")
+                }
+            }
             Button {
                 item.isFlagged.toggle()
                 try? modelContext.save()
