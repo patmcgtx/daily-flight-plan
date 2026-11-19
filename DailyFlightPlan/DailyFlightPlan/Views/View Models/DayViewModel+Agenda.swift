@@ -108,6 +108,16 @@ extension DayViewModel {
         items.filter { slot(for: $0) == .section }
     }
 
+    /// Whether `section` has anything to list: untimed items assigned to it, completed items that
+    /// came due in it, ended calendar events, or completed reminders. Items that moved to Up Next
+    /// or Passed don't count, so a past segment is empty once nothing but history is left in it.
+    func hasContent(_ section: DaySection, in agenda: DayAgenda) -> Bool {
+        !sectionPills(section, from: agenda.sectionItems).isEmpty
+            || !deadlineRows(section, from: agenda.sectionItems).isEmpty
+            || !calendarEventsForSection(section, from: agenda.sectionEvents).isEmpty
+            || !reminderItemsForSection(section, from: agenda.sectionReminders).isEmpty
+    }
+
     /// When `entry` starts, for the "in 42 min" countdown on the next upcoming entry.
     func startTime(of entry: DayEntry) -> Date {
         switch entry {

@@ -23,13 +23,16 @@ struct CockpitViewMenu: View {
     @AppStorage(AppStorageKeys.showReminderItems.rawValue)
     private var showReminderItems: Bool = true
 
+    @AppStorage(AppStorageKeys.showEmptySegments.rawValue)
+    private var showEmptySegments: Bool = true
+
     @AppStorage(AppStorageKeys.uppercaseText.rawValue)
     private var uppercaseText: Bool = true
 
     /// True when any option differs from its default.
     private var isNonDefault: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
-            || !showCalendarEvents || !showReminderItems || !uppercaseText
+            || !showCalendarEvents || !showReminderItems || !showEmptySegments || !uppercaseText
     }
 
     var body: some View {
@@ -48,6 +51,9 @@ struct CockpitViewMenu: View {
             }
             Toggle(isOn: $showReminderItems) {
                 Label("Reminders", systemImage: "bell")
+            }
+            Toggle(isOn: $showEmptySegments) {
+                Label("Empty Segments", systemImage: "square.dashed")
             }
 
             Divider()

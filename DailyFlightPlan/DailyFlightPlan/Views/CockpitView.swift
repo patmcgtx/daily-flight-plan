@@ -40,6 +40,9 @@ struct CockpitView: View {
     @AppStorage(AppStorageKeys.showReminderItems.rawValue)
     private var showReminderItems: Bool = true
 
+    @AppStorage(AppStorageKeys.showEmptySegments.rawValue)
+    private var showEmptySegments: Bool = true
+
     @AppStorage(AppStorageKeys.uppercaseText.rawValue)
     private var uppercaseText: Bool = true
 
@@ -217,11 +220,17 @@ struct CockpitView: View {
                             progress: viewModel.passedProgress(items: raw, reminders: rawReminders)
                         )
                     }
-                    sectionCard(
-                        section, date: date, items: agenda.sectionItems, raw: rawSectionItems,
-                        events: viewModel.calendarEventsForSection(section, from: agenda.sectionEvents),
-                        reminders: viewModel.reminderItemsForSection(section, from: agenda.sectionReminders)
-                    )
+                    // Empty segments can be hidden from the View menu. Past segments tend to go
+                    // empty on their own, since their open items move to Passed. The current
+                    // segment always stays: it carries the NOW marker and the Add item button.
+                    if showEmptySegments || section == viewModel.currentSection
+                        || viewModel.hasContent(section, in: agenda) {
+                        sectionCard(
+                            section, date: date, items: agenda.sectionItems, raw: rawSectionItems,
+                            events: viewModel.calendarEventsForSection(section, from: agenda.sectionEvents),
+                            reminders: viewModel.reminderItemsForSection(section, from: agenda.sectionReminders)
+                        )
+                    }
                 }
 
                 let openItems = viewModel.anyTimeItems(from: agenda.sectionItems)
@@ -688,13 +697,7 @@ struct CockpitView: View {
                 items: activeItems(for: viewModel.selectedDate),
                 events: visibleEvents, reminders: visibleReminders
             )
-            expandedSections = Set(DaySection.allCases.filter { section in
-                let items = viewModel.sectionPills(section, from: agenda.sectionItems)
-                           + viewModel.deadlineRows(section, from: agenda.sectionItems)
-                let events = viewModel.calendarEventsForSection(section, from: agenda.sectionEvents)
-                let reminders = viewModel.reminderItemsForSection(section, from: agenda.sectionReminders)
-                return !items.isEmpty || !events.isEmpty || !reminders.isEmpty
-            })
+            expandedSections = Set(DaySection.allCases.filter { viewModel.hasContent($0, in: agenda) })
         } else {
             initializeExpandedSections()
         }

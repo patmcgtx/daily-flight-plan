@@ -275,6 +275,36 @@ struct DayAgendaTests {
         #expect(progress.total == 0)
     }
 
+    // MARK: Segment content
+
+    @Test("hasContent is true for a segment holding an untimed item, a completed timed item, an ended event, or a completed reminder", arguments: [
+        (section: DaySection.firstThing, expected: true),   // completed reminder due 5:00
+        (section: DaySection.morning, expected: true),      // completed item due 9:00
+        (section: DaySection.midday, expected: true),       // ended event at 12:00
+        (section: DaySection.afternoon, expected: true),    // untimed item
+        (section: DaySection.evening, expected: false),
+        (section: DaySection.bedtime, expected: false),
+    ])
+    func hasContentPerSection(section: DaySection, expected: Bool) {
+        let viewModel = viewModel()
+        let agenda = viewModel.agenda(
+            items: [item(daySection: .afternoon), item(deadline: time(9), status: .completed)],
+            events: [event(start: time(12))],
+            reminders: [reminder(due: time(5), completed: true)]
+        )
+        #expect(viewModel.hasContent(section, in: agenda) == expected)
+    }
+
+    @Test("A past segment whose open items moved to Passed has no content left")
+    func hasContentIgnoresPassedItems() {
+        let viewModel = viewModel()
+        let agenda = viewModel.agenda(
+            items: [item(daySection: .morning), item(deadline: time(9))], events: [], reminders: []
+        )
+        #expect(agenda.passed.count == 2)
+        #expect(!viewModel.hasContent(.morning, in: agenda))
+    }
+
     // MARK: Passed summary prompt
 
     @Test("passedSummaryParts labels timed entries with the time they were due and leaves untimed ones as plain titles")

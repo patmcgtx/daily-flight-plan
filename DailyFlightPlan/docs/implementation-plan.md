@@ -438,6 +438,10 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   - **Stays in its segment**: ended Calendar events (never Passed — they can't be completed)
     and completed or canceled items whose time has passed, plus all untimed items in the
     current or later segments.
+  - **Empty Segments** view option (View menu, on by default): off hides segments with nothing
+    to list. A past segment goes empty on its own once its open items move to Passed, and only
+    shows again while completed items or ended Calendar events are visible in it. The current
+    segment always stays, for its NOW marker and Add item button.
   - *Done:* the partitioning lives in `DayViewModel+Agenda.swift`
     (`agenda(items:events:reminders:)`, `sectionItems(from:)`, `countdownLabel(for:)`), covered
     by `DayAgendaTests`. `CockpitView`
