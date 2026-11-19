@@ -394,6 +394,10 @@ func startLiveClock() {
             }
         }
         let signature = contentSignature(items: items, events: [], reminders: reminders)
+            + entries.compactMap { entry in
+                guard case .planItem(let item) = entry else { return nil }
+                return "\(item.uuid)|\(item.daySection?.rawValue ?? \"open\")"
+            }.joined(separator: ",")
         if let previous = passedContentSignature, previous != signature {
             clearPassedSummary()
         }
