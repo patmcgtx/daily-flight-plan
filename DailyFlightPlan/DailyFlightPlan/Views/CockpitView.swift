@@ -1101,23 +1101,24 @@ struct CockpitView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                 }
-                if !planItems.isEmpty {
+                // Oldest first across both row styles: runs of plan items share a flow layout,
+                // and each reminder is its own row.
+                ForEach(viewModel.passedRuns(from: entries)) { run in
                     Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
-                    // Same flow layout and drag-and-drop as the segments, so a passed item can
-                    // be dropped straight onto the segment it should move to.
-                    HFlow(spacing: 8) {
-                        ForEach(planItems) { item in
-                            paperPill(item, isPassed: true)
-                                .draggable(item.uuid.uuidString)
+                    switch run {
+                    case .pills(let items):
+                        // Same flow layout and drag-and-drop as the segments, so a passed item
+                        // can be dropped straight onto the segment it should move to.
+                        HFlow(spacing: 8) {
+                            ForEach(items) { item in
+                                paperPill(item, isPassed: true)
+                                    .draggable(item.uuid.uuidString)
+                            }
                         }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                }
-                // Reminders are read-only, so they stay as rows rather than draggable pills.
-                ForEach(entries) { entry in
-                    if case .reminder(let reminder) = entry {
-                        Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                    case .reminder(let reminder):
+                        // Reminders are read-only, so they stay as rows rather than pills.
                         ReminderItemRow(item: reminder)
                     }
                 }

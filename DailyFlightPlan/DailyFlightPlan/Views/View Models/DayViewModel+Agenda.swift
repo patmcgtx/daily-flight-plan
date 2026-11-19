@@ -34,7 +34,46 @@ struct DayAgenda {
     var sectionReminders: [ReminderItem] = []
 }
 
+/// A stretch of the Passed list in one row style: consecutive plan items share a flow layout of
+/// pills, while each reminder is its own row. Keeps the list oldest first across both styles.
+enum PassedRun: Identifiable {
+    case pills([PlanItem])
+    case reminder(ReminderItem)
+
+    var id: String {
+        switch self {
+        case .pills(let items): return "pills-\(items.first?.uuid.uuidString ?? "")"
+        case .reminder(let reminder): return "reminder-\(reminder.id)"
+        }
+    }
+}
+
 extension DayViewModel {
+
+    /// Groups `entries` (already oldest first) into runs without reordering them. Calendar events
+    /// never appear in Passed, so any that sneak in are skipped.
+    func passedRuns(from entries: [DayEntry]) -> [PassedRun] {
+        var runs: [PassedRun] = []
+        var pending: [PlanItem] = []
+        func flushPills() {
+            guard !pending.isEmpty else { return }
+            runs.append(.pills(pending))
+            pending = []
+        }
+        for entry in entries {
+            switch entry {
+            case .planItem(let item):
+                pending.append(item)
+            case .reminder(let reminder):
+                flushPills()
+                runs.append(.reminder(reminder))
+            case .calendarEvent:
+                continue
+            }
+        }
+        flushPills()
+        return runs
+    }
 
     private enum Slot {
         case upcoming, passed, section

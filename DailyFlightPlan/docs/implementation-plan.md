@@ -424,8 +424,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     - *Look:* orange italic title with a clock-alert icon, orange border and a faint orange
       header tint; the items inside are italic too.
     - *Layout:* plan items are the same flow-layout pills as the segments, draggable onto any
-      segment (italic, with the time they were due); Reminders are read-only so stay as rows
-      below. Dropping an open item onto an already-ended segment is refused (it would just
+      segment (italic, with the time they were due); Reminders are read-only so stay as rows,
+      interleaved in oldest-first order (neighboring plan items share one flow layout). Dropping an open item onto an already-ended segment is refused (it would just
       count as passed again); the drag springs back.
     - *AI summary:* while collapsed, the header shows a one-line on-device summary of what's
       left (like a collapsed segment), with the loading dots while it generates. It regenerates

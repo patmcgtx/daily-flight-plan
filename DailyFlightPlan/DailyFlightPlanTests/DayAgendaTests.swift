@@ -215,6 +215,33 @@ struct DayAgendaTests {
         ])
     }
 
+    @Test("passedRuns keeps the list oldest first, grouping only neighboring plan items into one pill run")
+    func passedRunsPreserveOrder() {
+        let viewModel = viewModel()
+        let earlyReminder = reminder(due: time(8))
+        let firstItem = item(deadline: time(9))
+        let secondItem = item(deadline: time(10))
+        let lateReminder = reminder(due: time(11))
+        let lastItem = item(deadline: time(12))
+        let agenda = viewModel.agenda(
+            items: [lastItem, secondItem, firstItem], events: [], reminders: [lateReminder, earlyReminder]
+        )
+        let runs = viewModel.passedRuns(from: agenda.passed)
+        #expect(runs.map(\.id) == [
+            PassedRun.reminder(earlyReminder).id,
+            PassedRun.pills([firstItem, secondItem]).id,
+            PassedRun.reminder(lateReminder).id,
+            PassedRun.pills([lastItem]).id,
+        ])
+    }
+
+    @Test("passedRuns is empty for an empty list and skips calendar events")
+    func passedRunsEdgeCases() {
+        let viewModel = viewModel()
+        #expect(viewModel.passedRuns(from: []).isEmpty)
+        #expect(viewModel.passedRuns(from: [.calendarEvent(event(start: time(9)))]).isEmpty)
+    }
+
     @Test("On a day other than today every timed entry is upcoming and nothing is passed")
     func otherDaysHaveNoPassed() {
         let viewModel = viewModel(viewingToday: false)
