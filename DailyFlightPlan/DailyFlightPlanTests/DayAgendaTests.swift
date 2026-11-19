@@ -350,6 +350,33 @@ struct DayAgendaTests {
         #expect(parts.first?.hasPrefix("Reminder") == true)
     }
 
+    @Test("The Passed summary signature changes when an untimed item moves between ended segments, even though its title, status and deadline don't")
+    func passedSummarySignatureTracksSegment() {
+        let viewModel = viewModel()
+        let subject = item(daySection: .morning)
+        func passedSignature() -> String {
+            viewModel.passedSummarySignature(entries: viewModel.agenda(items: [subject], events: [], reminders: []).passed)
+        }
+        let plainBefore = viewModel.contentSignature(items: [subject], events: [], reminders: [])
+        let passedBefore = passedSignature()
+
+        subject.daySection = .midday   // still ended at 2 PM, so it stays in Passed
+
+        // The plain signature can't see the move, which is the gap the Passed one closes.
+        #expect(viewModel.contentSignature(items: [subject], events: [], reminders: []) == plainBefore)
+        #expect(passedSignature() != passedBefore)
+    }
+
+    @Test("The Passed summary signature is stable for unchanged contents and changes when the contents do")
+    func passedSummarySignatureStability() {
+        let viewModel = viewModel()
+        let first = item(deadline: time(9))
+        let second = reminder(due: time(8))
+        let entries = viewModel.agenda(items: [first], events: [], reminders: [second]).passed
+        #expect(viewModel.passedSummarySignature(entries: entries) == viewModel.passedSummarySignature(entries: entries))
+        #expect(viewModel.passedSummarySignature(entries: entries) != viewModel.passedSummarySignature(entries: []))
+    }
+
     // MARK: Countdown
 
     @Test("countdownLabel reads 'now' once started and rounds partial minutes up", arguments: [

@@ -1042,11 +1042,7 @@ struct CockpitView: View {
             if case .planItem(let item) = entry { return item }
             return nil
         }
-        let reminders = entries.compactMap { entry -> ReminderItem? in
-            if case .reminder(let reminder) = entry { return reminder }
-            return nil
-        }
-        let contentSignature = viewModel.contentSignature(items: planItems, events: [], reminders: reminders)
+        let contentSignature = viewModel.passedSummarySignature(entries: entries)
         return VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.spring(duration: 0.3)) { isPassedExpanded.toggle() }

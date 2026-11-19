@@ -381,9 +381,13 @@ func startLiveClock() {
         return Array(parts.prefix(8))
     }
 
-    /// Regenerates the Passed summary if what's in the area has changed since the last one
-    /// (items moved, completed, canceled, or newly passed), then generates it if needed.
-    func refreshPassedSummaryIfNeeded(entries: [DayEntry]) {
+    /// A string that changes whenever what the Passed summary describes changes. On top of
+    /// `contentSignature` (membership, status, titles, times) it covers each plan item's
+    /// segment: an untimed item's summary label uses its segment's end time, so moving it between
+    /// two ended segments changes the summary without changing anything `contentSignature` sees.
+    /// The view watches this same value, so a change both triggers the refresh and invalidates the
+    /// cached summary.
+    func passedSummarySignature(entries: [DayEntry]) -> String {
         var items: [PlanItem] = []
         var reminders: [ReminderItem] = []
         for entry in entries {
@@ -393,11 +397,17 @@ func startLiveClock() {
             case .calendarEvent: break
             }
         }
-        let signature = contentSignature(items: items, events: [], reminders: reminders)
-            + entries.compactMap { entry in
-                guard case .planItem(let item) = entry else { return nil }
-                return "\(item.uuid)|\(item.daySection?.rawValue ?? \"open\")"
-            }.joined(separator: ",")
+        let sections = items
+            .sorted { $0.uuid.uuidString < $1.uuid.uuidString }
+            .map { "\($0.uuid)|\($0.daySection?.rawValue ?? "open")" }
+            .joined(separator: ",")
+        return contentSignature(items: items, events: [], reminders: reminders) + "||" + sections
+    }
+
+    /// Regenerates the Passed summary if what's in the area has changed since the last one
+    /// (items moved, completed, canceled, or newly passed), then generates it if needed.
+    func refreshPassedSummaryIfNeeded(entries: [DayEntry]) {
+        let signature = passedSummarySignature(entries: entries)
         if let previous = passedContentSignature, previous != signature {
             clearPassedSummary()
         }
