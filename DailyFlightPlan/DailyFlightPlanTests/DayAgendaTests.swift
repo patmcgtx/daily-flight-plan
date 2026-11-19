@@ -355,27 +355,32 @@ struct DayAgendaTests {
 
     // MARK: Passed summary prompt
 
-    @Test("passedSummaryParts labels timed entries with the time they were due and leaves untimed ones as plain titles")
-    func passedSummaryPartsLabelsTimes() {
+    @Test("passedSummaryParts follows the oldest-first order across plan items and reminders, labeling timed entries and leaving untimed ones as plain titles")
+    func passedSummaryPartsFollowChronology() {
         let viewModel = viewModel()
         let timed = PlanItem(title: "Call Sam", deadline: time(9, 30))
-        let untimed = PlanItem(title: "Water plants", daySection: .morning)
+        let untimed = PlanItem(title: "Water plants", daySection: .morning)   // morning ends 10:59
         let due = ReminderItem(
             id: "r", title: "Pay rent", notes: nil, dueDate: time(8), listTitle: "List",
             listColor: .blue, isCompleted: false
         )
-        let parts = viewModel.passedSummaryParts(items: [timed, untimed], reminders: [due])
-        #expect(parts == [
+        let agenda = viewModel.agenda(items: [untimed, timed], events: [], reminders: [due])
+        #expect(viewModel.passedSummaryParts(entries: agenda.passed) == [
+            "Pay rent at \(time(8).formatted(.dateTime.hour().minute()))",
             "Call Sam at \(time(9, 30).formatted(.dateTime.hour().minute()))",
             "Water plants",
-            "Pay rent at \(time(8).formatted(.dateTime.hour().minute()))",
         ])
     }
 
-    @Test("passedSummaryParts keeps the prompt short by capping the number of entries")
-    func passedSummaryPartsAreCapped() {
-        let many = (0..<12).map { PlanItem(title: "Item \($0)", daySection: .morning) }
-        #expect(viewModel().passedSummaryParts(items: many, reminders: []).count == 8)
+    @Test("passedSummaryParts caps the prompt at the eight oldest entries, so older reminders aren't crowded out by newer plan items")
+    func passedSummaryPartsKeepOldestWhenCapped() {
+        let viewModel = viewModel()
+        let oldReminder = reminder(due: time(5))
+        let manyItems = (0..<12).map { PlanItem(title: "Item \($0)", deadline: time(9, $0)) }
+        let agenda = viewModel.agenda(items: manyItems, events: [], reminders: [oldReminder])
+        let parts = viewModel.passedSummaryParts(entries: agenda.passed)
+        #expect(parts.count == 8)
+        #expect(parts.first?.hasPrefix("Reminder") == true)
     }
 
     // MARK: Countdown

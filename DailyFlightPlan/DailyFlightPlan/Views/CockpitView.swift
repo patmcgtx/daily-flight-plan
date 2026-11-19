@@ -1144,10 +1144,10 @@ struct CockpitView: View {
             Text("Reminders in this list aren't affected.")
         }
         .onAppear {
-            viewModel.refreshPassedSummaryIfNeeded(items: planItems, reminders: reminders)
+            viewModel.refreshPassedSummaryIfNeeded(entries: entries)
         }
         .onChange(of: contentSignature) { _, _ in
-            viewModel.refreshPassedSummaryIfNeeded(items: planItems, reminders: reminders)
+            viewModel.refreshPassedSummaryIfNeeded(entries: entries)
         }
     }
 

@@ -359,36 +359,53 @@ func startLiveClock() {
         isLoadingPassedSummary = false
     }
 
-    /// Short phrases describing what is in the Passed area, oldest first, for the summary
-    /// prompt: timed entries carry the time they were due, untimed ones just their title.
-    func passedSummaryParts(items: [PlanItem], reminders: [ReminderItem]) -> [String] {
+    /// Short phrases describing what is in the Passed area, for the summary prompt. Built from
+    /// `entries` (`agenda.passed`, already oldest first across plan items and reminders, with
+    /// untimed items placed at the end of their segment), so the order and the cap on how many
+    /// entries are sent both follow that single chronology. Timed entries carry the time they
+    /// were due; untimed ones are just their title, since their segment's end isn't a due time.
+    func passedSummaryParts(entries: [DayEntry]) -> [String] {
         func label(_ title: String, at time: Date?) -> String {
             guard let time else { return title }
             return "\(title) at \(time.formatted(.dateTime.hour().minute()))"
         }
-        let itemParts = items.map { label($0.title, at: $0.deadline) }
-        let reminderParts = reminders.map { label($0.title, at: $0.dueDate) }
-        return Array((itemParts + reminderParts).prefix(8))
+        let parts = entries.compactMap { entry -> String? in
+            switch entry {
+            case .planItem(let item): return label(item.title, at: item.deadline)
+            case .reminder(let reminder): return label(reminder.title, at: reminder.dueDate)
+            case .calendarEvent: return nil
+            }
+        }
+        return Array(parts.prefix(8))
     }
 
     /// Regenerates the Passed summary if what's in the area has changed since the last one
     /// (items moved, completed, canceled, or newly passed), then generates it if needed.
-    func refreshPassedSummaryIfNeeded(items: [PlanItem], reminders: [ReminderItem]) {
+    func refreshPassedSummaryIfNeeded(entries: [DayEntry]) {
+        var items: [PlanItem] = []
+        var reminders: [ReminderItem] = []
+        for entry in entries {
+            switch entry {
+            case .planItem(let item): items.append(item)
+            case .reminder(let reminder): reminders.append(reminder)
+            case .calendarEvent: break
+            }
+        }
         let signature = contentSignature(items: items, events: [], reminders: reminders)
         if let previous = passedContentSignature, previous != signature {
             clearPassedSummary()
         }
         passedContentSignature = signature
-        generatePassedSummaryIfNeeded(items: items, reminders: reminders)
+        generatePassedSummaryIfNeeded(entries: entries)
     }
 
     /// Generates a one-line AI summary of the Passed area. Skips if already cached or in flight.
-    func generatePassedSummaryIfNeeded(items: [PlanItem], reminders: [ReminderItem]) {
+    func generatePassedSummaryIfNeeded(entries: [DayEntry]) {
         guard passedSummary == nil, passedSummaryTask == nil else { return }
-        guard !items.isEmpty || !reminders.isEmpty else { return }
+        guard !entries.isEmpty else { return }
         guard SystemLanguageModel.default.availability == .available else { return }
 
-        let prompt = passedSummaryParts(items: items, reminders: reminders).joined(separator: "; ")
+        let prompt = passedSummaryParts(entries: entries).joined(separator: "; ")
         let generation = UUID()
         passedSummaryGeneration = generation
         isLoadingPassedSummary = true
