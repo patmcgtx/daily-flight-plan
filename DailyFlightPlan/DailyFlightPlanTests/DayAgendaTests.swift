@@ -355,7 +355,7 @@ struct DayAgendaTests {
 
     // MARK: Passed summary prompt
 
-    @Test("passedSummaryParts follows the oldest-first order across plan items and reminders, labeling timed entries and leaving untimed ones as plain titles")
+    @Test("passedSummaryParts follows the oldest-first order across plan items and reminders and labels untimed items with their section end")
     func passedSummaryPartsFollowChronology() {
         let viewModel = viewModel()
         let timed = PlanItem(title: "Call Sam", deadline: time(9, 30))
@@ -368,7 +368,7 @@ struct DayAgendaTests {
         #expect(viewModel.passedSummaryParts(entries: agenda.passed) == [
             "Pay rent at \(time(8).formatted(.dateTime.hour().minute()))",
             "Call Sam at \(time(9, 30).formatted(.dateTime.hour().minute()))",
-            "Water plants",
+            "Water plants at \(time(10, 59).formatted(.dateTime.hour().minute()))",
         ])
     }
 

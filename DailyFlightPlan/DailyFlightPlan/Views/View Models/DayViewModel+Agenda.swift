@@ -228,7 +228,7 @@ extension DayViewModel {
     }
 
     /// The last moment of `section` on the day of `currentTime`.
-    private func sectionEndTime(_ section: DaySection) -> Date {
+    func sectionEndTime(_ section: DaySection) -> Date {
         Calendar.current.date(
             bySettingHour: section.endMinutes / 60, minute: section.endMinutes % 60,
             second: 59, of: currentTime

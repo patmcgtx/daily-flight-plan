@@ -363,7 +363,7 @@ func startLiveClock() {
     /// `entries` (`agenda.passed`, already oldest first across plan items and reminders, with
     /// untimed items placed at the end of their segment), so the order and the cap on how many
     /// entries are sent both follow that single chronology. Timed entries carry the time they
-    /// were due; untimed ones are just their title, since their segment's end isn't a due time.
+    /// were due; untimed plan items carry their segment's end time.
     func passedSummaryParts(entries: [DayEntry]) -> [String] {
         func label(_ title: String, at time: Date?) -> String {
             guard let time else { return title }
@@ -371,7 +371,9 @@ func startLiveClock() {
         }
         let parts = entries.compactMap { entry -> String? in
             switch entry {
-            case .planItem(let item): return label(item.title, at: item.deadline)
+            case .planItem(let item):
+                let time = item.deadline ?? item.daySection.map(sectionEndTime)
+                return label(item.title, at: time)
             case .reminder(let reminder): return label(reminder.title, at: reminder.dueDate)
             case .calendarEvent: return nil
             }
