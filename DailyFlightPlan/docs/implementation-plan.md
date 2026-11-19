@@ -417,8 +417,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     here only, not also in their day section, so there are no duplicates. Plan items and
     reminders stay completable from the list. Respects the View-menu toggles (Calendar Events,
     Reminders, Completed, Flagged Only) and the category filter.
-  - **Passed**: one collapsed area, headed "Passed · N", placed right before the current
-    segment. A single list, oldest first, with no per-row labels. It holds open items whose
+  - **Passed**: one area, expanded by default (tap the header to collapse), headed "Passed",
+    placed right before the current segment. A single list, oldest first, with no per-row labels. It holds open items whose
     moment has gone: pending plan items past their deadline, uncompleted Reminders past their
     due time, and untimed pending items — Maintenance (routine) ones included — whose day
     segment has ended. Plan items get "Move to Now" (current segment, untimed) in their context
@@ -447,7 +447,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   - *Done:* the partitioning lives in `DayViewModel+Agenda.swift`
     (`agenda(items:events:reminders:)`, `sectionItems(from:)`, `countdownLabel(for:)`), covered
     by `DayAgendaTests`. `CockpitView`
-    renders `upNextCard` and the collapsed `passedCard`; the sections' progress counts exclude
+    renders `upNextCard` and `passedCard`; the sections' progress counts exclude
     items shown in Up Next or Passed. **Deviations:**
     - *No all-day banner:* `EventKitCalendarService` already filters all-day events out, so
       there is nothing to show. Surfacing them needs `CalendarEvent` to carry an all-day flag.

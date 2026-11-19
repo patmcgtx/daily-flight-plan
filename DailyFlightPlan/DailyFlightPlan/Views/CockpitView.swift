@@ -62,7 +62,7 @@ struct CockpitView: View {
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
     @State private var isUpNextExpanded = true
-    @State private var isPassedExpanded = false
+    @State private var isPassedExpanded = true
     @State private var isConfirmingCancelAllPassed = false
 
     @State private var searchText: String = ""
@@ -1033,7 +1033,7 @@ struct CockpitView: View {
         }
     }
 
-    /// Collapsed by default, shown right before the current segment: open timed items and
+    /// Expanded by default, shown right before the current segment: open timed items and
     /// reminders whose time has gone, plus open items (routines included) left behind once their
     /// day section ended. Calendar events never land here. Orange and italic, and drawn straight
     /// on the page with no card or border, so it stands apart from the live segments.
