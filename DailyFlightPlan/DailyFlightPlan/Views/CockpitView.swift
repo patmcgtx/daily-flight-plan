@@ -59,6 +59,7 @@ struct CockpitView: View {
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
     @State private var isPassedExpanded = false
+    @State private var isConfirmingCancelAllPassed = false
 
     @State private var searchText: String = ""
     @State private var isShowingSearch = false
@@ -211,7 +212,10 @@ struct CockpitView: View {
                 ForEach(DaySection.allCases) { section in
                     // Passed sits right before the current segment, after the ended ones.
                     if section == viewModel.currentSection && !agenda.passed.isEmpty {
-                        passedCard(agenda.passed)
+                        passedCard(
+                            agenda.passed,
+                            progress: viewModel.passedProgress(items: raw, reminders: rawReminders)
+                        )
                     }
                     sectionCard(
                         section, date: date, items: agenda.sectionItems, raw: rawSectionItems,
@@ -1019,30 +1023,59 @@ struct CockpitView: View {
 
     /// Collapsed by default, shown right before the current segment: open timed items and
     /// reminders whose time has gone, plus open items (routines included) left behind once their
-    /// day section ended. Calendar events never land here.
-    private func passedCard(_ entries: [DayEntry]) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+    /// day section ended. Calendar events never land here. Styled in orange and italic so it
+    /// stands apart from the live segments; the counter is done/came-due, with a "!" while any
+    /// are left.
+    private func passedCard(_ entries: [DayEntry], progress: (completed: Int, total: Int)) -> some View {
+        let planItems = entries.compactMap { entry -> PlanItem? in
+            if case .planItem(let item) = entry { return item }
+            return nil
+        }
+        return VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.spring(duration: 0.3)) { isPassedExpanded.toggle() }
             } label: {
                 HStack(spacing: 8) {
-                    Text("Passed · \(entries.count)")
+                    Image(systemName: "clock.badge.exclamationmark")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Color.orange)
+                    Text("Passed")
                         .font(CockpitStyle.mono(.headline, weight: .bold))
+                        .italic()
                         .cockpitUppercase()
-                        .foregroundStyle(CockpitStyle.ink)
+                        .foregroundStyle(Color.orange)
                     Spacer()
+                    Text("! \(progress.completed)/\(progress.total)")
+                        .font(CockpitStyle.mono(.caption2, weight: .bold))
+                        .foregroundStyle(Color.orange)
                     Image(systemName: isPassedExpanded ? "chevron.up" : "chevron.down")
                         .font(.caption.bold())
                         .foregroundStyle(CockpitStyle.muted)
                 }
                 .padding(16)
+                .background(Color.orange.opacity(0.12))
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Passed, \(entries.count) items")
+            .accessibilityLabel(
+                "Passed, \(progress.completed) of \(progress.total) done, \(entries.count) left"
+            )
             .accessibilityHint(isPassedExpanded ? "Collapse" : "Expand")
 
             if isPassedExpanded {
+                if !planItems.isEmpty {
+                    Rectangle().fill(Color.orange.opacity(0.6)).frame(height: 1)
+                    HFlow(spacing: 10) {
+                        passedActionButton("Move all to now", systemImage: "arrow.uturn.forward") {
+                            moveToNow(planItems)
+                        }
+                        passedActionButton("Cancel all", systemImage: "xmark.circle") {
+                            isConfirmingCancelAllPassed = true
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                }
                 ForEach(entries) { entry in
                     Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
                     agendaRow(entry, isPassed: true)
@@ -1052,10 +1085,37 @@ struct CockpitView: View {
         .padding(.bottom, isPassedExpanded ? 4 : 0)
         .background(CockpitStyle.surface)
         .clipShape(Rectangle())
-        .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
+        .overlay(Rectangle().stroke(Color.orange, lineWidth: 2.5))
         .background {
             Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
         }
+        .confirmationDialog(
+            "Cancel \(planItems.count) passed \(planItems.count == 1 ? "item" : "items")?",
+            isPresented: $isConfirmingCancelAllPassed,
+            titleVisibility: .visible
+        ) {
+            Button("Cancel \(planItems.count) \(planItems.count == 1 ? "Item" : "Items")", role: .destructive) {
+                cancel(planItems)
+            }
+            Button("Keep", role: .cancel) {}
+        } message: {
+            Text("Reminders in this list aren't affected.")
+        }
+    }
+
+    private func passedActionButton(
+        _ title: String, systemImage: String, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(CockpitStyle.mono(.caption, weight: .bold))
+                .cockpitUppercase()
+                .foregroundStyle(CockpitStyle.ink)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
     }
 
     /// One row of Up Next or Passed, in each source's existing row style. Passed plan items also
@@ -1072,11 +1132,20 @@ struct CockpitView: View {
         }
     }
 
-    /// Gives a passed item back to the current section (untimed) so it's live again.
-    private func moveToNow(_ item: PlanItem) {
+    /// Gives passed items back to the current section (untimed) so they're live again.
+    private func moveToNow(_ items: [PlanItem]) {
         withAnimation(.spring(duration: 0.3)) {
-            item.daySection = viewModel.currentSection
-            item.deadline = nil
+            for item in items {
+                item.daySection = viewModel.currentSection
+                item.deadline = nil
+            }
+        }
+        try? modelContext.save()
+    }
+
+    private func cancel(_ items: [PlanItem]) {
+        withAnimation(.spring(duration: 0.3)) {
+            for item in items { item.status = .canceled }
         }
         try? modelContext.save()
     }
@@ -1362,10 +1431,11 @@ struct CockpitView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .contentShape(Rectangle())
+        .italic(isPassed)
         .contextMenu {
             Button { itemToEdit = item } label: { Label("Edit", systemImage: "pencil") }
             if isPassed {
-                Button { moveToNow(item) } label: {
+                Button { moveToNow([item]) } label: {
                     Label("Move to Now", systemImage: "arrow.uturn.forward")
                 }
             }

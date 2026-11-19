@@ -142,12 +142,9 @@ func startLiveClock() {
     /// Item was assigned to a day section that has ended, with no specific deadline. The Cockpit
     /// shows these in its Past area as Missed (see `DayViewModel+Agenda.swift`).
     func isSectionMissed(_ item: PlanItem) -> Bool {
-        guard isToday, item.status == .pending, item.deadline == nil,
-              let section = item.daySection,
-              let sectionEnd = Calendar.current.date(
-                  bySettingHour: section.endHour, minute: 59, second: 59, of: currentTime
-              ) else { return false }
-        return sectionEnd < currentTime
+        guard item.status == .pending, item.deadline == nil,
+              let section = item.daySection else { return false }
+        return isSectionOver(section)
     }
 
     // MARK: Item grouping

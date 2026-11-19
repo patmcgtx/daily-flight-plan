@@ -421,6 +421,13 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     segment has ended. Plan items get "Move to Now" (current segment, untimed) in their context
     menu alongside the checkbox (done) and Cancel. Today only; items left on earlier days stay
     with the Phase 2.9 review flow, which should share these row actions.
+    - *Look:* orange italic title with a clock-alert icon, orange border and a faint orange
+      header tint; the items inside are italic too.
+    - *Counter:* "! 3/10" like the segment headers — completed over everything that has come
+      due (the open entries here plus completed items and Reminders whose time or segment has
+      ended, which went back to their segment). Uses the unfiltered lists, like the segments.
+    - *Bulk actions* (when expanded): "Move all to now" and "Cancel all" (with a confirmation),
+      for the plan items in the list. Reminders are read-only, so they're left alone.
   - **Stays in its segment**: ended Calendar events (never Passed — they can't be completed)
     and completed or canceled items whose time has passed, plus all untimed items in the
     current or later segments.
