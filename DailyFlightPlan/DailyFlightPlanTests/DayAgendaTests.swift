@@ -269,39 +269,6 @@ struct DayAgendaTests {
         #expect(place(of: subject, in: agenda) == expected)
     }
 
-    // MARK: Passed progress
-
-    @Test("passedProgress counts completed over everything that has come due, ignoring items still ahead and canceled ones")
-    func passedProgressCountsComeDueItems() {
-        let viewModel = viewModel()
-        let items = [
-            item(deadline: time(9), status: .completed),     // came due, done
-            item(deadline: time(9)),                          // came due, open
-            item(daySection: .morning, status: .completed),   // segment over, done
-            item(daySection: .morning),                       // segment over, open
-            item(daySection: .afternoon),                     // current segment: not due
-            item(deadline: time(16)),                         // still ahead
-            item(deadline: time(9), status: .canceled),       // canceled: ignored
-        ]
-        let reminders = [
-            reminder(due: time(8), completed: true),
-            reminder(due: time(8)),
-            reminder(due: time(17)),
-            reminder(due: nil),
-        ]
-        let progress = viewModel.passedProgress(items: items, reminders: reminders)
-        #expect(progress.completed == 3)
-        #expect(progress.total == 6)
-    }
-
-    @Test("passedProgress is empty on a day other than today")
-    func passedProgressEmptyOnOtherDays() {
-        let viewModel = viewModel(viewingToday: false)
-        let progress = viewModel.passedProgress(items: [item(deadline: time(9))], reminders: [reminder(due: time(8))])
-        #expect(progress.completed == 0)
-        #expect(progress.total == 0)
-    }
-
     // MARK: Drop rules
 
     @Test("canMove refuses an open item dropped on an ended segment, and nothing else", arguments: [

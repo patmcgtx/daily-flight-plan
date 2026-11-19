@@ -196,35 +196,9 @@ extension DayViewModel {
         return item.status == .pending ? .passed : .section
     }
 
-    /// Completed vs. total for everything that has come due today: the open entries in Passed,
-    /// plus completed plan items and reminders whose time (or day section) has ended and that
-    /// therefore went back to their segment. Takes the unfiltered lists, like the segments'
-    /// own counters, so hiding completed items doesn't zero the count.
-    func passedProgress(items: [PlanItem], reminders: [ReminderItem]) -> (completed: Int, total: Int) {
-        guard isToday else { return (0, 0) }
-        var completed = 0
-        var total = 0
-        for item in items where item.status != .canceled && hasComeDue(item) {
-            total += 1
-            if item.status == .completed { completed += 1 }
-        }
-        for reminder in reminders {
-            guard let due = reminder.dueDate, due < currentTime else { continue }
-            total += 1
-            if reminder.isCompleted { completed += 1 }
-        }
-        return (completed, total)
-    }
-
     /// Whether `section` has ended, viewing today. The first thing past 7:29 AM is Morning.
     func isSectionOver(_ section: DaySection) -> Bool {
         isToday && sectionEndTime(section) < currentTime
-    }
-
-    private func hasComeDue(_ item: PlanItem) -> Bool {
-        if let deadline = item.deadline { return deadline < currentTime }
-        guard let section = item.daySection else { return false }
-        return isSectionOver(section)
     }
 
     /// The last moment of `section` on the day of `currentTime`.

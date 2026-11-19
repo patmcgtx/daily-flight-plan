@@ -61,6 +61,7 @@ struct CockpitView: View {
     @State private var expandedSections: Set<DaySection> = []
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
+    @State private var isUpNextExpanded = true
     @State private var isPassedExpanded = false
     @State private var isConfirmingCancelAllPassed = false
 
@@ -215,10 +216,7 @@ struct CockpitView: View {
                 ForEach(DaySection.allCases) { section in
                     // Passed sits right before the current segment, after the ended ones.
                     if section == viewModel.currentSection && !agenda.passed.isEmpty {
-                        passedCard(
-                            agenda.passed,
-                            progress: viewModel.passedProgress(items: raw, reminders: rawReminders)
-                        )
+                        passedCard(agenda.passed)
                     }
                     // Empty segments can be hidden from the View menu. Past segments tend to go
                     // empty on their own, since their open items move to Passed. The current
@@ -985,53 +983,61 @@ struct CockpitView: View {
 
     /// Every timed commitment for the day in one chronological list. On today the soonest
     /// entry is flagged with a highlighter bar and a countdown; other days just list the day's
-    /// schedule.
+    /// schedule. Drawn straight on the page, with no card, border or shadow, so it doesn't read
+    /// as another day segment.
     private func upNextCard(_ entries: [DayEntry]) -> some View {
         let isToday = viewModel.isToday
         return VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
-                Text(isToday ? "Up Next" : "Scheduled")
-                    .font(CockpitStyle.mono(.title2, weight: .bold))
-                    .cockpitUppercase()
-                    .foregroundStyle(CockpitStyle.ink.opacity(0.85))
-                Spacer()
-                if isToday, let next = entries.first {
-                    Text(viewModel.countdownLabel(for: next))
-                        .font(CockpitStyle.mono(.caption, weight: .bold))
+            // Tap the header to collapse the list. The countdown chip stays visible while
+            // collapsed, so the next commitment is still one glance away.
+            Button {
+                withAnimation(.spring(duration: 0.3)) { isUpNextExpanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(isToday ? "Up Next" : "Scheduled")
+                        .font(CockpitStyle.mono(.title2, weight: .bold))
                         .cockpitUppercase()
-                        .foregroundStyle(CockpitStyle.inkOnHighlighter)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(CockpitStyle.highlighter)
+                        .foregroundStyle(CockpitStyle.ink.opacity(0.85))
+                    Spacer()
+                    if isToday, let next = entries.first {
+                        Text(viewModel.countdownLabel(for: next))
+                            .font(CockpitStyle.mono(.caption, weight: .bold))
+                            .cockpitUppercase()
+                            .foregroundStyle(CockpitStyle.inkOnHighlighter)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(CockpitStyle.highlighter)
+                    }
+                    Image(systemName: isUpNextExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.bold())
+                        .foregroundStyle(CockpitStyle.muted)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(isUpNextExpanded ? "Collapse" : "Expand")
+
+            if isUpNextExpanded {
+                ForEach(entries) { entry in
+                    Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                    agendaRow(entry)
+                        .overlay(alignment: .leading) {
+                            if isToday && entry.id == entries.first?.id {
+                                Rectangle().fill(CockpitStyle.highlighter).frame(width: 4)
+                            }
+                        }
                 }
             }
-            .padding(16)
-
-            ForEach(entries) { entry in
-                Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
-                agendaRow(entry)
-                    .overlay(alignment: .leading) {
-                        if isToday && entry.id == entries.first?.id {
-                            Rectangle().fill(CockpitStyle.highlighter).frame(width: 4)
-                        }
-                    }
-            }
-        }
-        .padding(.bottom, 4)
-        .background(CockpitStyle.surface)
-        .clipShape(Rectangle())
-        .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
-        .background {
-            Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
         }
     }
 
     /// Collapsed by default, shown right before the current segment: open timed items and
     /// reminders whose time has gone, plus open items (routines included) left behind once their
-    /// day section ended. Calendar events never land here. Styled in orange and italic so it
-    /// stands apart from the live segments; the counter is done/came-due, with a "!" while any
-    /// are left.
-    private func passedCard(_ entries: [DayEntry], progress: (completed: Int, total: Int)) -> some View {
+    /// day section ended. Calendar events never land here. Orange and italic, and drawn straight
+    /// on the page with no card or border, so it stands apart from the live segments.
+    private func passedCard(_ entries: [DayEntry]) -> some View {
         let planItems = entries.compactMap { entry -> PlanItem? in
             if case .planItem(let item) = entry { return item }
             return nil
@@ -1056,9 +1062,6 @@ struct CockpitView: View {
                             .cockpitUppercase()
                             .foregroundStyle(Color.orange)
                         Spacer()
-                        Text("! \(progress.completed)/\(progress.total)")
-                            .font(CockpitStyle.mono(.caption2, weight: .bold))
-                            .foregroundStyle(Color.orange)
                         Image(systemName: isPassedExpanded ? "chevron.up" : "chevron.down")
                             .font(.caption.bold())
                             .foregroundStyle(CockpitStyle.muted)
@@ -1077,14 +1080,12 @@ struct CockpitView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
-                .background(Color.orange.opacity(0.12))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(
-                "Passed, \(progress.completed) of \(progress.total) done, \(entries.count) left"
-            )
+            .accessibilityLabel("Passed, \(entries.count) \(entries.count == 1 ? "item" : "items")")
             .accessibilityHint(isPassedExpanded ? "Collapse" : "Expand")
 
             if isPassedExpanded {
@@ -1123,13 +1124,6 @@ struct CockpitView: View {
                     }
                 }
             }
-        }
-        .padding(.bottom, isPassedExpanded ? 4 : 0)
-        .background(CockpitStyle.surface)
-        .clipShape(Rectangle())
-        .overlay(Rectangle().stroke(Color.orange, lineWidth: 2.5))
-        .background {
-            Rectangle().fill(CockpitStyle.shadow).offset(x: 3, y: 4)
         }
         .confirmationDialog(
             "Cancel \(planItems.count) passed \(planItems.count == 1 ? "item" : "items")?",

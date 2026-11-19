@@ -410,7 +410,10 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     Reminders with a time, and plan items with a time (deadline items). Sorted by time; each
     source keeps its existing row style (see the Calendar/Reminders visual-treatment bullet
     below). The next upcoming item gets a highlighter bar and a countdown ("in 42 min"); the
-    rest are compact rows beneath it. A Calendar event stays here until it ends. Entries appear
+    rest are compact rows beneath it. Drawn directly on the page background — no card, border,
+    shadow or header fill — so it doesn't look like a day segment. The header collapses and
+    expands like a segment's (chevron, spring animation; open by default), and the countdown
+    chip stays visible while it's collapsed. A Calendar event stays here until it ends. Entries appear
     here only, not also in their day section, so there are no duplicates. Plan items and
     reminders stay completable from the list. Respects the View-menu toggles (Calendar Events,
     Reminders, Completed, Flagged Only) and the category filter.
@@ -421,8 +424,9 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     segment has ended. Plan items get "Move to Now" (current segment, untimed) in their context
     menu alongside the checkbox (done) and Cancel. Today only; items left on earlier days stay
     with the Phase 2.9 review flow, which should share these row actions.
-    - *Look:* orange italic title with a clock-alert icon, orange border and a faint orange
-      header tint; the items inside are italic too.
+    - *Look:* orange italic title with a clock-alert icon; the items inside are italic too. No
+      card, border, tint or shadow — like Up Next it sits directly on the page background, so
+      neither reads as a day segment. No count in the header.
     - *Layout:* plan items are the same flow-layout pills as the segments, draggable onto any
       segment (italic, with the time they were due); Reminders are read-only so stay as rows,
       interleaved in oldest-first order (neighboring plan items share one flow layout). Dropping an open item onto an already-ended segment is refused (it would just
@@ -431,9 +435,6 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
       left (like a collapsed segment), with the loading dots while it generates. It regenerates
       when the contents change; state lives in `DayViewModel` (`passedSummary`) alongside the
       per-segment summaries rather than inside them.
-    - *Counter:* "! 3/10" like the segment headers — completed over everything that has come
-      due (the open entries here plus completed items and Reminders whose time or segment has
-      ended, which went back to their segment). Uses the unfiltered lists, like the segments.
     - *Bulk actions* (when expanded): "Move all to now" and "Cancel all" (with a confirmation),
       for the plan items in the list. Reminders are read-only, so they're left alone.
   - **Stays in its segment**: ended Calendar events (never Passed — they can't be completed)
