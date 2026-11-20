@@ -30,8 +30,6 @@ struct DayAgenda {
     var passed: [DayEntry] = []
     /// What stays in the day sections and Open area (see `DayViewModel.agenda`).
     var sectionItems: [PlanItem] = []
-    var sectionEvents: [CalendarEvent] = []
-    var sectionReminders: [ReminderItem] = []
 }
 
 /// A stretch of the Passed list in one row style: consecutive plan items share a flow layout of
@@ -81,18 +79,21 @@ extension DayViewModel {
 
     /// Splits `items`, `events`, and `reminders` between Up Next, Passed, and the day sections.
     ///
-    /// Passed (today only) holds things still open once their moment has gone: plan items with a
-    /// deadline, and reminders with a due time, that are past it and pending; and untimed plan
-    /// items, recurring (Maintenance) ones included, whose day section has ended. Calendar events
-    /// are never passed — they can't be completed.
+    /// Passed (today only) holds things whose moment has gone: plan items with a deadline that
+    /// are past it and pending; untimed plan items, recurring (Maintenance) ones included, whose
+    /// day section has ended; and every reminder whose due time has passed, open or completed
+    /// (a completed one only shows when the Completed filter lets it through).
     ///
     /// Up Next holds timed entries that aren't over: plan items before their deadline, reminders
     /// before their due time, and events until they end (so one in progress still shows). On any
     /// day other than today every timed entry is upcoming.
     ///
-    /// Everything else stays in its day section: untimed items, plus ended events and completed
-    /// or canceled items whose time has passed. Reminders without a due time are left out, as
-    /// the Open area shows those.
+    /// Calendar events that have ended are dropped: they can't be acted on, so they appear
+    /// nowhere once over.
+    ///
+    /// Everything else stays in its day section: untimed items, plus completed or canceled plan
+    /// items whose time has passed. Reminders without a due time are left out, as the Open area
+    /// shows those.
     func agenda(items: [PlanItem], events: [CalendarEvent], reminders: [ReminderItem]) -> DayAgenda {
         var upcoming: [(time: Date, entry: DayEntry)] = []
         var passed: [(time: Date, entry: DayEntry)] = []
@@ -111,21 +112,15 @@ extension DayViewModel {
         }
 
         for event in events {
-            if isToday && event.endDate <= currentTime {
-                agenda.sectionEvents.append(event)
-            } else {
-                upcoming.append((event.startDate, .calendarEvent(event)))
-            }
+            // An event that has ended is dropped entirely rather than filed anywhere.
+            if isToday && event.endDate <= currentTime { continue }
+            upcoming.append((event.startDate, .calendarEvent(event)))
         }
 
         for reminder in reminders {
             guard let due = reminder.dueDate else { continue }
             if isToday && due < currentTime {
-                if reminder.isCompleted {
-                    agenda.sectionReminders.append(reminder)
-                } else {
-                    passed.append((due, .reminder(reminder)))
-                }
+                passed.append((due, .reminder(reminder)))
             } else {
                 upcoming.append((due, .reminder(reminder)))
             }
@@ -147,14 +142,13 @@ extension DayViewModel {
         items.filter { slot(for: $0) == .section }
     }
 
-    /// Whether `section` has anything to list: untimed items assigned to it, completed items that
-    /// came due in it, ended calendar events, or completed reminders. Items that moved to Up Next
-    /// or Passed don't count, so a past segment is empty once nothing but history is left in it.
+    /// Whether `section` has anything to list: untimed plan items assigned to it, or completed
+    /// ones that came due in it. Calendar events and reminders never count, since they live in
+    /// Up Next or Passed (or, once an event is over, nowhere), and neither do items that moved to
+    /// Up Next or Passed, so a past segment is empty once nothing but completed items are left.
     func hasContent(_ section: DaySection, in agenda: DayAgenda) -> Bool {
         !sectionPills(section, from: agenda.sectionItems).isEmpty
             || !deadlineRows(section, from: agenda.sectionItems).isEmpty
-            || !calendarEventsForSection(section, from: agenda.sectionEvents).isEmpty
-            || !reminderItemsForSection(section, from: agenda.sectionReminders).isEmpty
     }
 
     /// Whether dropping `item` onto `section` (nil = Open) should be accepted. An open item

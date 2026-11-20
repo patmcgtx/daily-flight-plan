@@ -418,9 +418,10 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     reminders stay completable from the list. Respects the View-menu toggles (Calendar Events,
     Reminders, Completed, Flagged Only) and the category filter.
   - **Passed**: one area, expanded by default (tap the header to collapse), headed "Passed",
-    placed right before the current segment. A single list, oldest first, with no per-row labels. It holds open items whose
-    moment has gone: pending plan items past their deadline, uncompleted Reminders past their
-    due time, and untimed pending items — Maintenance (routine) ones included — whose day
+    placed right before the current segment. A single list, oldest first, with no per-row
+    labels. It holds things whose moment has gone: pending plan items past their deadline,
+    every Reminder past its due time (completed ones too, when the Completed filter lets them
+    through), and untimed pending items — Maintenance (routine) ones included — whose day
     segment has ended. Plan items get "Move to Now" (current segment, untimed) in their context
     menu alongside the checkbox (done) and Cancel. Today only; items left on earlier days stay
     with the Phase 2.9 review flow, which should share these row actions.
@@ -437,13 +438,16 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
       per-segment summaries rather than inside them.
     - *Bulk actions* (when expanded): "Move all to now" and "Cancel all" (with a confirmation),
       for the plan items in the list. Reminders are read-only, so they're left alone.
-  - **Stays in its segment**: ended Calendar events (never Passed — they can't be completed)
-    and completed or canceled items whose time has passed, plus all untimed items in the
-    current or later segments.
+  - **Stays in its segment**: completed or canceled plan items whose time has passed, plus all
+    untimed items in the current or later segments.
+  - **Ended Calendar events are shown nowhere**: they can't be completed or acted on, so once
+    an event ends it drops out of Up Next without moving to Passed or back into a segment.
+    (An event in progress stays in Up Next until it ends.)
   - **Empty Segments** view option (View menu, on by default): off hides segments with nothing
     to list. A past segment goes empty on its own once its open items move to Passed, and only
-    shows again while completed items or ended Calendar events are visible in it. The current
-    segment always stays, for its NOW marker and Add item button.
+    shows again while completed plan items are visible in it — Calendar events and Reminders
+    never keep a segment alive. The current segment always stays, for its NOW marker and Add
+    item button.
   - *Done:* the partitioning lives in `DayViewModel+Agenda.swift`
     (`agenda(items:events:reminders:)`, `sectionItems(from:)`, `countdownLabel(for:)`), covered
     by `DayAgendaTests`. `CockpitView`
@@ -500,6 +504,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   active, consider hiding unmatched segments.
 - **✅ Clean up filtering**: The filtering needs some UX updates
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
+- **Past-days tweaks**: Let's display past days differently. They are in the past and unactionable. They simply show a "pilot's report" of what was completed, canceled, and missed that day. 
 - **✅ Day intention note**: a short freeform text field on the Day view for what the user wants to
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
   tracked separately under Phase 1.2 (now cross-referenced there, not duplicated); pulled

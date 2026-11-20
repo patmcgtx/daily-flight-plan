@@ -374,7 +374,9 @@ func startLiveClock() {
             case .planItem(let item):
                 let time = item.deadline ?? item.daySection.map(sectionEndTime)
                 return label(item.title, at: time)
-            case .reminder(let reminder): return label(reminder.title, at: reminder.dueDate)
+            // A completed reminder can sit in Passed, but the summary is about what's left.
+            case .reminder(let reminder):
+                return reminder.isCompleted ? nil : label(reminder.title, at: reminder.dueDate)
             case .calendarEvent: return nil
             }
         }
@@ -418,10 +420,11 @@ func startLiveClock() {
     /// Generates a one-line AI summary of the Passed area. Skips if already cached or in flight.
     func generatePassedSummaryIfNeeded(entries: [DayEntry]) {
         guard passedSummary == nil, passedSummaryTask == nil else { return }
-        guard !entries.isEmpty else { return }
+        let parts = passedSummaryParts(entries: entries)
+        guard !parts.isEmpty else { return }
         guard SystemLanguageModel.default.availability == .available else { return }
 
-        let prompt = passedSummaryParts(entries: entries).joined(separator: "; ")
+        let prompt = parts.joined(separator: "; ")
         let generation = UUID()
         passedSummaryGeneration = generation
         isLoadingPassedSummary = true

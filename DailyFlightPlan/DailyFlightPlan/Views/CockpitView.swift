@@ -224,9 +224,7 @@ struct CockpitView: View {
                     if showEmptySegments || section == viewModel.currentSection
                         || viewModel.hasContent(section, in: agenda) {
                         sectionCard(
-                            section, date: date, items: agenda.sectionItems, raw: rawSectionItems,
-                            events: viewModel.calendarEventsForSection(section, from: agenda.sectionEvents),
-                            reminders: viewModel.reminderItemsForSection(section, from: agenda.sectionReminders)
+                            section, date: date, items: agenda.sectionItems, raw: rawSectionItems
                         )
                     }
                 }
@@ -722,17 +720,15 @@ struct CockpitView: View {
         _ section: DaySection,
         date: Date,
         items: [PlanItem],
-        raw: [PlanItem],
-        events: [CalendarEvent],
-        reminders: [ReminderItem]
+        raw: [PlanItem]
     ) -> some View {
         let pills = viewModel.sectionPills(section, from: items)
         let regularPills = pills.filter { !$0.isRecurring }
         let routinePills = pills.filter { $0.isRecurring }
         let deadlines = viewModel.deadlineRows(section, from: items)
         let allSectionItems = pills + deadlines
-        let hasContent = !allSectionItems.isEmpty || !events.isEmpty || !reminders.isEmpty
-        let contentSignature = viewModel.contentSignature(items: allSectionItems, events: events, reminders: reminders)
+        let hasContent = !allSectionItems.isEmpty
+        let contentSignature = viewModel.contentSignature(items: allSectionItems, events: [], reminders: [])
         let isSelectedDate = Calendar.current.isDate(date, inSameDayAs: viewModel.selectedDate)
         let rawAll = viewModel.sectionPills(section, from: raw) + viewModel.deadlineRows(section, from: raw)
         let completed = rawAll.filter { $0.status == .completed }.count
@@ -835,24 +831,6 @@ struct CockpitView: View {
                                 Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1).padding(.leading, 54)
                             }
                         }
-                        if !events.isEmpty {
-                            if !allSectionItems.isEmpty { Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1) }
-                            VStack(spacing: 0) {
-                                ForEach(events) { event in
-                                    CalendarEventRow(event: event)
-                                }
-                            }
-                        }
-                        if !reminders.isEmpty {
-                            if !allSectionItems.isEmpty || !events.isEmpty {
-                                Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
-                            }
-                            VStack(spacing: 0) {
-                                ForEach(reminders) { reminder in
-                                    ReminderItemRow(item: reminder)
-                                }
-                            }
-                        }
                     }
                     .padding(.bottom, 4)
                 }
@@ -897,13 +875,13 @@ struct CockpitView: View {
         .onAppear {
             guard isSelectedDate else { return }
             if hasContent {
-                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
             }
         }
         .onChange(of: contentSignature) { _, _ in
             guard isSelectedDate else { return }
             if hasContent {
-                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
             } else {
                 viewModel.clearSummary(for: section)
             }

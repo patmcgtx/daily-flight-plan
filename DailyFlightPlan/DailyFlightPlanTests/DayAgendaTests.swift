@@ -150,7 +150,7 @@ struct DayAgendaTests {
 
     // MARK: Calendar events
 
-    @Test("An event is upcoming until it ends, so one in progress still counts; an ended one stays in its section", arguments: [
+    @Test("An event is upcoming until it ends, so one in progress still counts; an ended one is dropped and shown nowhere", arguments: [
         (startHour: 15, startMinute: 0, minutes: 30, expectedUpcoming: true),
         (startHour: 13, startMinute: 30, minutes: 60, expectedUpcoming: true),
         (startHour: 9, startMinute: 0, minutes: 30, expectedUpcoming: false),
@@ -158,27 +158,31 @@ struct DayAgendaTests {
     ])
     func eventPlacement(startHour: Int, startMinute: Int, minutes: Int, expectedUpcoming: Bool) {
         let subject = event(start: time(startHour, startMinute), minutes: minutes)
-        let agenda = viewModel().agenda(items: [], events: [subject], reminders: [])
+        let viewModel = viewModel()
+        let agenda = viewModel.agenda(items: [], events: [subject], reminders: [])
         #expect(agenda.upcoming.map(\.id) == (expectedUpcoming ? [DayEntry.calendarEvent(subject).id] : []))
-        #expect(agenda.sectionEvents.map(\.id) == (expectedUpcoming ? [] : [subject.id]))
         #expect(agenda.passed.isEmpty)
+        // An ended event must not keep any segment alive, either.
+        #expect(DaySection.allCases.allSatisfy { !viewModel.hasContent($0, in: agenda) })
     }
 
     // MARK: Reminders
 
-    @Test("A timed reminder is upcoming before its due time; after it, passed if open and back in its section if completed", arguments: [
+    @Test("A timed reminder is upcoming before its due time and in Passed after it, whether open or completed", arguments: [
         (dueHour: 15, completed: false, expected: Place.upcoming),
         (dueHour: 15, completed: true, expected: Place.upcoming),
         (dueHour: 9, completed: false, expected: Place.passed),
-        (dueHour: 9, completed: true, expected: Place.section),
+        (dueHour: 9, completed: true, expected: Place.passed),
     ])
     func timedReminder(dueHour: Int, completed: Bool, expected: Place) {
         let subject = reminder(due: time(dueHour), completed: completed)
-        let agenda = viewModel().agenda(items: [], events: [], reminders: [subject])
+        let viewModel = viewModel()
+        let agenda = viewModel.agenda(items: [], events: [], reminders: [subject])
         let id = DayEntry.reminder(subject).id
         #expect(agenda.upcoming.map(\.id) == (expected == .upcoming ? [id] : []))
         #expect(agenda.passed.map(\.id) == (expected == .passed ? [id] : []))
-        #expect(agenda.sectionReminders.map(\.id) == (expected == .section ? [subject.id] : []))
+        // Reminders never keep a segment alive: they live in Up Next or Passed.
+        #expect(DaySection.allCases.allSatisfy { !viewModel.hasContent($0, in: agenda) })
     }
 
     @Test("A reminder with no due time is left out of every list")
@@ -186,7 +190,6 @@ struct DayAgendaTests {
         let agenda = viewModel().agenda(items: [], events: [], reminders: [reminder(due: nil)])
         #expect(agenda.upcoming.isEmpty)
         #expect(agenda.passed.isEmpty)
-        #expect(agenda.sectionReminders.isEmpty)
     }
 
     // MARK: Ordering and other days
@@ -253,7 +256,6 @@ struct DayAgendaTests {
         #expect(agenda.passed.isEmpty)
         #expect(agenda.upcoming.count == 3)
         #expect(agenda.sectionItems.map(\.uuid) == [sectioned.uuid])
-        #expect(agenda.sectionEvents.isEmpty)
     }
 
     // MARK: Section boundary
@@ -292,10 +294,10 @@ struct DayAgendaTests {
 
     // MARK: Segment content
 
-    @Test("hasContent is true for a segment holding an untimed item, a completed timed item, an ended event, or a completed reminder", arguments: [
-        (section: DaySection.firstThing, expected: true),   // completed reminder due 5:00
+    @Test("hasContent is true only for a segment holding an untimed plan item or a completed one that came due there; ended events and reminders don't count", arguments: [
+        (section: DaySection.firstThing, expected: false),  // only a completed reminder due 5:00
         (section: DaySection.morning, expected: true),      // completed item due 9:00
-        (section: DaySection.midday, expected: true),       // ended event at 12:00
+        (section: DaySection.midday, expected: false),      // only an ended event at 12:00
         (section: DaySection.afternoon, expected: true),    // untimed item
         (section: DaySection.evening, expected: false),
         (section: DaySection.bedtime, expected: false),
@@ -337,6 +339,16 @@ struct DayAgendaTests {
             "Call Sam at \(time(9, 30).formatted(.dateTime.hour().minute()))",
             "Water plants at \(time(10, 59).formatted(.dateTime.hour().minute()))",
         ])
+    }
+
+    @Test("passedSummaryParts describes what's left, so a completed reminder in Passed is left out of the prompt")
+    func passedSummaryPartsSkipCompletedReminders() {
+        let viewModel = viewModel()
+        let open = reminder(due: time(8))
+        let done = reminder(due: time(7), completed: true)
+        let agenda = viewModel.agenda(items: [], events: [], reminders: [open, done])
+        #expect(agenda.passed.count == 2)
+        #expect(viewModel.passedSummaryParts(entries: agenda.passed).count == 1)
     }
 
     @Test("passedSummaryParts caps the prompt at the eight oldest entries, so older reminders aren't crowded out by newer plan items")
