@@ -52,5 +52,9 @@ enum AppStorageKeys: String, CaseIterable, Identifiable {
     /// View option: render Cockpit labels in UPPERCASE (on by default)
     case uppercaseText
 
+    /// View option: show segments with nothing to list (on by default). Off hides them — past
+    /// segments included, once only history is left — except the current segment.
+    case showEmptySegments
+
     var id: String { rawValue }
 }

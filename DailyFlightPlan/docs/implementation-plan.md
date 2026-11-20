@@ -402,14 +402,67 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   genuine redesign, not a reskin.
 
 ### Phase 2.5 — Day/Flight View Refinements
-- **Consolidated timed-items list** *(priority — do first)*: show every timed item in a single list
-  at the top of the Cockpit view, ahead of the day sections, instead of scattering them across
-  sections. Sources: Calendar appointments, Reminders that have a time, and plan items with a
-  time. Sorted by time; keeps each source's existing row style (see the Calendar/Reminders
-  visual-treatment bullet below). Open questions: whether timed items also still appear in
-  their day section (leaning no, to avoid duplicates), and how all-day events and
-  already-passed items are handled (leaning toward all-day events pinned first, passed items
-  dimmed rather than hidden).
+- **✅ Up Next + Passed: consolidated timed items and missed items** *(priority — do first)*: put
+  time-specific commitments front and center at the top of the Cockpit view, ahead of the day
+  sections, and pull open items whose moment has passed into one quiet place. Replaces the
+  earlier "Consolidated timed-items list" and "Auto-drop missed items?" bullets.
+  - **Up Next**: every timed entry that isn't over, in one list. Sources: Calendar events,
+    Reminders with a time, and plan items with a time (deadline items). Sorted by time; each
+    source keeps its existing row style (see the Calendar/Reminders visual-treatment bullet
+    below). The next upcoming item gets a highlighter bar and a countdown ("in 42 min"); the
+    rest are compact rows beneath it. Drawn directly on the page background — no card, border,
+    shadow or header fill — so it doesn't look like a day segment. The header collapses and
+    expands like a segment's (chevron, spring animation; open by default), and the countdown
+    chip stays visible while it's collapsed. A Calendar event stays here until it ends. Entries appear
+    here only, not also in their day section, so there are no duplicates. Plan items and
+    reminders stay completable from the list. Respects the View-menu toggles (Calendar Events,
+    Reminders, Completed, Flagged Only) and the category filter.
+  - **Passed**: one area, expanded by default (tap the header to collapse), headed "Passed",
+    placed right before the current segment. A single list, oldest first, with no per-row
+    labels. It holds things whose moment has gone: pending plan items past their deadline,
+    every Reminder past its due time (completed ones too, when the Completed filter lets them
+    through), and untimed pending items — Maintenance (routine) ones included — whose day
+    segment has ended. Plan items get "Move to Now" (current segment, untimed) in their context
+    menu alongside the checkbox (done) and Cancel. Today only; items left on earlier days stay
+    with the Phase 2.9 review flow, which should share these row actions.
+    - *Look:* orange italic title with a clock-alert icon; the items inside are italic too. No
+      card, border, tint or shadow — like Up Next it sits directly on the page background, so
+      neither reads as a day segment. No count in the header.
+    - *Layout:* plan items are the same flow-layout pills as the segments, draggable onto any
+      segment (italic, with the time they were due); Reminders are read-only so stay as rows,
+      interleaved in oldest-first order (neighboring plan items share one flow layout). Dropping an open item onto an already-ended segment is refused (it would just
+      count as passed again); the drag springs back.
+    - *AI summary:* while collapsed, the header shows a one-line on-device summary of what's
+      left (like a collapsed segment), with the loading dots while it generates. It regenerates
+      when the contents change; state lives in `DayViewModel` (`passedSummary`) alongside the
+      per-segment summaries rather than inside them.
+    - *Bulk actions* (when expanded): "Move all to now" and "Cancel all" (with a confirmation),
+      for the plan items in the list. Reminders are read-only, so they're left alone.
+  - **Stays in its segment**: completed or canceled plan items whose time has passed, plus all
+    untimed items in the current or later segments.
+  - **Ended Calendar events are shown nowhere**: they can't be completed or acted on, so once
+    an event ends it drops out of Up Next without moving to Passed or back into a segment.
+    (An event in progress stays in Up Next until it ends.)
+  - **Empty Segments** view option (View menu, on by default): off hides segments with nothing
+    to list. A past segment goes empty on its own once its open items move to Passed, and only
+    shows again while completed plan items are visible in it — Calendar events and Reminders
+    never keep a segment alive. The current segment always stays, for its NOW marker and Add
+    item button.
+  - *Done:* the partitioning lives in `DayViewModel+Agenda.swift`
+    (`agenda(items:events:reminders:)`, `sectionItems(from:)`, `countdownLabel(for:)`), covered
+    by `DayAgendaTests`. `CockpitView`
+    renders `upNextCard` and `passedCard`; the sections' progress counts exclude
+    items shown in Up Next or Passed. **Deviations:**
+    - *No all-day banner:* `EventKitCalendarService` already filters all-day events out, so
+      there is nothing to show. Surfacing them needs `CalendarEvent` to carry an all-day flag.
+    - Row actions are in the context menu — swipe actions don't work outside a `List`.
+    - On days other than today the Up Next card is titled "Scheduled" and lists every timed
+      entry; there is no Passed area.
+    - An earlier version had a combined "Past" area with Passed/Missed tags, held ended Calendar
+      events, and excluded routines. Dropped after trying it: tags were redundant, events
+      belong in their segment, and open routines in an ended segment read as inconsistent.
+    - Because timed entries moved out of the sections, the per-section AI summaries cover only
+      what remains in each section.
 - **✅ Toolbar rework — separate categories from view settings** *(priority — do second)*:
   split the Cockpit toolbar's current single filter entry point into two distinct controls.
   - **Categories selection**: its own toolbar button, opening the existing category selection
@@ -445,10 +498,13 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - **✅ Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
   analogy.
-- **Auto-drop missed items?** When a day segment passes, items should automatically promote to "Open." Alternately, create a "missed" section for past (aka passed) segments. Maybe even a toggle to see missed items.
-- **Search focus**: Consider hiding unmatched segments when search & filter are active.
-- **Clean up filtering**: The filtering needs some UX updates
+- **Search: swipe-down gesture and focus**: replace the Cockpit toolbar's Search button with a
+  swipe-down (pull-to-reveal) gesture that brings up the inline search bar, then remove the
+  button so the trailing toolbar is just View and Categories. While search and filters are
+  active, consider hiding unmatched segments.
+- **✅ Clean up filtering**: The filtering needs some UX updates
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
+- **Past-days tweaks**: Let's display past days differently. They are in the past and unactionable. They simply show a "pilot's report" of what was completed, canceled, and missed that day. 
 - **✅ Day intention note**: a short freeform text field on the Day view for what the user wants to
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
   tracked separately under Phase 1.2 (now cross-referenced there, not duplicated); pulled
@@ -666,6 +722,17 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
 - **Fix all `docs/known-bugs.md` entries** before this phase is considered done
 - **Make Calendar and Reminders access read-only**: no need for read/write access anymore
 - **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
+- **Bounce-back animation for refused drops**: dragging an open item (e.g. out of the Cockpit's
+  Passed area) onto an already-ended segment is refused in `CockpitView.handlePillDrop` via
+  `DayViewModel.canMove`, but the pill still animates as if it landed in the segment before
+  reappearing in Passed — the destination accepts the drop at the system level and only declines
+  it in the action closure. The polish is to refuse up front so the pill springs back to where it
+  started. First attempt (tracking the dragged item with `onDragSessionUpdated`, then returning
+  `DropConfiguration(operation: .cancel)` from `dropConfiguration` on ended segments) built fine
+  but felt off on device and was rolled back; next candidates are disabling ended-segment
+  destinations with `dropDestination(for:isEnabled:action:)` while an open item is dragged, or
+  moving the segments to a `DropDelegate` whose `dropUpdated` proposes `.cancel`. Needs on-device
+  testing; watch for flicker from re-rendering mid-drag and for a changed default drag badge.
 - **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
 - **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
 - **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Future Plans.

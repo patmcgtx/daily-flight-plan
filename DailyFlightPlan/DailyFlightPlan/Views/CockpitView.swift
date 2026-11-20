@@ -40,6 +40,9 @@ struct CockpitView: View {
     @AppStorage(AppStorageKeys.showReminderItems.rawValue)
     private var showReminderItems: Bool = true
 
+    @AppStorage(AppStorageKeys.showEmptySegments.rawValue)
+    private var showEmptySegments: Bool = true
+
     @AppStorage(AppStorageKeys.uppercaseText.rawValue)
     private var uppercaseText: Bool = true
 
@@ -58,6 +61,9 @@ struct CockpitView: View {
     @State private var expandedSections: Set<DaySection> = []
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
+    @State private var isUpNextExpanded = true
+    @State private var isPassedExpanded = true
+    @State private var isConfirmingCancelAllPassed = false
 
     @State private var searchText: String = ""
     @State private var isShowingSearch = false
@@ -189,6 +195,11 @@ struct CockpitView: View {
         )
         let items = activeItems(for: date)
         let raw = rawItems(for: date)
+        // Timed entries that aren't over live in Up Next, and anything still open once its time
+        // or segment ended in Passed. The sections hold the rest: untimed items, plus ended
+        // calendar events and completed items.
+        let agenda = viewModel.agenda(items: items, events: visibleEvents, reminders: visibleReminders)
+        let rawSectionItems = viewModel.sectionItems(from: raw)
 
         ScrollView {
             VStack(spacing: 16) {
@@ -198,15 +209,27 @@ struct CockpitView: View {
 
                 briefingRow(raw, date: date)
 
-                ForEach(DaySection.allCases) { section in
-                    sectionCard(
-                        section, date: date, items: items, raw: raw,
-                        events: viewModel.calendarEventsForSection(section, from: visibleEvents),
-                        reminders: viewModel.reminderItemsForSection(section, from: visibleReminders)
-                    )
+                if !agenda.upcoming.isEmpty {
+                    upNextCard(agenda.upcoming)
                 }
 
-                let openItems = viewModel.anyTimeItems(from: items)
+                ForEach(DaySection.allCases) { section in
+                    // Passed sits right before the current segment, after the ended ones.
+                    if section == viewModel.currentSection && !agenda.passed.isEmpty {
+                        passedCard(agenda.passed)
+                    }
+                    // Empty segments can be hidden from the View menu. Past segments tend to go
+                    // empty on their own, since their open items move to Passed. The current
+                    // segment always stays: it carries the NOW marker and the Add item button.
+                    if showEmptySegments || section == viewModel.currentSection
+                        || viewModel.hasContent(section, in: agenda) {
+                        sectionCard(
+                            section, date: date, items: agenda.sectionItems, raw: rawSectionItems
+                        )
+                    }
+                }
+
+                let openItems = viewModel.anyTimeItems(from: agenda.sectionItems)
                 let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
                 if !openItems.isEmpty || !anyTimeReminders.isEmpty {
                     openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
@@ -666,28 +689,29 @@ struct CockpitView: View {
             let visibleReminders = searchFiltered(reminders:
                 showCompleted ? rawReminders : rawReminders.filter { !$0.isCompleted }
             )
-            let selectedItems = activeItems(for: viewModel.selectedDate)
-            expandedSections = Set(DaySection.allCases.filter { section in
-                let items = viewModel.sectionPills(section, from: selectedItems)
-                           + viewModel.deadlineRows(section, from: selectedItems)
-                let events = viewModel.calendarEventsForSection(section, from: visibleEvents)
-                let reminders = viewModel.reminderItemsForSection(section, from: visibleReminders)
-                return !items.isEmpty || !events.isEmpty || !reminders.isEmpty
-            })
+            let agenda = viewModel.agenda(
+                items: activeItems(for: viewModel.selectedDate),
+                events: visibleEvents, reminders: visibleReminders
+            )
+            expandedSections = Set(DaySection.allCases.filter { viewModel.hasContent($0, in: agenda) })
         } else {
             initializeExpandedSections()
         }
     }
 
-    private func handlePillDrop(uuidString: String, targetSection: DaySection?) {
+    /// Returns false only when the drop is refused (an open item onto an already-ended segment),
+    /// so the drag springs back instead of the item reappearing in Passed.
+    private func handlePillDrop(uuidString: String, targetSection: DaySection?) -> Bool {
         guard let uuid = UUID(uuidString: uuidString),
-              let item = allItems.first(where: { $0.uuid == uuid }) else { return }
-        guard item.daySection != targetSection || item.deadline != nil else { return }
+              let item = allItems.first(where: { $0.uuid == uuid }) else { return true }
+        guard viewModel.canMove(item, to: targetSection) else { return false }
+        guard item.daySection != targetSection || item.deadline != nil else { return true }
         withAnimation(.spring(duration: 0.3)) {
             item.daySection = targetSection
             item.deadline = nil
         }
         try? modelContext.save()
+        return true
     }
 
     // MARK: - Section card
@@ -696,17 +720,15 @@ struct CockpitView: View {
         _ section: DaySection,
         date: Date,
         items: [PlanItem],
-        raw: [PlanItem],
-        events: [CalendarEvent],
-        reminders: [ReminderItem]
+        raw: [PlanItem]
     ) -> some View {
         let pills = viewModel.sectionPills(section, from: items)
         let regularPills = pills.filter { !$0.isRecurring }
         let routinePills = pills.filter { $0.isRecurring }
         let deadlines = viewModel.deadlineRows(section, from: items)
         let allSectionItems = pills + deadlines
-        let hasContent = !allSectionItems.isEmpty || !events.isEmpty || !reminders.isEmpty
-        let contentSignature = viewModel.contentSignature(items: allSectionItems, events: events, reminders: reminders)
+        let hasContent = !allSectionItems.isEmpty
+        let contentSignature = viewModel.contentSignature(items: allSectionItems, events: [], reminders: [])
         let isSelectedDate = Calendar.current.isDate(date, inSameDayAs: viewModel.selectedDate)
         let rawAll = viewModel.sectionPills(section, from: raw) + viewModel.deadlineRows(section, from: raw)
         let completed = rawAll.filter { $0.status == .completed }.count
@@ -809,24 +831,6 @@ struct CockpitView: View {
                                 Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1).padding(.leading, 54)
                             }
                         }
-                        if !events.isEmpty {
-                            if !allSectionItems.isEmpty { Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1) }
-                            VStack(spacing: 0) {
-                                ForEach(events) { event in
-                                    CalendarEventRow(event: event)
-                                }
-                            }
-                        }
-                        if !reminders.isEmpty {
-                            if !allSectionItems.isEmpty || !events.isEmpty {
-                                Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
-                            }
-                            VStack(spacing: 0) {
-                                ForEach(reminders) { reminder in
-                                    ReminderItemRow(item: reminder)
-                                }
-                            }
-                        }
                     }
                     .padding(.bottom, 4)
                 }
@@ -863,8 +867,7 @@ struct CockpitView: View {
         }
         .dropDestination(for: String.self) { dropItems, _ in
             guard let uuidString = dropItems.first else { return false }
-            handlePillDrop(uuidString: uuidString, targetSection: section)
-            return true
+            return handlePillDrop(uuidString: uuidString, targetSection: section)
         } isTargeted: { targeted in
             dropTargetedSection = targeted ? section : nil
         }
@@ -872,13 +875,13 @@ struct CockpitView: View {
         .onAppear {
             guard isSelectedDate else { return }
             if hasContent {
-                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
             }
         }
         .onChange(of: contentSignature) { _, _ in
             guard isSelectedDate else { return }
             if hasContent {
-                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: events, reminders: reminders)
+                viewModel.refreshSummaryIfNeeded(for: section, items: allSectionItems, events: [], reminders: [])
             } else {
                 viewModel.clearSummary(for: section)
             }
@@ -947,12 +950,219 @@ struct CockpitView: View {
         }
         .dropDestination(for: String.self) { dropItems, _ in
             guard let uuidString = dropItems.first else { return false }
-            handlePillDrop(uuidString: uuidString, targetSection: nil)
-            return true
+            return handlePillDrop(uuidString: uuidString, targetSection: nil)
         } isTargeted: { targeted in
             isOpenDropTargeted = targeted
         }
         .animation(.easeInOut(duration: 0.15), value: isOpenDropTargeted)
+    }
+
+    // MARK: - Up Next / Past
+
+    /// Every timed commitment for the day in one chronological list. On today the soonest
+    /// entry is flagged with a highlighter bar and a countdown; other days just list the day's
+    /// schedule. Drawn straight on the page, with no card, border or shadow, so it doesn't read
+    /// as another day segment.
+    private func upNextCard(_ entries: [DayEntry]) -> some View {
+        let isToday = viewModel.isToday
+        return VStack(alignment: .leading, spacing: 0) {
+            // Tap the header to collapse the list. The countdown chip stays visible while
+            // collapsed, so the next commitment is still one glance away.
+            Button {
+                withAnimation(.spring(duration: 0.3)) { isUpNextExpanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(isToday ? "Up Next" : "Scheduled")
+                        .font(CockpitStyle.mono(.title2, weight: .bold))
+                        .cockpitUppercase()
+                        .foregroundStyle(CockpitStyle.ink.opacity(0.85))
+                    Spacer()
+                    if isToday, let next = entries.first {
+                        Text(viewModel.countdownLabel(for: next))
+                            .font(CockpitStyle.mono(.caption, weight: .bold))
+                            .cockpitUppercase()
+                            .foregroundStyle(CockpitStyle.inkOnHighlighter)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(CockpitStyle.highlighter)
+                    }
+                    Image(systemName: isUpNextExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.bold())
+                        .foregroundStyle(CockpitStyle.muted)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(isUpNextExpanded ? "Collapse" : "Expand")
+
+            if isUpNextExpanded {
+                ForEach(entries) { entry in
+                    Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                    agendaRow(entry)
+                        .overlay(alignment: .leading) {
+                            if isToday && entry.id == entries.first?.id {
+                                Rectangle().fill(CockpitStyle.highlighter).frame(width: 4)
+                            }
+                        }
+                }
+            }
+        }
+    }
+
+    /// Expanded by default, shown right before the current segment: open timed items and
+    /// reminders whose time has gone, plus open items (routines included) left behind once their
+    /// day section ended. Calendar events never land here. Orange and italic, and drawn straight
+    /// on the page with no card or border, so it stands apart from the live segments.
+    private func passedCard(_ entries: [DayEntry]) -> some View {
+        let planItems = entries.compactMap { entry -> PlanItem? in
+            if case .planItem(let item) = entry { return item }
+            return nil
+        }
+        let contentSignature = viewModel.passedSummarySignature(entries: entries)
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.spring(duration: 0.3)) { isPassedExpanded.toggle() }
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "clock.badge.exclamationmark")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(Color.orange)
+                        Text("Passed")
+                            .font(CockpitStyle.mono(.headline, weight: .bold))
+                            .italic()
+                            .cockpitUppercase()
+                            .foregroundStyle(Color.orange)
+                        Spacer()
+                        Image(systemName: isPassedExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption.bold())
+                            .foregroundStyle(CockpitStyle.muted)
+                    }
+                    // Like a collapsed segment, the one-line AI summary stands in for the list.
+                    if !isPassedExpanded {
+                        if let summary = viewModel.passedSummary {
+                            Text(summary)
+                                .font(CockpitStyle.mono(.caption))
+                                .italic()
+                                .foregroundStyle(CockpitStyle.muted)
+                                .lineLimit(2)
+                        } else if viewModel.isLoadingPassedSummary {
+                            loadingDotsView
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Passed, \(entries.count) \(entries.count == 1 ? "item" : "items")")
+            .accessibilityHint(isPassedExpanded ? "Collapse" : "Expand")
+
+            if isPassedExpanded {
+                if !planItems.isEmpty {
+                    Rectangle().fill(Color.orange.opacity(0.6)).frame(height: 1)
+                    HFlow(spacing: 10) {
+                        passedActionButton("Move all to now", systemImage: "arrow.uturn.forward") {
+                            moveToNow(planItems)
+                        }
+                        passedActionButton("Cancel all", systemImage: "xmark.circle") {
+                            isConfirmingCancelAllPassed = true
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                }
+                // Oldest first across both row styles: runs of plan items share a flow layout,
+                // and each reminder is its own row.
+                ForEach(viewModel.passedRuns(from: entries)) { run in
+                    Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                    switch run {
+                    case .pills(let items):
+                        // Same flow layout and drag-and-drop as the segments, so a passed item
+                        // can be dropped straight onto the segment it should move to.
+                        HFlow(spacing: 8) {
+                            ForEach(items) { item in
+                                paperPill(item, isPassed: true)
+                                    .draggable(item.uuid.uuidString)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                    case .reminder(let reminder):
+                        // Reminders are read-only, so they stay as rows rather than pills.
+                        ReminderItemRow(item: reminder)
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            "Cancel \(planItems.count) passed \(planItems.count == 1 ? "item" : "items")?",
+            isPresented: $isConfirmingCancelAllPassed,
+            titleVisibility: .visible
+        ) {
+            Button("Cancel \(planItems.count) \(planItems.count == 1 ? "Item" : "Items")", role: .destructive) {
+                cancel(planItems)
+            }
+            Button("Keep", role: .cancel) {}
+        } message: {
+            Text("Reminders in this list aren't affected.")
+        }
+        .onAppear {
+            viewModel.refreshPassedSummaryIfNeeded(entries: entries)
+        }
+        .onChange(of: contentSignature) { _, _ in
+            viewModel.refreshPassedSummaryIfNeeded(entries: entries)
+        }
+    }
+
+    private func passedActionButton(
+        _ title: String, systemImage: String, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(CockpitStyle.mono(.caption, weight: .bold))
+                .cockpitUppercase()
+                .foregroundStyle(CockpitStyle.ink)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// One row of Up Next, in each source's existing row style.
+    @ViewBuilder
+    private func agendaRow(_ entry: DayEntry) -> some View {
+        switch entry {
+        case .planItem(let item):
+            cardDeadlineRow(item)
+        case .calendarEvent(let event):
+            CalendarEventRow(event: event)
+        case .reminder(let reminder):
+            ReminderItemRow(item: reminder)
+        }
+    }
+
+    /// Gives passed items back to the current section (untimed) so they're live again.
+    private func moveToNow(_ items: [PlanItem]) {
+        withAnimation(.spring(duration: 0.3)) {
+            for item in items {
+                item.daySection = viewModel.currentSection
+                item.deadline = nil
+            }
+        }
+        try? modelContext.save()
+    }
+
+    private func cancel(_ items: [PlanItem]) {
+        withAnimation(.spring(duration: 0.3)) {
+            for item in items { item.status = .canceled }
+        }
+        try? modelContext.save()
     }
 
     // MARK: - Card headers
@@ -1110,7 +1320,9 @@ struct CockpitView: View {
 
     /// A flagged item is called out with a highlighter-yellow background behind its title
     /// instead of a flag icon — the one deliberate behavior swap for this design sprint.
-    private func paperPill(_ item: PlanItem, showRecurringBadge: Bool = true) -> some View {
+    private func paperPill(
+        _ item: PlanItem, showRecurringBadge: Bool = true, isPassed: Bool = false
+    ) -> some View {
         HStack(spacing: 5) {
             if item.status == .pending {
                 Button {
@@ -1124,6 +1336,13 @@ struct CockpitView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Complete \(item.title)")
+            }
+
+            // A passed pill keeps the time it was due, which the segments' pills never show.
+            if isPassed, let deadline = item.deadline {
+                Text(deadline, format: .dateTime.hour().minute())
+                    .font(CockpitStyle.mono(.caption2))
+                    .foregroundStyle(CockpitStyle.muted)
             }
 
             Text(item.title)
@@ -1155,8 +1374,14 @@ struct CockpitView: View {
         .background {
             Rectangle().stroke(CockpitStyle.border, lineWidth: 1)
         }
+        .italic(isPassed)
         .onTapGesture { itemToEdit = item }
         .contextMenu {
+            if isPassed {
+                Button { moveToNow([item]) } label: {
+                    Label("Move to Now", systemImage: "arrow.uturn.forward")
+                }
+            }
             Button {
                 item.isFlagged.toggle()
                 try? modelContext.save()
