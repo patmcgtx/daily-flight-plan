@@ -473,7 +473,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   - *Done:* `DayViewModel.isPastDay` and `pastDayReport(items:)` (`DayViewModel+Agenda.swift`,
     covered by `DayAgendaTests`); `CockpitView.pastDayReportView`. **Deviations:** `PlanItem`
     stores no completion time, so rows show the item's scheduled deadline, if any. The Completed
-    filter is ignored on a past day (search and category filters still apply). The flight name
+    filter is forced on for a past day (Flagged Only, Maintenance, search and category filters
+    still apply). The flight name
     stays editable.
 - **✅ Toolbar rework — separate categories from view settings** *(priority — do second)*:
   split the Cockpit toolbar's current single filter entry point into two distinct controls.

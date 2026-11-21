@@ -210,8 +210,8 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
   sections with read-only rows. Calendar events and Reminders are left out. The Flight Status
   card's caption becomes "Flight Report" and drops the Destination label, Route line and "Next
   up" line; the briefing row recaps "N done · N missed"; the Add item button, NOW marker and
-  Open drop target are not shown. The Completed filter is ignored (search and category filters
-  still apply).
+  Open drop target are not shown. The Completed filter is forced on (Flagged Only, Maintenance,
+  search and category filters still apply).
 - **Section cards**: flat `Rectangle` (no corner radius) per day section, black/gray border, hard
   offset shadow. The active section's name (not the whole header) gets the yellow highlighter
   treatment instead of a tinted background.

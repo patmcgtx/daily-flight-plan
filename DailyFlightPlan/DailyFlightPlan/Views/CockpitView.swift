@@ -995,11 +995,16 @@ struct CockpitView: View {
         return "\(done) done · \(missed) missed"
     }
 
-    /// Every item on `date`, canceled included. The Completed filter is ignored, since a report
-    /// is about what got done, but search and category filters still narrow it.
+    /// Every item on `date`, canceled included. The Completed filter is forced on, since a report
+    /// is about what got done, but the Flagged Only, Maintenance, search and category filters
+    /// still narrow it.
     private func reportItems(for date: Date) -> [PlanItem] {
         guard !isDeletingData else { return [] }
-        let matching = exportItems(for: date).matchingSearchText(searchText)
+        let matching = exportItems(for: date)
+            .matchingDayStatusFilters(
+                showFlaggedOnly: showFlaggedOnly, showCompleted: true, showRecurring: showRecurring
+            )
+            .matchingSearchText(searchText)
         return categorySelectionService?.filterItems(matching) ?? matching
     }
 
