@@ -203,6 +203,15 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
   `DayViewModel` clock, which only updates per-minute for the rest of the app. On days other
   than today the clock and countdown are replaced by a blurb: "A <weekday> in the can" for past
   days, "A <weekday> to look forward to" for future days.
+- **Past-day Flight Report**: when `DayViewModel.isPastDay`, the Cockpit swaps the live layout
+  for a read-only report. `DayViewModel.pastDayReport(items:)` (`DayViewModel+Agenda.swift`)
+  files the day's plan items into Completed, Missed (still pending) and Canceled, earliest
+  deadline first; `CockpitView.pastDayReportView` renders them as collapsible on-the-page
+  sections with read-only rows. Calendar events and Reminders are left out. The Flight Status
+  card's caption becomes "Flight Report" and drops the Destination label, Route line and "Next
+  up" line; the briefing row recaps "N done · N missed"; the Add item button, NOW marker and
+  Open drop target are not shown. The Completed filter is ignored (search and category filters
+  still apply).
 - **Section cards**: flat `Rectangle` (no corner radius) per day section, black/gray border, hard
   offset shadow. The active section's name (not the whole header) gets the yellow highlighter
   treatment instead of a tinted background.

@@ -106,6 +106,8 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
     number (`DFP` + date), "Next up at HH:MM", and a Route/Intentions line listing all six day
     sections, bolding each once fully complete
   - Briefing row: live clock, live countdown to midnight, and outstanding-flagged-item count
+  - Past days show a read-only "Flight Report" instead: Completed, Missed and Canceled items,
+    with no Add button, NOW marker, Calendar events or Reminders
   - Collapsible section cards with per-section progress ring (`completed/total`, filter-independent)
   - `HFlow` pills for non-deadline items (regular items and routine items on separate rows); timed rows for deadline items
   - Notes indicator icon on pills when notes are populated
