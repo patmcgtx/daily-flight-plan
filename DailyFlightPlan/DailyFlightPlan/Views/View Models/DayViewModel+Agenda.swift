@@ -24,6 +24,9 @@ enum DayEntry: Identifiable {
 
 /// Where the Cockpit shows each thing on the selected day.
 struct DayAgenda {
+    /// All-day calendar events, in the order given. They have no time, so they're listed apart
+    /// from Up Next and never count as passed.
+    var allDay: [CalendarEvent] = []
     /// Timed entries not yet over, soonest first. An in-progress calendar event counts as upcoming.
     var upcoming: [DayEntry] = []
     /// Open entries whose time or day section has ended, oldest first.
@@ -112,6 +115,10 @@ extension DayViewModel {
         }
 
         for event in events {
+            if event.isAllDay {
+                agenda.allDay.append(event)
+                continue
+            }
             // An event that has ended is dropped entirely rather than filed anywhere.
             if isToday && event.endDate <= currentTime { continue }
             upcoming.append((event.startDate, .calendarEvent(event)))

@@ -166,6 +166,22 @@ struct DayAgendaTests {
         #expect(DaySection.allCases.allSatisfy { !viewModel.hasContent($0, in: agenda) })
     }
 
+    @Test("An all-day event is listed apart from Up Next and Passed, even once the day is over", arguments: [true, false])
+    func allDayEventPlacement(viewingToday: Bool) {
+        let viewModel = viewModel(viewingToday: viewingToday)
+        // The event spans the selected day, so for yesterday it ended before "now".
+        let dayStart = Calendar.current.startOfDay(for: viewModel.selectedDate)
+        let subject = CalendarEvent(
+            id: UUID().uuidString, title: "Holiday", startDate: dayStart,
+            endDate: Calendar.current.date(byAdding: .day, value: 1, to: dayStart)!,
+            calendarTitle: "Calendar", calendarColor: .blue, isAllDay: true
+        )
+        let agenda = viewModel.agenda(items: [], events: [subject], reminders: [])
+        #expect(agenda.allDay.map(\.id) == [subject.id])
+        #expect(agenda.upcoming.isEmpty)
+        #expect(agenda.passed.isEmpty)
+    }
+
     // MARK: Reminders
 
     @Test("A timed reminder is upcoming before its due time and in Passed after it, whether open or completed", arguments: [

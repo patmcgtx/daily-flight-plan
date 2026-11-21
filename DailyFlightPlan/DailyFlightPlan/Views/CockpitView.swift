@@ -61,6 +61,7 @@ struct CockpitView: View {
     @State private var expandedSections: Set<DaySection> = []
     @State private var dropTargetedSection: DaySection? = nil
     @State private var isOpenDropTargeted = false
+    @State private var isAllDayExpanded = true
     @State private var isUpNextExpanded = true
     @State private var isPassedExpanded = true
     @State private var isConfirmingCancelAllPassed = false
@@ -208,6 +209,10 @@ struct CockpitView: View {
                 flightStatusCard(raw, date: date)
 
                 briefingRow(raw, date: date)
+
+                if !agenda.allDay.isEmpty {
+                    allDayCard(agenda.allDay)
+                }
 
                 if !agenda.upcoming.isEmpty {
                     upNextCard(agenda.upcoming)
@@ -958,6 +963,50 @@ struct CockpitView: View {
     }
 
     // MARK: - Up Next / Past
+
+    /// The day's all-day calendar events, above Up Next and styled like it (drawn on the page,
+    /// collapsible by tapping the header). The count stays visible while collapsed.
+    private func allDayCard(_ events: [CalendarEvent]) -> some View {
+        // Like Up Next / Scheduled, the title reads "Today" only when viewing today.
+        let title = viewModel.isToday ? "Today" : "All Day"
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.spring(duration: 0.3)) { isAllDayExpanded.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(CockpitStyle.mono(.title2, weight: .bold))
+                        .cockpitUppercase()
+                        .foregroundStyle(CockpitStyle.ink.opacity(0.85))
+                    Spacer()
+                    if !isAllDayExpanded {
+                        Text("\(events.count)")
+                            .font(CockpitStyle.mono(.caption, weight: .bold))
+                            .foregroundStyle(CockpitStyle.inkOnHighlighter)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(CockpitStyle.highlighter)
+                    }
+                    Image(systemName: isAllDayExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption.bold())
+                        .foregroundStyle(CockpitStyle.muted)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(title), \(events.count) \(events.count == 1 ? "event" : "events")")
+            .accessibilityHint(isAllDayExpanded ? "Collapse" : "Expand")
+
+            if isAllDayExpanded {
+                ForEach(events) { event in
+                    Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                    CalendarEventRow(event: event)
+                }
+            }
+        }
+    }
 
     /// Every timed commitment for the day in one chronological list. On today the soonest
     /// entry is flagged with a highlighter bar and a countdown; other days just list the day's

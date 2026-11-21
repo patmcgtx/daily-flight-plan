@@ -39,6 +39,15 @@ final class MockCalendarService: CalendarService {
                 calendarTitle: "Personal",
                 calendarColor: .green
             )),
+            ("personal", CalendarEvent(
+                id: "mock-3",
+                title: "Sam's Birthday",
+                startDate: cal.startOfDay(for: date),
+                endDate: cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: date))!,
+                calendarTitle: "Personal",
+                calendarColor: .green,
+                isAllDay: true
+            )),
         ]
 
         if calendarIDs.isEmpty {
