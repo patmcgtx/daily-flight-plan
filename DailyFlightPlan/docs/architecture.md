@@ -211,7 +211,9 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
   card's caption becomes "Flight Report" and drops the Destination label, Route line and "Next
   up" line; the briefing row recaps "N done · N missed"; the Add item button, NOW marker and
   Open drop target are not shown. The Completed filter is forced on (Flagged Only, Maintenance,
-  search and category filters still apply).
+  search and category filters still apply). `CockpitViewMenu(isPastDay:)` disables the Completed,
+  Calendar Events, Reminders and Empty Segments toggles on a past day (the first three display
+  their effective state) and leaves them out of the filter icon's "non-default" highlight.
 - **Section cards**: flat `Rectangle` (no corner radius) per day section, black/gray border, hard
   offset shadow. The active section's name (not the whole header) gets the yellow highlighter
   treatment instead of a tinted background.
