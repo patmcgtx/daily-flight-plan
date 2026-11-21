@@ -453,16 +453,33 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     by `DayAgendaTests`. `CockpitView`
     renders `upNextCard` and `passedCard`; the sections' progress counts exclude
     items shown in Up Next or Passed. **Deviations:**
-    - *No all-day banner:* `EventKitCalendarService` already filters all-day events out, so
-      there is nothing to show. Surfacing them needs `CalendarEvent` to carry an all-day flag.
+    - *All-day events (added after the first pass, which skipped them):* `CalendarEvent` now
+      carries `isAllDay` and `EventKitCalendarService` no longer filters them out. They get
+      their own collapsible card, `allDayCard`, above Up Next and styled like it. It's titled
+      "Today" when viewing today and "All Day" on other days, and the count stays visible while
+      collapsed. They have no time, so they're listed apart from Up Next and never count as
+      passed. `DayViewModel.agenda(...)` returns them in `DayAgenda.allDay`.
     - Row actions are in the context menu — swipe actions don't work outside a `List`.
-    - On days other than today the Up Next card is titled "Scheduled" and lists every timed
-      entry; there is no Passed area.
+    - On future days the Up Next card is titled "Scheduled" and lists every timed entry; there
+      is no Passed area. Past days skip both and show the Flight Report instead.
     - An earlier version had a combined "Past" area with Passed/Missed tags, held ended Calendar
       events, and excluded routines. Dropped after trying it: tags were redundant, events
       belong in their segment, and open routines in an ended segment read as inconsistent.
     - Because timed entries moved out of the sections, the per-section AI summaries cover only
       what remains in each section.
+- **✅ Past-day Flight Report**: any day before today shows a read-only report instead of the live
+  layout. Same on-the-page style as Up Next, with sections for Completed, Missed (open items;
+  orange like Passed) and Canceled. Empty sections are omitted, and a collapsed header's count
+  isn't highlighted. Calendar events and Reminders are left out entirely. The flight card's
+  caption reads "Flight Report" above the flight number, and the briefing row recaps
+  "N done · N missed". Hidden on past days: the Add item button, ROUTE line, DESTINATION label
+  (the note itself stays editable), NOW marker, "Next up" line, countdown, and Open drop target.
+  - *Done:* `DayViewModel.isPastDay` and `pastDayReport(items:)` (`DayViewModel+Agenda.swift`,
+    covered by `DayAgendaTests`); `CockpitView.pastDayReportView`. **Deviations:** `PlanItem`
+    stores no completion time, so rows show the item's scheduled deadline, if any. The Completed
+    filter is forced on for a past day (Flagged Only, Maintenance, search and category filters
+    still apply). The flight name stays editable. The View Options menu disables Completed,
+    Calendar Events, Reminders and Empty Segments on a past day, since the report ignores them.
 - **✅ Toolbar rework — separate categories from view settings** *(priority — do second)*:
   split the Cockpit toolbar's current single filter entry point into two distinct controls.
   - **Categories selection**: its own toolbar button, opening the existing category selection
@@ -504,7 +521,6 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   active, consider hiding unmatched segments.
 - **✅ Clean up filtering**: The filtering needs some UX updates
 - **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
-- **Past-days tweaks**: Let's display past days differently. They are in the past and unactionable. They simply show a "pilot's report" of what was completed, canceled, and missed that day. 
 - **✅ Day intention note**: a short freeform text field on the Day view for what the user wants to
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously
   tracked separately under Phase 1.2 (now cross-referenced there, not duplicated); pulled
