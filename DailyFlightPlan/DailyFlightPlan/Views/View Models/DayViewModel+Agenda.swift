@@ -210,3 +210,41 @@ extension DayViewModel {
         ) ?? currentTime
     }
 }
+
+/// What the Cockpit lists for a day that's over: a read-only record of its plan items, rather
+/// than a live agenda. Calendar events and Reminders aren't part of it.
+struct PastDayReport {
+    /// Completed plan items, earliest first.
+    var completed: [PlanItem] = []
+    /// Plan items left open, earliest first.
+    var missed: [PlanItem] = []
+    /// Canceled plan items, earliest first.
+    var canceled: [PlanItem] = []
+
+    var isEmpty: Bool {
+        completed.isEmpty && missed.isEmpty && canceled.isEmpty
+    }
+}
+
+extension DayViewModel {
+
+    /// Files `items` into the sections of a past day's report. Unlike
+    /// `agenda(items:events:reminders:)` there's no live clock to split on, so status alone
+    /// decides: an item is completed, missed (still pending), or canceled.
+    ///
+    /// Each list runs earliest first by deadline, with untimed items last. Ties fall back to the
+    /// title, then the id, so the order is deterministic across recomputes.
+    func pastDayReport(items: [PlanItem]) -> PastDayReport {
+        func ordered(_ items: [PlanItem]) -> [PlanItem] {
+            items.sorted {
+                ($0.deadline ?? .distantFuture, $0.title, $0.uuid.uuidString)
+                    < ($1.deadline ?? .distantFuture, $1.title, $1.uuid.uuidString)
+            }
+        }
+        return PastDayReport(
+            completed: ordered(items.filter { $0.status == .completed }),
+            missed: ordered(items.filter { $0.status == .pending }),
+            canceled: ordered(items.filter { $0.status == .canceled })
+        )
+    }
+}

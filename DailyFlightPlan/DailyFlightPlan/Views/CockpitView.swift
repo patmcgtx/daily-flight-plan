@@ -64,6 +64,10 @@ struct CockpitView: View {
     @State private var isAllDayExpanded = true
     @State private var isUpNextExpanded = true
     @State private var isPassedExpanded = true
+    // Past-day report sections, each collapsible like Up Next.
+    @State private var isReportCompletedExpanded = true
+    @State private var isReportMissedExpanded = true
+    @State private var isReportCanceledExpanded = true
     @State private var isConfirmingCancelAllPassed = false
 
     @State private var searchText: String = ""
@@ -132,17 +136,20 @@ struct CockpitView: View {
         }
         .tint(CockpitStyle.ink)
         .overlay(alignment: .bottomTrailing) {
-            Button { isAddingItem = true } label: {
-                Image(systemName: "plus")
-                    .font(.title2)
+            // A past day is a read-only report, so nothing can be added to it.
+            if !viewModel.isPastDay {
+                Button { isAddingItem = true } label: {
+                    Image(systemName: "plus")
+                        .font(.title2)
+                }
+                .buttonStyle(.glass)
+                .tint(CockpitStyle.highlighter)
+                .frame(width: 52, height: 52)
+                .clipShape(Circle())
+                .padding(.trailing, 16)
+                .padding(.bottom, 16)
+                .accessibilityLabel("Add Item")
             }
-            .buttonStyle(.glass)
-            .tint(CockpitStyle.highlighter)
-            .frame(width: 52, height: 52)
-            .clipShape(Circle())
-            .padding(.trailing, 16)
-            .padding(.bottom, 16)
-            .accessibilityLabel("Add Item")
         }
         .environment(\.editItem) { item in itemToEdit = item }
         .sheet(isPresented: $isAddingItem) {
@@ -210,34 +217,41 @@ struct CockpitView: View {
 
                 briefingRow(raw, date: date)
 
-                if !agenda.allDay.isEmpty {
-                    allDayCard(agenda.allDay)
-                }
-
-                if !agenda.upcoming.isEmpty {
-                    upNextCard(agenda.upcoming)
-                }
-
-                ForEach(DaySection.allCases) { section in
-                    // Passed sits right before the current segment, after the ended ones.
-                    if section == viewModel.currentSection && !agenda.passed.isEmpty {
-                        passedCard(agenda.passed)
+                if viewModel.isPastDay {
+                    pastDayReportView(
+                        date: date,
+                        report: viewModel.pastDayReport(items: reportItems(for: date))
+                    )
+                } else {
+                    if !agenda.allDay.isEmpty {
+                        allDayCard(agenda.allDay)
                     }
-                    // Empty segments can be hidden from the View menu. Past segments tend to go
-                    // empty on their own, since their open items move to Passed. The current
-                    // segment always stays: it carries the NOW marker and the Add item button.
-                    if showEmptySegments || section == viewModel.currentSection
-                        || viewModel.hasContent(section, in: agenda) {
-                        sectionCard(
-                            section, date: date, items: agenda.sectionItems, raw: rawSectionItems
-                        )
-                    }
-                }
 
-                let openItems = viewModel.anyTimeItems(from: agenda.sectionItems)
-                let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
-                if !openItems.isEmpty || !anyTimeReminders.isEmpty {
-                    openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
+                    if !agenda.upcoming.isEmpty {
+                        upNextCard(agenda.upcoming)
+                    }
+
+                    ForEach(DaySection.allCases) { section in
+                        // Passed sits right before the current segment, after the ended ones.
+                        if section == viewModel.currentSection && !agenda.passed.isEmpty {
+                            passedCard(agenda.passed)
+                        }
+                        // Empty segments can be hidden from the View menu. Past segments tend to go
+                        // empty on their own, since their open items move to Passed. The current
+                        // segment always stays: it carries the NOW marker and the Add item button.
+                        if showEmptySegments || section == viewModel.currentSection
+                            || viewModel.hasContent(section, in: agenda) {
+                            sectionCard(
+                                section, date: date, items: agenda.sectionItems, raw: rawSectionItems
+                            )
+                        }
+                    }
+
+                    let openItems = viewModel.anyTimeItems(from: agenda.sectionItems)
+                    let anyTimeReminders = viewModel.anyTimeReminderItems(from: visibleReminders)
+                    if !openItems.isEmpty || !anyTimeReminders.isEmpty {
+                        openCard(openItems, date: date, anyTimeReminders: anyTimeReminders)
+                    }
                 }
 
                 Spacer(minLength: 60)
@@ -388,7 +402,7 @@ struct CockpitView: View {
             }
         )
         return VStack(alignment: .leading, spacing: 2) {
-            Text("Flight")
+            Text(viewModel.isPastDay ? "Flight Report" : "Flight")
                 .font(CockpitStyle.mono(.caption2, weight: .bold))
                 .cockpitUppercase()
                 .foregroundStyle(CockpitStyle.muted)
@@ -437,10 +451,13 @@ struct CockpitView: View {
             }
         )
         return VStack(alignment: .leading, spacing: 2) {
-            Text("Destination")
-                .font(CockpitStyle.mono(.caption2, weight: .bold))
-                .cockpitUppercase()
-                .foregroundStyle(CockpitStyle.muted)
+            // A past day is a static report, so its note goes without the label.
+            if !viewModel.isPastDay {
+                Text("Destination")
+                    .font(CockpitStyle.mono(.caption2, weight: .bold))
+                    .cockpitUppercase()
+                    .foregroundStyle(CockpitStyle.muted)
+            }
             // The placeholder is a separate Text rather than the field's `prompt`, which
             // truncates to one line instead of wrapping.
             ZStack(alignment: .topLeading) {
@@ -477,7 +494,7 @@ struct CockpitView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     flightNameField(for: date)
                     destinationField(for: date)
-                    if let nextUp = nextUpTime(items, referenceDate: date) {
+                    if !viewModel.isPastDay, let nextUp = nextUpTime(items, referenceDate: date) {
                         Text("Next up at \(nextUp)")
                             .font(CockpitStyle.mono(.caption))
                             .foregroundStyle(CockpitStyle.muted)
@@ -487,10 +504,12 @@ struct CockpitView: View {
             }
             .padding(14)
 
-            Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+            if !viewModel.isPastDay {
+                Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
 
-            routeIntentionsLine()
-                .padding(14)
+                routeIntentionsLine()
+                    .padding(14)
+            }
         }
         .background(CockpitStyle.surface)
         .overlay(Rectangle().stroke(CockpitStyle.border, lineWidth: 1.5))
@@ -580,11 +599,12 @@ struct CockpitView: View {
                     .fill(CockpitStyle.border.opacity(0.4))
                     .frame(width: 1, height: 14)
             } else {
-                // Past and future days have no live clock/countdown, so show a day blurb instead.
+                // Past and future days have no live clock/countdown. A past day recaps how it
+                // went; a future one gets a blurb.
                 briefingItem(
                     icon: nil,
-                    text: date < Calendar.current.startOfDay(for: .now)
-                        ? "It's in the past"
+                    text: viewModel.isPastDay
+                        ? pastDayRecap(for: date)
                         : "Future you"
                 )
                 Rectangle()
@@ -960,6 +980,188 @@ struct CockpitView: View {
             isOpenDropTargeted = targeted
         }
         .animation(.easeInOut(duration: 0.15), value: isOpenDropTargeted)
+    }
+
+    // MARK: - Past-day report
+
+    /// "3 done · 2 missed", counting every item on the day regardless of the on-screen filters.
+    private func pastDayRecap(for date: Date) -> String {
+        let all = exportItems(for: date)
+        let done = all.filter { $0.status == .completed }.count
+        let missed = all.filter { $0.status == .pending }.count
+        return "\(done) done · \(missed) missed"
+    }
+
+    /// Every item on `date`, canceled included. The Completed filter is ignored, since a report
+    /// is about what got done, but search and category filters still narrow it.
+    private func reportItems(for date: Date) -> [PlanItem] {
+        guard !isDeletingData else { return [] }
+        let matching = exportItems(for: date).matchingSearchText(searchText)
+        return categorySelectionService?.filterItems(matching) ?? matching
+    }
+
+    private enum ReportTone {
+        case standard, missed, canceled
+    }
+
+    /// The report for a day that's over, in the same on-the-page style as Up Next and All Day.
+    /// Read-only: rows can't be completed, edited, or dragged.
+    @ViewBuilder
+    private func pastDayReportView(date: Date, report: PastDayReport) -> some View {
+        if report.isEmpty {
+            Text("Nothing was planned for this day.")
+                .font(CockpitStyle.mono(.caption))
+                .foregroundStyle(CockpitStyle.muted)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+        }
+
+        if !report.completed.isEmpty {
+            reportSection(
+                "Completed", count: report.completed.count, isExpanded: $isReportCompletedExpanded
+            ) {
+                ForEach(report.completed) { item in
+                    Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                    reportItemRow(item, tone: .standard)
+                }
+            }
+        }
+
+        if !report.missed.isEmpty {
+            reportSection(
+                "Missed", count: report.missed.count, isExpanded: $isReportMissedExpanded,
+                tone: .missed
+            ) {
+                ForEach(report.missed) { item in
+                    Rectangle().fill(Color.orange.opacity(0.6)).frame(height: 1)
+                    reportItemRow(item, tone: .missed)
+                }
+            }
+        }
+
+        if !report.canceled.isEmpty {
+            reportSection(
+                "Canceled", count: report.canceled.count, isExpanded: $isReportCanceledExpanded,
+                tone: .canceled
+            ) {
+                ForEach(report.canceled) { item in
+                    Rectangle().fill(CockpitStyle.border.opacity(0.4)).frame(height: 1)
+                    reportItemRow(item, tone: .canceled)
+                }
+            }
+        }
+    }
+
+    /// A collapsible report section with the Up Next header look: big uppercase title, a count
+    /// count while collapsed, and a chevron. Missed borrows Passed's orange italic; Canceled is
+    /// muted.
+    private func reportSection<Rows: View>(
+        _ title: String, count: Int, isExpanded: Binding<Bool>, tone: ReportTone = .standard,
+        @ViewBuilder rows: () -> Rows
+    ) -> some View {
+        let titleColor: Color = switch tone {
+        case .standard: CockpitStyle.ink.opacity(0.85)
+        case .missed: .orange
+        case .canceled: CockpitStyle.muted
+        }
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.spring(duration: 0.3)) { isExpanded.wrappedValue.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    if tone == .missed {
+                        Image(systemName: "clock.badge.exclamationmark")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(Color.orange)
+                    }
+                    Text(title)
+                        .font(CockpitStyle.mono(.title2, weight: .bold))
+                        .italic(tone == .missed)
+                        .cockpitUppercase()
+                        .foregroundStyle(titleColor)
+                    Spacer()
+                    // Plain, not highlighted: nothing here is pending any more.
+                    if !isExpanded.wrappedValue {
+                        Text("\(count)")
+                            .font(CockpitStyle.mono(.caption, weight: .bold))
+                            .foregroundStyle(CockpitStyle.muted)
+                    }
+                    Image(systemName: isExpanded.wrappedValue ? "chevron.up" : "chevron.down")
+                        .font(.caption.bold())
+                        .foregroundStyle(CockpitStyle.muted)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(title), \(count) \(count == 1 ? "item" : "items")")
+            .accessibilityHint(isExpanded.wrappedValue ? "Collapse" : "Expand")
+
+            if isExpanded.wrappedValue {
+                rows()
+            }
+        }
+    }
+
+    /// A read-only plan item row: a status glyph in place of `cardDeadlineRow`'s toggle button,
+    /// and no context menu.
+    private func reportItemRow(_ item: PlanItem, tone: ReportTone) -> some View {
+        let glyph: String? = switch item.status {
+        case .completed: "checkmark"
+        case .canceled: "xmark"
+        case .pending: nil
+        }
+        let glyphColor: Color = switch item.status {
+        case .completed: CockpitStyle.routeBlue
+        case .canceled: CockpitStyle.muted
+        case .pending: .orange
+        }
+        let statusLabel: String = switch item.status {
+        case .completed: "Completed"
+        case .canceled: "Canceled"
+        case .pending: "Missed"
+        }
+        return HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(glyphColor.opacity(item.status == .pending ? 0.6 : 1), lineWidth: 1.5)
+                    .frame(width: 26, height: 26)
+                if let glyph {
+                    Image(systemName: glyph)
+                        .font(.caption.bold())
+                        .foregroundStyle(glyphColor)
+                }
+            }
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.title)
+                    .font(CockpitStyle.mono(.body, weight: .semibold))
+                    .cockpitUppercase()
+                    .strikethrough(item.status != .pending)
+                    .foregroundStyle(
+                        item.isFlagged
+                            ? CockpitStyle.inkOnHighlighter
+                            : (item.status == .pending ? CockpitStyle.ink : CockpitStyle.muted)
+                    )
+                    .padding(.horizontal, item.isFlagged ? 3 : 0)
+                    .background(item.isFlagged ? CockpitStyle.highlighter.opacity(0.8) : Color.clear)
+                if let dl = item.deadline {
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock").font(.caption2)
+                        Text(dl, format: .dateTime.hour().minute())
+                            .font(CockpitStyle.mono(.caption2))
+                    }
+                    .foregroundStyle(CockpitStyle.muted)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(statusLabel)
     }
 
     // MARK: - Up Next / Past

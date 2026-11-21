@@ -43,6 +43,11 @@ final class DayViewModel {
         Calendar.current.isDateInToday(selectedDate)
     }
 
+    /// Whether the selected day is over, so the Cockpit shows its read-only report.
+    var isPastDay: Bool {
+        selectedDate < Calendar.current.startOfDay(for: currentTime)
+    }
+
     /// The section that contains the current clock time, or nil if not viewing today
     var currentSection: DaySection? {
         guard isToday else { return nil }

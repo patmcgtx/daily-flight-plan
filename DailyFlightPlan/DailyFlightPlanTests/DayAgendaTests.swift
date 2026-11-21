@@ -420,4 +420,49 @@ struct DayAgendaTests {
         let subject = reminder(due: now.addingTimeInterval(Double(minutesAhead) * 60))
         #expect(viewModel(now: now).countdownLabel(for: .reminder(subject)) == expected)
     }
+
+    // MARK: Past-day report
+
+    @Test("A past day's report files each plan item by status, whatever its time", arguments: [
+        (status: ItemStatus.completed, deadlineHour: 9 as Int?),
+        (status: ItemStatus.completed, deadlineHour: nil),
+        (status: ItemStatus.pending, deadlineHour: 9 as Int?),
+        (status: ItemStatus.pending, deadlineHour: nil),
+        (status: ItemStatus.canceled, deadlineHour: 9 as Int?),
+    ])
+    func pastDayReportFilesItemsByStatus(status: ItemStatus, deadlineHour: Int?) {
+        let subject = item(deadline: deadlineHour.map { time($0) }, status: status)
+        let report = viewModel(viewingToday: false).pastDayReport(items: [subject])
+        #expect(report.completed.contains { $0.uuid == subject.uuid } == (status == .completed))
+        #expect(report.missed.contains { $0.uuid == subject.uuid } == (status == .pending))
+        #expect(report.canceled.contains { $0.uuid == subject.uuid } == (status == .canceled))
+    }
+
+    @Test("A past day's report lists items earliest first, with untimed ones last")
+    func pastDayReportOrdersEarliestFirst() {
+        let late = item(deadline: time(16), status: .completed)
+        let early = item(deadline: time(8), status: .completed)
+        let untimed = item(status: .completed)
+        let report = viewModel(viewingToday: false).pastDayReport(items: [untimed, late, early])
+        #expect(report.completed.map(\.uuid) == [early, late, untimed].map(\.uuid))
+    }
+
+    @Test("A past day with nothing on it has an empty report")
+    func pastDayReportEmpty() {
+        #expect(viewModel(viewingToday: false).pastDayReport(items: []).isEmpty)
+    }
+
+    @Test("isPastDay is true only for days before today", arguments: [
+        (daysFromToday: -2, expected: true),
+        (daysFromToday: -1, expected: true),
+        (daysFromToday: 0, expected: false),
+        (daysFromToday: 1, expected: false),
+    ])
+    func isPastDay(daysFromToday: Int, expected: Bool) {
+        let subject = viewModel()
+        subject.selectedDate = Calendar.current.date(
+            byAdding: .day, value: daysFromToday, to: Calendar.current.startOfDay(for: .now)
+        )!
+        #expect(subject.isPastDay == expected)
+    }
 }

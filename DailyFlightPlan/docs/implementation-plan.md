@@ -463,6 +463,18 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
       belong in their segment, and open routines in an ended segment read as inconsistent.
     - Because timed entries moved out of the sections, the per-section AI summaries cover only
       what remains in each section.
+- **✅ Past-day Flight Report**: any day before today shows a read-only report instead of the live
+  layout. Same on-the-page style as Up Next, with sections for Completed, Missed (open items;
+  orange like Passed) and Canceled. Empty sections are omitted, and a collapsed header's count
+  isn't highlighted. Calendar events and Reminders are left out entirely. The flight card's
+  caption reads "Flight Report" above the flight number, and the briefing row recaps
+  "N done · N missed". Hidden on past days: the Add item button, ROUTE line, DESTINATION label
+  (the note itself stays editable), NOW marker, "Next up" line, countdown, and Open drop target.
+  - *Done:* `DayViewModel.isPastDay` and `pastDayReport(items:)` (`DayViewModel+Agenda.swift`,
+    covered by `DayAgendaTests`); `CockpitView.pastDayReportView`. **Deviations:** `PlanItem`
+    stores no completion time, so rows show the item's scheduled deadline, if any. The Completed
+    filter is ignored on a past day (search and category filters still apply). The flight name
+    stays editable.
 - **✅ Toolbar rework — separate categories from view settings** *(priority — do second)*:
   split the Cockpit toolbar's current single filter entry point into two distinct controls.
   - **Categories selection**: its own toolbar button, opening the existing category selection
