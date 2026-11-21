@@ -527,6 +527,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 
 ### Phase 2.7 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
+- **Detect duplicates in import**: It's going to be faily common for me to defer an item to the next day and then also import that same item the next day via Things. Flag/detect the resulting dup.
 - **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
 - **Add a flag toggle on import**: The import can't automatically know if this item should be
   flagged, but make it easy.
