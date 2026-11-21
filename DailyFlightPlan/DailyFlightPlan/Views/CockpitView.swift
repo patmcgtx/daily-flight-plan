@@ -986,6 +986,9 @@ struct CockpitView: View {
 
     /// "3 done · 2 missed", counting every item on the day regardless of the on-screen filters.
     private func pastDayRecap(for date: Date) -> String {
+        // Like the other render-time reads, skip the query while Delete All Items runs, when
+        // its models may already be invalidated.
+        guard !isDeletingData else { return "0 done · 0 missed" }
         let all = exportItems(for: date)
         let done = all.filter { $0.status == .completed }.count
         let missed = all.filter { $0.status == .pending }.count
