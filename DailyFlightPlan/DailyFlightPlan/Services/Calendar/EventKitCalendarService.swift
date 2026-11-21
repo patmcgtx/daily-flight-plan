@@ -47,7 +47,6 @@ final class EventKitCalendarService: CalendarService {
         let ekEvents = store.events(matching: predicate)
 
         return ekEvents
-            .filter { !$0.isAllDay }
             .compactMap { event -> CalendarEvent? in
                 guard let id = event.eventIdentifier,
                       let title = event.title,
@@ -60,7 +59,8 @@ final class EventKitCalendarService: CalendarService {
                     startDate: start,
                     endDate: end,
                     calendarTitle: calendar.title,
-                    calendarColor: Color(cgColor: calendar.cgColor)
+                    calendarColor: Color(cgColor: calendar.cgColor),
+                    isAllDay: event.isAllDay
                 )
             }
             .sorted { $0.startDate < $1.startDate }

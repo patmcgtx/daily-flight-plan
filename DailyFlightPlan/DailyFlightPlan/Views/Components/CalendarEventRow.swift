@@ -28,10 +28,12 @@ struct CalendarEventRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    Text(event.startDate, format: .dateTime.hour().minute())
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
+                    if !event.isAllDay {
+                        Text(event.startDate, format: .dateTime.hour().minute())
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
 
                     Text(event.title)
                         .font(.subheadline)

@@ -12,4 +12,5 @@ struct CalendarEvent: Identifiable {
     let endDate: Date
     let calendarTitle: String
     let calendarColor: Color
+    var isAllDay: Bool = false
 }
