@@ -1017,7 +1017,11 @@ struct CockpitView: View {
     @ViewBuilder
     private func pastDayReportView(date: Date, report: PastDayReport) -> some View {
         if report.isEmpty {
-            Text("Nothing was planned for this day.")
+            // An empty report is either an empty day or a day whose items the filters (search,
+            // categories, Flagged Only, Maintenance) hide, so say which. While Delete All Items
+            // runs, skip the query as elsewhere and treat the day as empty.
+            let isDayEmpty = isDeletingData || exportItems(for: date).isEmpty
+            Text(isDayEmpty ? "Nothing was planned for this day." : "No items match the current filters.")
                 .font(CockpitStyle.mono(.caption))
                 .foregroundStyle(CockpitStyle.muted)
                 .frame(maxWidth: .infinity)
