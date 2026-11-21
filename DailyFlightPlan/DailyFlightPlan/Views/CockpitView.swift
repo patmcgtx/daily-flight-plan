@@ -125,7 +125,7 @@ struct CockpitView: View {
                             isFocused: $isSearchFieldFocused
                         )
 
-                        CockpitViewMenu()
+                        CockpitViewMenu(isPastDay: viewModel.isPastDay)
 
                         CategoriesToolbarButton()
                     }

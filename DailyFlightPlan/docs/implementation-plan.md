@@ -475,7 +475,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     stores no completion time, so rows show the item's scheduled deadline, if any. The Completed
     filter is forced on for a past day (Flagged Only, Maintenance, search and category filters
     still apply). The flight name
-    stays editable.
+    stays editable. The View Options menu disables Completed, Calendar
+    Events, Reminders and Empty Segments on a past day, since the report ignores them.
 - **✅ Toolbar rework — separate categories from view settings** *(priority — do second)*:
   split the Cockpit toolbar's current single filter entry point into two distinct controls.
   - **Categories selection**: its own toolbar button, opening the existing category selection

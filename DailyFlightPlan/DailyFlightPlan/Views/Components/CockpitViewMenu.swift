@@ -8,6 +8,10 @@ import SwiftUI
 /// without opening a sheet. Shares its storage keys with `FilterSheetView`/`CockpitView`.
 struct CockpitViewMenu: View {
 
+    /// A past day is a read-only report of plan items, so the options that only shape the live
+    /// day (Completed, Calendar Events, Reminders, Empty Segments) are disabled for it.
+    var isPastDay: Bool = false
+
     @AppStorage(AppStorageKeys.showFlaggedOnly.rawValue)
     private var showFlaggedOnly: Bool = false
 
@@ -30,9 +34,11 @@ struct CockpitViewMenu: View {
     private var uppercaseText: Bool = true
 
     /// True when any option differs from its default.
+    /// Options disabled on a past day don't count, as they aren't in effect there.
     private var isNonDefault: Bool {
-        showFlaggedOnly || showCompleted || !showRecurring
-            || !showCalendarEvents || !showReminderItems || !showEmptySegments || !uppercaseText
+        showFlaggedOnly || !showRecurring || !uppercaseText
+            || (!isPastDay
+                && (showCompleted || !showCalendarEvents || !showReminderItems || !showEmptySegments))
     }
 
     var body: some View {
@@ -40,21 +46,27 @@ struct CockpitViewMenu: View {
             Toggle(isOn: $showFlaggedOnly) {
                 Label("Flagged Only", systemImage: "flag.fill")
             }
-            Toggle(isOn: $showCompleted) {
+            // The report always lists completed items, and never Calendar events or Reminders,
+            // so a past day shows those toggles as they effectively are.
+            Toggle(isOn: isPastDay ? .constant(true) : $showCompleted) {
                 Label("Completed", systemImage: "checkmark")
             }
+            .disabled(isPastDay)
             Toggle(isOn: $showRecurring) {
                 Label("Maintenance", systemImage: "wrench")
             }
-            Toggle(isOn: $showCalendarEvents) {
+            Toggle(isOn: isPastDay ? .constant(false) : $showCalendarEvents) {
                 Label("Calendar Events", systemImage: "calendar")
             }
-            Toggle(isOn: $showReminderItems) {
+            .disabled(isPastDay)
+            Toggle(isOn: isPastDay ? .constant(false) : $showReminderItems) {
                 Label("Reminders", systemImage: "bell")
             }
+            .disabled(isPastDay)
             Toggle(isOn: $showEmptySegments) {
                 Label("Empty Segments", systemImage: "square.dashed")
             }
+            .disabled(isPastDay)
 
             Divider()
 
