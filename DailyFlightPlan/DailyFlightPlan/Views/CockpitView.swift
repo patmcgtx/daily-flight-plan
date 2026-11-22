@@ -74,11 +74,7 @@ struct CockpitView: View {
     @State private var isShowingSearch = false
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isShowingExport = false
-    @FocusState private var isFlightNameFocused: Bool
     @FocusState private var isDestinationFocused: Bool
-    /// What the flight name field shows. Mirrors the displayed flight number while unfocused;
-    /// while editing it holds the raw text so the field can be emptied without snapping back.
-    @State private var flightDraft: String = ""
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -394,42 +390,14 @@ struct CockpitView: View {
     /// The flight name caption, editable inline. It shows the default "DFP YYYYMMDD" number as
     /// real text, so the user can tweak it (e.g. append a suffix) rather than retype the date.
     private func flightNameField(for date: Date) -> some View {
-        let name = Binding(
-            get: { flightDraft },
-            set: {
-                flightDraft = String($0.prefix(Day.maxFlightNameLength))
-                commitFlightName(flightDraft, for: date)
-            }
+        FlightNameField(
+            caption: viewModel.isPastDay ? "Flight Report" : "Flight",
+            displayed: displayedFlightNumber(for: date),
+            defaultNumber: Day.defaultFlightNumber(for: date),
+            commit: { commitFlightName($0, for: date) }
         )
-        return VStack(alignment: .leading, spacing: 2) {
-            Text(viewModel.isPastDay ? "Flight Report" : "Flight")
-                .font(CockpitStyle.mono(.caption2, weight: .bold))
-                .cockpitUppercase()
-                .foregroundStyle(CockpitStyle.muted)
-            TextField(
-                "", text: name,
-                prompt: Text(Day.defaultFlightNumber(for: date))
-                    .font(CockpitStyle.mono(.body, weight: .bold))
-                    .foregroundStyle(CockpitStyle.muted)
-            )
-            .font(CockpitStyle.mono(.body, weight: .bold))
-            .cockpitUppercase()
-            .foregroundStyle(CockpitStyle.ink)
-            .textFieldStyle(.plain)
-            .focused($isFlightNameFocused)
-            .submitLabel(.done)
-            .onSubmit { isFlightNameFocused = false }
-            .accessibilityLabel("Flight name")
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .onTapGesture { isFlightNameFocused = true }
-        .onChange(of: displayedFlightNumber(for: date), initial: true) { _, displayed in
-            if !isFlightNameFocused { flightDraft = displayed }
-        }
-        .onChange(of: isFlightNameFocused) { _, focused in
-            if !focused { flightDraft = displayedFlightNumber(for: date) }
-        }
+        // A fresh field (and draft) per day.
+        .id(Day.normalized(date))
     }
 
     /// "DESTINATION" label with a short, multi-line-capable note on what the day is for, shown
@@ -1751,3 +1719,77 @@ struct CockpitView: View {
 }
 
 #endif
+
+/// The editable flight name. Its own view, so the Cockpit's re-renders don't rebuild the field
+/// mid-edit, with the draft started from the stored name.
+private struct FlightNameField: View {
+    let caption: String
+    /// The stored flight number (or the default), shown whenever the field isn't being edited.
+    let displayed: String
+    let defaultNumber: String
+    let commit: (String) -> Void
+
+    @Environment(\.scenePhase) private var scenePhase
+    @FocusState private var isFocused: Bool
+    /// Raw text while editing, so the field can be emptied without snapping back. It's saved
+    /// only when editing ends; saving per keystroke refreshes the `@Query` mid-edit.
+    @State private var draft: String
+    /// Bound so SwiftUI tracks the caret itself. Without it, on a real iPhone the cursor jumped
+    /// to the end of the text on the first edit.
+    @State private var selection: TextSelection?
+
+    init(caption: String, displayed: String, defaultNumber: String, commit: @escaping (String) -> Void) {
+        self.caption = caption
+        self.displayed = displayed
+        self.defaultNumber = defaultNumber
+        self.commit = commit
+        _draft = State(initialValue: displayed)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(caption)
+                .font(CockpitStyle.mono(.caption2, weight: .bold))
+                .cockpitUppercase()
+                .foregroundStyle(CockpitStyle.muted)
+            TextField(
+                text: $draft,
+                selection: $selection,
+                prompt: Text(defaultNumber)
+                    .font(CockpitStyle.mono(.body, weight: .bold))
+                    .foregroundStyle(CockpitStyle.muted)
+            ) {
+                Text("Flight name")
+            }
+            .font(CockpitStyle.mono(.body, weight: .bold))
+            .foregroundStyle(CockpitStyle.ink)
+            .textFieldStyle(.plain)
+            .focused($isFocused)
+            .submitLabel(.done)
+            .onSubmit { isFocused = false }
+            .accessibilityLabel("Flight name")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Pick up changes from elsewhere (e.g. sync) while the field isn't being edited.
+        .onChange(of: displayed) { _, displayed in
+            if !isFocused { draft = displayed }
+        }
+        .onChange(of: draft) { _, new in
+            if new.count > Day.maxFlightNameLength { draft = String(new.prefix(Day.maxFlightNameLength)) }
+        }
+        .onChange(of: isFocused) { _, focused in
+            guard !focused else { return }
+            commit(draft)
+            // Blank snaps back to the default number.
+            if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { draft = defaultNumber }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active, isFocused { commit(draft) }
+        }
+        // Changing days replaces this view (see `.id` at the call site) without reliably
+        // reporting the focus loss, so save any unsaved edit on the way out.
+        .onDisappear {
+            if draft != displayed { commit(draft) }
+        }
+    }
+}
