@@ -1786,5 +1786,10 @@ private struct FlightNameField: View {
         .onChange(of: scenePhase) { _, phase in
             if phase != .active, isFocused { commit(draft) }
         }
+        // Changing days replaces this view (see `.id` at the call site) without reliably
+        // reporting the focus loss, so save any unsaved edit on the way out.
+        .onDisappear {
+            if draft != displayed { commit(draft) }
+        }
     }
 }
