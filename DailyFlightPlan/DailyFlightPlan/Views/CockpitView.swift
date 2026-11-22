@@ -79,6 +79,7 @@ struct CockpitView: View {
     /// What the flight name field shows. Mirrors the displayed flight number while unfocused;
     /// while editing it holds the raw text so the field can be emptied without snapping back.
     @State private var flightDraft: String = ""
+    @Environment(\.scenePhase) private var scenePhase
 
     private var isFilterActive: Bool {
         showFlaggedOnly || showCompleted || !showRecurring
@@ -391,15 +392,19 @@ struct CockpitView: View {
         dayForEditing(date).setFlightName(text)
     }
 
+    /// Saves the draft and shows the resulting name (blank snaps back to the default number).
+    private func finishEditingFlightName(for date: Date) {
+        commitFlightName(flightDraft, for: date)
+        let trimmed = flightDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        flightDraft = trimmed.isEmpty ? Day.defaultFlightNumber(for: date) : flightDraft
+    }
+
     /// The flight name caption, editable inline. It shows the default "DFP YYYYMMDD" number as
     /// real text, so the user can tweak it (e.g. append a suffix) rather than retype the date.
     private func flightNameField(for date: Date) -> some View {
         let name = Binding(
             get: { flightDraft },
-            set: {
-                flightDraft = String($0.prefix(Day.maxFlightNameLength))
-                commitFlightName(flightDraft, for: date)
-            }
+            set: { flightDraft = String($0.prefix(Day.maxFlightNameLength)) }
         )
         return VStack(alignment: .leading, spacing: 2) {
             Text(viewModel.isPastDay ? "Flight Report" : "Flight")
@@ -413,7 +418,6 @@ struct CockpitView: View {
                     .foregroundStyle(CockpitStyle.muted)
             )
             .font(CockpitStyle.mono(.body, weight: .bold))
-            .cockpitUppercase()
             .foregroundStyle(CockpitStyle.ink)
             .textFieldStyle(.plain)
             .focused($isFlightNameFocused)
@@ -422,13 +426,16 @@ struct CockpitView: View {
             .accessibilityLabel("Flight name")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .onTapGesture { isFlightNameFocused = true }
         .onChange(of: displayedFlightNumber(for: date), initial: true) { _, displayed in
             if !isFlightNameFocused { flightDraft = displayed }
         }
+        // The draft is saved only when editing ends. Saving on every keystroke refreshed the
+        // `@Query` mid-edit and made the field reset its text, which threw the cursor to the end.
         .onChange(of: isFlightNameFocused) { _, focused in
-            if !focused { flightDraft = displayedFlightNumber(for: date) }
+            if !focused { finishEditingFlightName(for: date) }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active, isFlightNameFocused { commitFlightName(flightDraft, for: date) }
         }
     }
 
