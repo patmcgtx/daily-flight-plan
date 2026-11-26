@@ -23,8 +23,13 @@ DailyFlightPlan/
 │                               Info.plist's UIAppFonts
 └── Views/
     ├── Components/   — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
-    │                   ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
-    ├── View Models/  — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
+    │                   ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule,
+    │                   CockpitViewMenu (View Options menu), CategoriesToolbarButton,
+    │                   DatePickerButton, InlineSearchBar (SearchToggleButton/InlineSearchField),
+    │                   FilterToolbarButton
+    ├── View Models/  — DayViewModel, DayViewModel+Agenda (Up Next / Passed / All Day /
+    │                   Flight Report partitioning), ItemFormViewModel, CategoriesEditViewModel,
+    │                   CategoriesSelectFlowViewModel
     ├── DayView.swift          — TabView host: manages shared state, fetches calendar/reminders, owns all sheets
     ├── CockpitView.swift    — Cockpit tab (struct CockpitView): primary day view, paper-plan styling
     ├── FlightPlanView.swift   — retired Day tab (struct FlightPlanView): swipe pager; `Tab(…)` entry
@@ -38,7 +43,8 @@ DailyFlightPlan/
     │                           backed by a temp `.md` file; takes a `title` + pre-rendered `markdown` string
     ├── MarkdownImportView.swift — Paste-to-import sheet: TextEditor → Foundation Models parse → review list → commit
     ├── CardDeckView.swift     — Cards tab (commented out): collapsible stacked section cards with AI summaries
-    ├── TimelineView.swift     — Nav Log tab: chronological multi-day interactive list
+    ├── TimelineView.swift     — Nav Log tab (struct TimelineView): chronological multi-day interactive list
+    ├── FilterSheetView.swift  — General/Specific filter sheet, used by Maintenance and Nav Log
     ├── ItemForm.swift
     └── CategoriesEditView.swift
 ```
@@ -109,7 +115,7 @@ enum ItemStatus: String, Codable
     // Recurring instances cannot be deferred — cancel today's instance; tomorrow's appears automatically.
 ```
 
-"Missed" items (specific deadline passed, still `.pending`) are computed dynamically — no extra DB field. Section-assigned items stay in their section card regardless of whether that section's time window has passed.
+"Passed" items (specific deadline passed, or an untimed item whose segment has ended, still `.pending`) are computed dynamically — no extra DB field — by `DayViewModel.agenda(items:events:reminders:)`. Today only, they're pulled out of their segment cards into the Cockpit's Passed area; completed or canceled items whose time has passed, and untimed items in the current or later segments, stay in their segment. On past days the same data is shown as "Missed" in the read-only Flight Report.
 
 **Recurring habit model (template + instance):** Each recurring habit is stored as a *template* (`isTemplate = true`). Each day, `DayView` lazily creates a per-day *instance* (`template != nil`) for today only — future dates show read-only ghost projections of the template instead. Instances are independent `PlanItem` records so completing, canceling, or editing one does not affect other days or the template itself. `template` and `instances` use a self-referential `@Relationship` (not a UUID) for CloudKit compatibility. On first launch after upgrade, `migrateOldRecurringItems()` converts any pre-template recurring items to the new model.
 
@@ -126,7 +132,7 @@ The unresolved-`template`-link case (`coversRecurringOccurrence` returning `fals
 protocol CalendarService {
     func events(for date: Date) async throws -> [CalendarEvent]
 }
-// CalendarEvent DTO: id, title, startDate, endDate, calendarColor
+// CalendarEvent DTO: id, title, startDate, endDate, calendarColor, isAllDay
 // Tapping opens Calendar app via UIApplication.open(calshow: url)
 
 protocol RemindersService {
@@ -141,7 +147,7 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
 ## UI: "Structured Flight Plan"
 
 **Tab bar (system `TabView`, Liquid Glass automatic on iOS 26):**
-- **Cockpit** (`airplane`) — primary day view, styled as a filed paper flight plan (`CockpitView.swift`); button-based day navigation; collapsible section cards with progress ring, HFlow pills, Calendar events, and Reminders
+- **Cockpit** (`airplane.up.forward`) — primary day view, styled as a filed paper flight plan (`CockpitView.swift`); button-based day navigation; All Day, Up Next and Passed areas above collapsible segment cards with progress ring and HFlow pills (see "Cockpit tab" below)
 - **Maintenance** (`wrench`) — recurring habit template management: collapsible cards grouped by
   weekday pattern (Every Day / Weekdays / Weekends / custom); tap header to expand/collapse (all
   start expanded; collapsed shows name + item count). Within each card, items are subdivided by
@@ -157,24 +163,32 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
   toolbar `square.and.arrow.up` export button opens `MarkdownExportView` via
   `RoutineMarkdownExporter`, rendering every template (ignoring active filters) grouped by
   schedule, then by day segment.
-- **Nav Log** (`checklist`) — chronological multi-day list of all plan items; fully interactive
-- Tab order in the UI is Flight / Routine / Timeline (`Cmd+1` Flight, `Cmd+2` Routine, `Cmd+3` Timeline on macOS)
+- **Nav Log** (`list.bullet.clipboard`; `TimelineView.swift`) — chronological multi-day list of all plan items; fully interactive
+- Tab order in the UI is Cockpit / Maintenance / Nav Log (`Cmd+1` Cockpit, `Cmd+2` Maintenance, `Cmd+3` Nav Log on macOS)
 - The original **Day** tab (`airplane`, `FlightPlanView.swift`, swipe-pager-based) is retired —
   its `Tab(…)` entry is commented out in `DayView.swift`, not deleted, in case it's worth reviving
 
 **Navigation bar toolbar (Cockpit tab, inside `NavigationStack`):**
-- Leading: `⚙` Settings button, `arrow.down.doc` Import button
-- Trailing: `ToolbarItemGroup` — `scope` go-to-today button; search toggle; filter menu
-  (`line.3.horizontal.decrease.circle`) with Flagged/Done/Routines/Calendar/Reminders toggles;
-  `square.and.arrow.up` export button (opens `MarkdownExportView` via `DayPlanMarkdownExporter`,
-  scoped to the selected date, grouped by day section, including completion status and whether
-  each item is a routine) — system groups into a single Liquid Glass capsule on iOS 26
-- Trailing: `+` Add Item button (separate from the group, bottom-trailing overlay)
+- Leading: a single `ellipsis.circle` "More" menu — Developer (settings), Import
+  (`MarkdownImportView`), and Export (`MarkdownExportView` via `DayPlanMarkdownExporter`, scoped to
+  the selected date, grouped by day segment, including completion status and whether each item is
+  a routine). Collapsing these into one control frees width so the trailing items aren't pushed
+  into the system overflow menu
+- Trailing `ToolbarItemGroup` — system groups it into a single Liquid Glass capsule on iOS 26:
+  - Search toggle (`SearchToggleButton`/`InlineSearchField`, local to the tab)
+  - **View Options** (`CockpitViewMenu`, `camera.filters`): a `Menu` of toggles — Flagged Only,
+    Completed, Maintenance, Calendar Events, Reminders, Empty Segments, UPPERCASE — sharing the
+    `@AppStorage` keys; disabled or fixed on past days, where the report ignores them
+  - **Categories** (`CategoriesToolbarButton`, `tag`): opens `CategoriesSelectFlow` alone in a
+    popover. This split (categories vs. view settings) replaced the single filter button
+    (`FilterToolbarButton`), which remains on Maintenance and Nav Log
+- The date heading is the date picker: tap it to open `DatePickerButton`'s picker
+- `+` Add Item button: a bottom-trailing overlay, hidden on past days
 - `.toolbarBackgroundVisibility(.hidden, for: .navigationBar, .tabBar)` (iOS only) forces both
   bars fully transparent — see the Cockpit tab's Liquid Glass note below for why this is explicit
   rather than left to the system's automatic heuristic
 
-All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`, `showRecurring`) is saved to `@AppStorage` and shared across all tabs. The filter icon fills/accents when any filter is active.
+Filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `showReminderItems`, `showRecurring` — labeled "Maintenance" in the View Options menu — `showEmptySegments`, `uppercaseText`) is saved to `@AppStorage`. The Cockpit's View Options and Categories icons fill/accent when any setting is non-default; Nav Log keeps its own isolate-style keys (e.g. `showCompletedOnly`).
 
 **Cockpit tab (`CockpitView.swift`) — current primary view:**
 - **Paper styling**: monospaced type (IBM Plex Mono, bundled in `Theming/Fonts/`), flat black
@@ -214,16 +228,42 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
   search and category filters still apply). `CockpitViewMenu(isPastDay:)` disables the Completed,
   Calendar Events, Reminders and Empty Segments toggles on a past day (the first three display
   their effective state) and leaves them out of the filter icon's "non-default" highlight.
-- **Section cards**: flat `Rectangle` (no corner radius) per day section, black/gray border, hard
+- **Day agenda (top to bottom)**: on today and future days the page is `All Day` → `Up Next` →
+  `Passed` (today only) → segment cards → `Open`. All three leading areas are drawn directly on the
+  page background (no card, border or shadow), so they don't read as day segments, and each
+  collapses/expands like a segment.
+  - **All Day** (`allDayCard`): all-day Calendar events (`CalendarEvent.isAllDay`), titled "Today"
+    on today and "All Day" otherwise; the count stays visible while collapsed.
+  - **Up Next** (`upNextCard`): every timed entry that isn't over, in one time-sorted list —
+    Calendar events (until they end), Reminders with a time, and deadline plan items — each keeping
+    its own row style. The next entry gets a highlighter bar and a countdown (`countdownLabel(for:)`),
+    which stays visible while collapsed. Entries appear here only, not also in a segment. Titled
+    "Scheduled" on future days, which have no Passed area. Respects the View Options toggles and the
+    category filter. Plan items and Reminders are completable from the list.
+  - **Passed** (`passedCard`, today only): pending plan items past their deadline, every Reminder
+    past its due time, and untimed pending items — Maintenance ones included — whose segment has
+    ended, oldest first. Plan items are draggable flow pills (italic, with their due time);
+    Reminders stay read-only rows. Context-menu actions: "Move to Now", Cancel; when expanded, bulk
+    "Move all to now" and "Cancel all" (with confirmation). Dropping an open item onto an
+    already-ended segment is refused. While collapsed, the header shows an on-device AI summary
+    held in `DayViewModel.passedSummary`.
+  - Ended Calendar events appear nowhere (they can't be acted on).
+  - **Empty Segments** (View Options, on by default): off hides segments with nothing to list;
+    the current segment always stays for its NOW marker and Add item button.
+  - Partitioning lives in `DayViewModel+Agenda.swift` — `agenda(items:events:reminders:)` returns
+    a `DayAgenda` (`allDay`, Up Next and Passed entries), `sectionItems(from:)` returns what stays in
+    segments — and is covered by `DayAgendaTests`. Segment progress counts exclude items shown in Up
+    Next or Passed, and per-segment AI summaries cover only what remains in each segment.
+- **Section cards**: flat `Rectangle` (no corner radius) per day segment, black/gray border, hard
   offset shadow. The active section's name (not the whole header) gets the yellow highlighter
   treatment instead of a tinted background.
 - **Flagged items**: a yellow highlighter rectangle behind the title text, replacing the flag
   icon used elsewhere in the app.
-- **`DayViewModel` additions backing this tab**: `nextUpcomingDeadline(from:referenceDate:)` and
-  `outstandingFlaggedCount(from:)` — extracted from view-local logic so they're covered by unit
+- **`DayViewModel` additions backing this tab**: `nextUpcomingDeadline(from:referenceDate:)`,
+  `outstandingFlaggedCount(from:)`, and the agenda/report functions above — extracted from view-local logic so they're covered by unit
   tests (`DayViewModelTests.swift`) rather than living only in the view.
 - Otherwise shares `FlightPlanView`'s functional shape: same `DayViewModel`, same `@Query`,
-  same filter/search/drag-and-drop/AI-summary behavior, same sheets (`ItemForm`, `SettingsView`,
+  same search/drag-and-drop/AI-summary behavior, same sheets (`ItemForm`, `SettingsView`,
   `MarkdownImportView`).
 
 **Retired Day tab (`FlightPlanView.swift`) — kept for reference, not currently shown:**
@@ -247,7 +287,7 @@ All filter state (`showFlaggedOnly`, `showCompleted`, `showCalendarEvents`, `sho
 
 **Cards tab (commented out):** One card per day section in a vertically scrollable stack. Cards start collapsed (shows AI summary or count fallback + time range + completion count) and expand on tap to show the full item list. The current section is expanded by default on today. Date navigation header matches Flight Plan. AI summaries generated on `.onAppear`. `+ Add item` inside expanded card content.
 
-**Original "Cockpit" tab (commented out, now "Focus"):** Original main day view with scrolling date header, `NowBarView`, grouped item sub-rows (pending / done / cancelled / habits), AI section summaries, and the full DaySectionView component. Kept for reference; may be retired in Phase 1.4 (Tech Debt).
+**Original "Cockpit" tab (commented out, now "Focus"):** Original main day view with scrolling date header, `NowBarView`, grouped item sub-rows (pending / done / cancelled / habits), AI section summaries, and the full DaySectionView component. Kept for reference; may be retired in Phase 1.0.4 (Tech Debt).
 
 **Item types in the day view:**
 | Type | Layout | Visual treatment |

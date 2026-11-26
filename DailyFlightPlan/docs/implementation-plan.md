@@ -2,9 +2,17 @@
 
 See `architecture.md` for folder structure, data models, and UI direction.
 
+**Naming:** the user-facing tabs are **Cockpit**, **Maintenance**, and **Nav Log** (matching the
+labels in `DayView.swift`). Code types keep older names (`CockpitView`, `RoutineView`,
+`TimelineView`), and earlier phase entries may still say "Day", "Flight", "Routine", or
+"Timeline" for the same things.
+
 ## Version 0.1 — Core Functionality (feature-complete, not release-ready)
 
-All 22 phases complete. Core features are working: daily plan view with swipe navigation, recurring habits/routines, Calendar and Reminders integration, iCloud sync, Markdown import (Foundation Models), Mac support. Not yet polished for public release — see Version 1.0 (Phases 1.0.1–1.0.5) for fit/finish, accessibility, and beta testing.
+All 22 phases complete. Core features are working: daily plan view with swipe navigation, recurring
+habits/routines, Calendar and Reminders integration, iCloud sync, Markdown import (Foundation
+Models), Mac support. Not yet polished for public release — see Version 1.0 (Phases 1.0.1–1.0.5) for
+fit/finish, accessibility, and beta testing.
 
 ### ✅ Phase 0.1.1 — Skeleton + Models
 - Set up folder structure mirroring MapsPlus
@@ -40,11 +48,15 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 ### ✅ Phase 0.1.4 — Filtering + Categories
 - Wire up filter toggle pills (flagged / completed / recurring) to `@AppStorage`
 - Horizontally scrollable `CategoryCapsule` row in filter sub-bar
-- `CategorySelectionService` (adapted from MapsPlus) — SwiftData-backed `SelectedCategories` singleton
+- `CategorySelectionService` (adapted from MapsPlus) — SwiftData-backed `SelectedCategories`
+  singleton
 - `CategoriesEditView` + `CategoriesEditViewModel` for adding/renaming/deleting categories
-- `@Environment(\.categorySelectionService)` injected via `InjectLiveServicesModifier` / `InjectMockServicesModifier`
+- `@Environment(\.categorySelectionService)` injected via `InjectLiveServicesModifier` /
+  `InjectMockServicesModifier`
 - Filter toggles show active state (accentColor fill) vs. inactive (regularMaterial)
-- Follow-up polish: recurring items remain visible by default, add/rename/delete category actions now only clear UI state after a successful SwiftData save, and category item counts pluralize correctly
+- Follow-up polish: recurring items remain visible by default, add/rename/delete category actions
+  now only clear UI state after a successful SwiftData save, and category item counts pluralize
+  correctly
 
 ### ✅ Phase 0.1.5 — Progress Indicator
 - `ProgressRingView` — small donut/ring in header top-right
@@ -53,10 +65,12 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - Animates with spring when completion changes
 
 ### ✅ Phase 0.1.6 — Add / Edit Item
-- `ItemForm` sheet with: title, notes, flagged toggle, date + optional deadline time, recurring toggle + day-of-week picker, category selector
+- `ItemForm` sheet with: title, notes, flagged toggle, date + optional deadline time, recurring
+  toggle + day-of-week picker, category selector
 - `ItemFormViewModel` (`@Observable @MainActor`)
 - Validate and save via `modelContext`; both create and edit modes
-- Edit triggered via `@Entry var editItem` environment key injected by `DayView`; "Edit…" context menu item in `ItemPillView` and `DeadlineItemRow` calls it
+- Edit triggered via `@Entry var editItem` environment key injected by `DayView`; "Edit…" context
+  menu item in `ItemPillView` and `DeadlineItemRow` calls it
 - Add Item button in `DayView` presents `ItemForm(date:)`; "Edit…" presents `ItemForm(item:)`
 - Bindings use `Bindable(viewModel).property` pattern since ViewModel is `@Observable @MainActor`
 
@@ -67,48 +81,80 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 - Permission requested on first event fetch in `DayView.fetchCalendarEvents()`
 - `NSCalendarsFullAccessUsageDescription` added to `Info.plist`
 - `selectedCalendarIDs` added to `AppStorageKeys` (comma-separated; empty = all calendars)
-- `CalendarEventRow` — read-only row with colored calendar dot; tap opens Calendar app via `calshow:` URL
-- Calendar events rendered in each `DaySectionView` (below deadline rows) via `calendarEventsForSection(_:from:)` on `DayViewModel`
+- `CalendarEventRow` — read-only row with colored calendar dot; tap opens Calendar app via
+  `calshow:` URL
+- Calendar events rendered in each `DaySectionView` (below deadline rows) via
+  `calendarEventsForSection(_:from:)` on `DayViewModel`
 - Calendar selection UI deferred to Phase 0.3.1 (Settings); all calendars shown by default
 
 ### ✅ Phase 0.1.8 — Reminders Integration
-- `RemindersService` protocol + `EventKitRemindersService` live implementation (separate `EKEventStore` from calendar service)
+- `RemindersService` protocol + `EventKitRemindersService` live implementation (separate
+  `EKEventStore` from calendar service)
 - `MockRemindersService` (#if DEBUG) — returns two mock items for today: one timed, one undated
 - Reminders permission requested lazily on first fetch (`requestFullAccessToReminders()`, iOS 17+)
 - `NSRemindersFullAccessUsageDescription` added to `Info.plist`
 - `selectedReminderListIDs` added to `AppStorageKeys` (comma-separated; empty = all lists)
 - `reminderIdentifier: String?` added to `PlanItem` for future two-way sync tracking
 - `ReminderItemRow` — read-only row with list color dot + bell icon + optional time + title
-- Timed reminders appear in their matching day section (via `reminderItemsForSection(_:from:)` on `DayViewModel`)
+- Timed reminders appear in their matching day section (via `reminderItemsForSection(_:from:)` on
+  `DayViewModel`)
 - Undated reminders appear in the "Any Time" area as a grouped card of `ReminderItemRow`s
-- `EKEventStoreChanged` notification re-fetches both calendar events and reminders on any store change
-- **Skipped**: two-way completion sync (marking done/deferred writing back to `EKReminder`) — decided against, not needed
+- `EKEventStoreChanged` notification re-fetches both calendar events and reminders on any store
+  change
+- **Skipped**: two-way completion sync (marking done/deferred writing back to `EKReminder`) —
+  decided against, not needed
 - **Deferred**: reminder list selection UI — moved to Phase 0.3.1 (Settings)
 
 ### ✅ Phase 0.1.9 — Workflow Refinements
-- **Spillover** *(removed in Phase 0.2.9 — see note there)*: On app launch (and at midnight if the app is open), pending items from any date before today are moved to today. Deadline-based items have their deadline cleared and become "any time" items (already flagged as missed). Recurring items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
-- **"Past" section**: When viewing today, sections whose time window has already ended are hidden from the main section list. Their past calendar events appear in a non-section "Past" area at the top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
-- **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the missed time.
-- **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
-- **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the Past/Missed areas grow in real time as sections end during the day.
-- **Projected recurring items**: On future dates, recurring section-based habits that apply to that weekday appear as ghosted (35% opacity, non-interactive) pills in their section — a preview of the expected day, not yet committed items.
-- **Richer seed data**: Recurring habits across all five sections plus timed and untimed items for thorough testing.
+- **Spillover** *(removed in Phase 0.2.9 — see note there)*: On app launch (and at midnight if the
+  app is open), pending items from any date before today are moved to today. Deadline-based items
+  have their deadline cleared and become "any time" items (already flagged as missed). Recurring
+  items spill as-is (no duplicate created for the new day). Navigation moves to today after spill.
+- **"Past" section**: When viewing today, sections whose time window has already ended are hidden
+  from the main section list. Their past calendar events appear in a non-section "Past" area at the
+  top of the scroll view. Pending plan items from those sections appear in the "Any Time" area via
+  the missed-item logic. Timed reminders from past sections appear in the "Missed" area.
+- **"Missed" section**: Dedicated non-section area (above "Any Time") for pending items whose
+  specific deadline has passed and for past timed reminders. Uses `DeadlineItemRow` to show the
+  missed time.
+- **"Any Time" split**: Untimed items and section-based items whose section has ended (but had no
+  specific deadline) appear in "Any Time". Deadline-missed items moved to "Missed".
+- **Live clock**: A per-minute timer drives `currentSection` and `activeSections` so the Past/Missed
+  areas grow in real time as sections end during the day.
+- **Projected recurring items**: On future dates, recurring section-based habits that apply to that
+  weekday appear as ghosted (35% opacity, non-interactive) pills in their section — a preview of the
+  expected day, not yet committed items.
+- **Richer seed data**: Recurring habits across all five sections plus timed and untimed items for
+  thorough testing.
 - **Deferred**: Drag to reorder items between sections → shipped in Phase 0.1.10
 
 ### ✅ Phase 0.1.10 — UI Refinements
-- **Drag to reassign section**: Long-press any section pill or deadline row to drag it to a different day section card. Dropping onto a section sets `item.daySection` and clears any deadline. Dragging to "Open" clears both (`daySection = nil`, `deadline = nil`). Each section highlights with an accent-colored border while a drag is over it. Added `uuid: UUID` to `PlanItem` as a stable drag token. "Open" also acts as a drop target, with an empty placeholder shown when it has no items.
-- **Calendar / Reminders toggles**: Filter-bar `Calendar` and `Reminders` toggle pills added to the filter row (stored in `@AppStorage` as `showCalendarEvents` / `showReminderItems`, both on by default). When toggled off, events/reminders are hidden from all sections, Past, Missed, and Open.
+- **Drag to reassign section**: Long-press any section pill or deadline row to drag it to a
+  different day section card. Dropping onto a section sets `item.daySection` and clears any
+  deadline. Dragging to "Open" clears both (`daySection = nil`, `deadline = nil`). Each section
+  highlights with an accent-colored border while a drag is over it. Added `uuid: UUID` to `PlanItem`
+  as a stable drag token. "Open" also acts as a drop target, with an empty placeholder shown when it
+  has no items.
+- **Calendar / Reminders toggles**: Filter-bar `Calendar` and `Reminders` toggle pills added to the
+  filter row (stored in `@AppStorage` as `showCalendarEvents` / `showReminderItems`, both on by
+  default). When toggled off, events/reminders are hidden from all sections, Past, Missed, and Open.
 - Renamed "Any Time" → "Open" (works for today and all other dates)
-- Remaining visual refinements (Calendar/Reminders row treatment, recurring item layout) handled by the Paper Plan view (Phase 0.2.4) and Phase 1.0.1
+- Remaining visual refinements (Calendar/Reminders row treatment, recurring item layout) handled by
+  the Paper Plan view (Phase 0.2.4) and Phase 1.0.1
 
 ### ✅ Phase 0.1.11 — Timeline View
 - `TimelineView.swift` — plan items only (no Calendar events, no Reminders)
-- Filter bar with Flagged/Done/Recurring toggles + category capsules (same `@AppStorage` keys as DayView)
-- Items grouped by date (`Dictionary(grouping:)` → sorted by day); today is always shown even if empty after filtering
-- "Today" section header uses accent color + bold; past dates are dimmed; future dates are full-weight
+- Filter bar with Flagged/Done/Recurring toggles + category capsules (same `@AppStorage` keys as
+  DayView)
+- Items grouped by date (`Dictionary(grouping:)` → sorted by day); today is always shown even if
+  empty after filtering
+- "Today" section header uses accent color + bold; past dates are dimmed; future dates are
+  full-weight
 - `ScrollViewReader` scrolls to today's section on `.onAppear`
-- Row shows status icon (checkmark/circle/x), title with strikethrough for done/canceled, and a subtitle showing deadline time or day section name
-- Tapping any row or the date header dismisses the sheet and calls `viewModel.navigate(to: date)` in DayView
+- Row shows status icon (checkmark/circle/x), title with strikethrough for done/canceled, and a
+  subtitle showing deadline time or day section name
+- Tapping any row or the date header dismisses the sheet and calls `viewModel.navigate(to: date)` in
+  DayView
 - Timeline button (`calendar.day.timeline.left`) added to DayView header (left side, next to `[<]`)
 - `navigate(to:)` method added to `DayViewModel`
 - Read-only; add/edit deferred to a later phase
@@ -117,87 +163,163 @@ All 22 phases complete. Core features are working: daily plan view with swipe na
 ### ✅ Phase 0.1.12 — Usability Part 1
 Items identified during early real-world use.
 
-- **Remove the Recurring filter toggle**: always show recurring items; grouped habit row makes them easy to distinguish visually
-- **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items — hidden unless the Done filter is active
-- **Hide past Calendar events**: treat past-section calendar events as done; hide by default, show only if Done filter is active
-- **Category filter excludes Calendar & Reminders**: when any category is selected, events and reminders are hidden entirely — they are not categorized
-- **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so there is no ambiguity about what each section covers
+- **Remove the Recurring filter toggle**: always show recurring items; grouped habit row makes them
+  easy to distinguish visually
+- **Auto-hide completed Reminders**: treat completed reminders the same as completed plan items —
+  hidden unless the Done filter is active
+- **Hide past Calendar events**: treat past-section calendar events as done; hide by default, show
+  only if Done filter is active
+- **Category filter excludes Calendar & Reminders**: when any category is selected, events and
+  reminders are hidden entirely — they are not categorized
+- **Time range on section headers**: display the actual hour range (e.g. "Morning · 6–10 AM") so
+  there is no ambiguity about what each section covers
 - **Tap item → edit**: a single short tap on any item pill or row opens its edit screen directly
-- **Always show all five sections**: removed section hiding — past sections stay visible for day-at-a-glance reference; only deadline-missed items surface in the "Missed" area
-- **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one start collapsed; collapsed headers display a one-line AI summary generated via Foundation Models (`LanguageModelSession`); live clock tick auto-expands the incoming section; falls back to item count badge when Foundation Models is unavailable
-- **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞ recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞ badge suppressed in the Habits row; checkbox shown only on pending items
+- **Always show all five sections**: removed section hiding — past sections stay visible for
+  day-at-a-glance reference; only deadline-missed items surface in the "Missed" area
+- **Auto-collapse inactive sections + AI summary**: on today, all sections except the current one
+  start collapsed; collapsed headers display a one-line AI summary generated via Foundation Models
+  (`LanguageModelSession`); live clock tick auto-expands the incoming section; falls back to item
+  count badge when Foundation Models is unavailable
+- **Grouped item sub-rows**: pending pills → Done row (✓) → Cancelled row (✗) → Habits row (∞
+  recurring + ghost projections); completed and cancelled items show with strikethrough; per-pill ∞
+  badge suppressed in the Habits row; checkbox shown only on pending items
 
 ### ✅ Phase 0.1.13 — Nav & Chrome Rework (Liquid Glass)
-- **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with long-press context menu only (cancel/defer drag zones also removed)
-- **Remove sticky header**: entire top header (date row + filter row) removed; no more material bar at the top
-- **Date label scrolls with content**: weekday + month/day + prev/next chevrons are now the first item in the scroll view's LazyVStack; they scroll along with the sections
-- **System TabView** (Focus · Timeline · Search) replaces the custom bottom bar; tab bar gets Liquid Glass automatically on iOS 26; `Tab(role: .search)` pins Search to trailing edge
-- **Add button in toolbar**: `[+]` is a `ToolbarItem(placement: .topBarTrailing)` on the Focus tab, sitting outside the filter group so it gets its own glass capsule
-- **Toolbar controls on Focus tab**: `NavigationStack` with `ToolbarItemGroup(placement: .topBarTrailing)` — filter menu · categories · theme — grouped by the system into a single Liquid Glass cluster; settings alone on `.topBarLeading`
-- **Active state on filter & theme buttons**: filter uses `.fill` icon + accent color when `showFlaggedOnly || showCompleted`; theme uses `.fill` paintbrush + accent color when not `.cupertino`
+- **Retire swipe gestures**: replaced swipe-left-to-cancel and swipe-right-to-defer with long-press
+  context menu only (cancel/defer drag zones also removed)
+- **Remove sticky header**: entire top header (date row + filter row) removed; no more material bar
+  at the top
+- **Date label scrolls with content**: weekday + month/day + prev/next chevrons are now the first
+  item in the scroll view's LazyVStack; they scroll along with the sections
+- **System TabView** (Focus · Timeline · Search) replaces the custom bottom bar; tab bar gets Liquid
+  Glass automatically on iOS 26; `Tab(role: .search)` pins Search to trailing edge
+- **Add button in toolbar**: `[+]` is a `ToolbarItem(placement: .topBarTrailing)` on the Focus tab,
+  sitting outside the filter group so it gets its own glass capsule
+- **Toolbar controls on Focus tab**: `NavigationStack` with `ToolbarItemGroup(placement:
+  .topBarTrailing)` — filter menu · categories · theme — grouped by the system into a single Liquid
+  Glass cluster; settings alone on `.topBarLeading`
+- **Active state on filter & theme buttons**: filter uses `.fill` icon + accent color when
+  `showFlaggedOnly || showCompleted`; theme uses `.fill` paintbrush + accent color when not
+  `.cupertino`
 - **Filter icon**: `line.3.horizontal.decrease.circle` (standard iOS filter icon, not sliders)
 
 ### ✅ Phase 0.1.14 — Usability Part 2
 - Use the app daily for a real period of time — real tasks, real calendar events, real reminders
-- Note friction points, readability issues, missing features, visual rough edges, and anything that feels off in actual use
+- Note friction points, readability issues, missing features, visual rough edges, and anything that
+  feels off in actual use
 - Gather a prioritized list of changes needed before shipping version 1.0
-- **"All clear" for completed sections**: when a collapsed section has no remaining pending items (all done/cancelled or nothing), display "All clear" in the header instead of an AI summary — a small reward for finishing the section
-- **Consistent indentation of items in a day section**: regular pending pills now use `labeledPillRow(icon: "list.dash", ...)` so they align with the done (✓), canceled (✗), and habits (∞) rows — all four pill groups share the same icon-column layout
-- **Import Reminder as PlanItem**: long-press a `ReminderItemRow` to get a context menu with "Import as Task"; creates a `PlanItem` from the reminder's title, notes, and dueDate (stored as a `deadline`, placing it in the right section automatically); stores `reminderIdentifier` for future two-way sync; the original reminder is left unchanged
-- **Rename day "section" to "segment"**: more in line with the flight/airplane analogy; user-facing terminology only for now
-- **Animation while waiting for section summary**: while a section summary is being generated by local AI, show a "..." animation
-- **Section summary reload option**: a small reload icon after an AI-generated section summary lets the user generate a fresh summary
-- **AI summary quality**: all timed items (deadline plan items, calendar events, and timed reminders) are merged and sorted by clock time and appear first; followed by non-recurring one-off tasks, untimed reminders, and recurring habits — so the most time-sensitive items always surface first in the summary
+- **"All clear" for completed sections**: when a collapsed section has no remaining pending items
+  (all done/cancelled or nothing), display "All clear" in the header instead of an AI summary — a
+  small reward for finishing the section
+- **Consistent indentation of items in a day section**: regular pending pills now use
+  `labeledPillRow(icon: "list.dash", ...)` so they align with the done (✓), canceled (✗), and habits
+  (∞) rows — all four pill groups share the same icon-column layout
+- **Import Reminder as PlanItem**: long-press a `ReminderItemRow` to get a context menu with "Import
+  as Task"; creates a `PlanItem` from the reminder's title, notes, and dueDate (stored as a
+  `deadline`, placing it in the right section automatically); stores `reminderIdentifier` for future
+  two-way sync; the original reminder is left unchanged
+- **Rename day "section" to "segment"**: more in line with the flight/airplane analogy; user-facing
+  terminology only for now
+- **Animation while waiting for section summary**: while a section summary is being generated by
+  local AI, show a "..." animation
+- **Section summary reload option**: a small reload icon after an AI-generated section summary lets
+  the user generate a fresh summary
+- **AI summary quality**: all timed items (deadline plan items, calendar events, and timed
+  reminders) are merged and sorted by clock time and appear first; followed by non-recurring one-off
+  tasks, untimed reminders, and recurring habits — so the most time-sensitive items always surface
+  first in the summary
 - *(Several AI-summary bugs found and fixed during this phase — see commit history for specifics;
   not tracked here or in `docs/known-bugs.md`, which only tracks currently-outstanding defects.)*
 
 ### ✅ Phase 0.1.15 — Fix Recurring Items / Habits / Routine Behavior
-- Implemented a **template + per-day instance model** using a self-referential `@Relationship` on `PlanItem`:
+- Implemented a **template + per-day instance model** using a self-referential `@Relationship` on
+  `PlanItem`:
   - `isTemplate: Bool` — true for recurring habit templates
   - `template: PlanItem?` — links each per-day instance back to its template
   - `instances: [PlanItem]` — inverse relationship; populated only on templates
   - `isRecurring: Bool` — computed: `isTemplate || template != nil`
-- **Materialization**: per-day instances are created lazily when `DayView` loads a date (`materializeRecurringInstances(for:)`); only missing instances are created, so it's idempotent
-- **Migration**: `migrateOldRecurringItems()` detects old-style recurring items (non-template with `recurringWeekdays` set) and converts them to templates on first load
-- **`@Query` split**: `allItems` now excludes templates (instances + one-off items only); `recurringTemplates` fetches templates only — this ensures templates are never shown as regular day items
-- **Spillover skips instances**: recurring instances are not spilled to the next day (each day gets a fresh instance via materialization)
-- **`ItemForm` template-aware**: hides the recurring schedule picker when editing an instance; nav title reads "Edit Routine" for templates vs. "Edit Item" for instances
-- **`ItemFormViewModel`**: saves recurring schedule and `isTemplate` only on templates/one-offs; instances inherit schedule from their template
-- **Sheets trigger re-materialization on dismiss**: so newly created templates get instances for the current day immediately
-- **Materialization is today-only**: future dates never get instances created — they show read-only ghost projections instead; past dates retain their historical instances
-- **Defer hidden for recurring instances**: "Defer to Tomorrow" is only offered for one-off items; recurring instances can only be completed or canceled, since tomorrow's habit appears automatically
+- **Materialization**: per-day instances are created lazily when `DayView` loads a date
+  (`materializeRecurringInstances(for:)`); only missing instances are created, so it's idempotent
+- **Migration**: `migrateOldRecurringItems()` detects old-style recurring items (non-template with
+  `recurringWeekdays` set) and converts them to templates on first load
+- **`@Query` split**: `allItems` now excludes templates (instances + one-off items only);
+  `recurringTemplates` fetches templates only — this ensures templates are never shown as regular
+  day items
+- **Spillover skips instances**: recurring instances are not spilled to the next day (each day gets
+  a fresh instance via materialization)
+- **`ItemForm` template-aware**: hides the recurring schedule picker when editing an instance; nav
+  title reads "Edit Routine" for templates vs. "Edit Item" for instances
+- **`ItemFormViewModel`**: saves recurring schedule and `isTemplate` only on templates/one-offs;
+  instances inherit schedule from their template
+- **Sheets trigger re-materialization on dismiss**: so newly created templates get instances for the
+  current day immediately
+- **Materialization is today-only**: future dates never get instances created — they show read-only
+  ghost projections instead; past dates retain their historical instances
+- **Defer hidden for recurring instances**: "Defer to Tomorrow" is only offered for one-off items;
+  recurring instances can only be completed or canceled, since tomorrow's habit appears
+  automatically
 - Self-referential `@Relationship` (not UUID) used for CloudKit compatibility
 
 ### ✅ Phase 0.1.16 — Multi-View UX Experiment
 - Added two alternative views alongside the Cockpit (day view):
-  - **Cards view** (`CardDeckView`) — vertically stacked section cards; collapsible headers with AI summary (or loading dots / count fallback) in collapsed state, full progress ring + item list when expanded; current section expanded by default on today; date navigation header; full filter/category/theme toolbar; `+ Add item` inside content area
-  - **Nav Log** (`TimelineView` renamed) — chronological multi-day list; items fully interactive (checkbox completes, tap opens edit form, long-press for Edit/Cancel context menu); Flagged/Done filter bar with category capsules
-- **Tab renames**: "Focus" → "Cockpit" (`airplane` icon); "Timeline" → "Nav Log" (`book.pages` icon); "Cards" tab added (`rectangle.stack` icon)
-- **Grid view built and dropped**: iterated on a 2-column grid overview with AI summary tiles; removed after review — three views is the right number
-- All three views (Cockpit, Cards, Nav Log) are live for extended usability testing before deciding what stays in 1.0
+  - **Cards view** (`CardDeckView`) — vertically stacked section cards; collapsible headers with AI
+    summary (or loading dots / count fallback) in collapsed state, full progress ring + item list
+    when expanded; current section expanded by default on today; date navigation header; full
+    filter/category/theme toolbar; `+ Add item` inside content area
+  - **Nav Log** (`TimelineView` renamed) — chronological multi-day list; items fully interactive
+    (checkbox completes, tap opens edit form, long-press for Edit/Cancel context menu); Flagged/Done
+    filter bar with category capsules
+- **Tab renames**: "Focus" → "Cockpit" (`airplane` icon); "Timeline" → "Nav Log" (`book.pages`
+  icon); "Cards" tab added (`rectangle.stack` icon)
+- **Grid view built and dropped**: iterated on a 2-column grid overview with AI summary tiles;
+  removed after review — three views is the right number
+- All three views (Cockpit, Cards, Nav Log) are live for extended usability testing before deciding
+  what stays in 1.0
 
 ### ✅ Phase 0.1.17 — iCloud Sync
 *Moved up from Version 2.0 — planning on Mac and executing on iPhone is the core workflow.*
-- Added `iCloud.com.patmcg.DailyFlightPlan` to `com.apple.developer.icloud-container-identifiers` in entitlements (Background Modes + remote-notification were already in `Info.plist`)
-- Updated `ModelContainers.persistentContainer()` to use `cloudKitDatabase: .private("iCloud.com.patmcg.DailyFlightPlan")`
-- Removed `@Attribute(.unique)` from `PlanCategory.name` — CloudKit cannot enforce uniqueness constraints; uniqueness is already enforced in `CategoriesEditViewModel` in code
-- **`SelectedCategories` removed from SwiftData**: CloudKit requires all relationships to have inverses; `SelectedCategories.categories` had no inverse on `PlanCategory`. Migrated to `UserDefaults`-backed `CategorySelectionService` (device-local filter state intentionally not synced)
+- Added `iCloud.com.patmcg.DailyFlightPlan` to `com.apple.developer.icloud-container-identifiers` in
+  entitlements (Background Modes + remote-notification were already in `Info.plist`)
+- Updated `ModelContainers.persistentContainer()` to use `cloudKitDatabase:
+  .private("iCloud.com.patmcg.DailyFlightPlan")`
+- Removed `@Attribute(.unique)` from `PlanCategory.name` — CloudKit cannot enforce uniqueness
+  constraints; uniqueness is already enforced in `CategoriesEditViewModel` in code
+- **`SelectedCategories` removed from SwiftData**: CloudKit requires all relationships to have
+  inverses; `SelectedCategories.categories` had no inverse on `PlanCategory`. Migrated to
+  `UserDefaults`-backed `CategorySelectionService` (device-local filter state intentionally not
+  synced)
   - `AppStorageKeys.selectedCategoryNames` added for the new storage key
-  - `CategorySelectionService` rewritten as a plain `@Observable` class using `UserDefaults`; no longer needs `ModelContext`
+  - `CategorySelectionService` rewritten as a plain `@Observable` class using `UserDefaults`; no
+    longer needs `ModelContext`
   - `SelectedCategories.swift` deleted from the project
-  - `InjectLiveServicesModifier` / `InjectMockServicesModifier` updated to use `@State private var categoryService = CategorySelectionService()` (stable across re-renders; no `modelContext` dependency)
-- Self-referential `@Relationship` on `PlanItem` (template ↔ instances) verified compatible: both sides have explicit inverses, `.nullify` delete rule, and optional to-one side — all CloudKit requirements met
-- **Note**: CloudKit schema must be initialized in the CloudKit Console before first production release; use the DEBUG schema initialization flow from Apple docs if needed before shipping
+  - `InjectLiveServicesModifier` / `InjectMockServicesModifier` updated to use `@State private var
+    categoryService = CategorySelectionService()` (stable across re-renders; no `modelContext`
+    dependency)
+- Self-referential `@Relationship` on `PlanItem` (template ↔ instances) verified compatible: both
+  sides have explicit inverses, `.nullify` delete rule, and optional to-one side — all CloudKit
+  requirements met
+- **Note**: CloudKit schema must be initialized in the CloudKit Console before first production
+  release; use the DEBUG schema initialization flow from Apple docs if needed before shipping
 
 ### ✅ Phase 0.1.18 — Mac Support
-*Moved up from Version 2.0 — needed alongside iCloud sync for the plan-on-Mac, execute-on-iPhone workflow.*
-- Project already had `TARGETED_DEVICE_FAMILY = "1,2,7"`, `SUPPORTED_PLATFORMS` including `macosx`, and `MACOSX_DEPLOYMENT_TARGET = 26.5` (later lowered to `26.2`, alongside `IPHONEOS_DEPLOYMENT_TARGET` and `XROS_DEPLOYMENT_TARGET`, to support an older iPhone — see "Allow running on my old iPhone" commit; both test targets' deployment targets were aligned to match) — no project file changes needed at the time
-- Created `Common/ViewExtensions.swift` with platform-conditional View + `ToolbarItemPlacement` extensions:
-  - `inlineNavigationTitle()` — no-op on macOS (`.navigationBarTitleDisplayMode(.inline)` is iOS-only)
-  - `.trailingBar` / `.leadingBar` — resolves to `.automatic` on macOS (`.topBarTrailing` / `.topBarLeading` are iOS-only)
-- Applied `inlineNavigationTitle()` across `DayView`, `CardDeckView`, `TimelineView`, `ItemForm`, `CategoriesEditView`
+*Moved up from Version 2.0 — needed alongside iCloud sync for the plan-on-Mac, execute-on-iPhone
+workflow.*
+- Project already had `TARGETED_DEVICE_FAMILY = "1,2,7"`, `SUPPORTED_PLATFORMS` including `macosx`,
+  and `MACOSX_DEPLOYMENT_TARGET = 26.5` (later lowered to `26.2`, alongside
+  `IPHONEOS_DEPLOYMENT_TARGET` and `XROS_DEPLOYMENT_TARGET`, to support an older iPhone — see "Allow
+  running on my old iPhone" commit; both test targets' deployment targets were aligned to match) —
+  no project file changes needed at the time
+- Created `Common/ViewExtensions.swift` with platform-conditional View + `ToolbarItemPlacement`
+  extensions:
+  - `inlineNavigationTitle()` — no-op on macOS (`.navigationBarTitleDisplayMode(.inline)` is
+    iOS-only)
+  - `.trailingBar` / `.leadingBar` — resolves to `.automatic` on macOS (`.topBarTrailing` /
+    `.topBarLeading` are iOS-only)
+- Applied `inlineNavigationTitle()` across `DayView`, `CardDeckView`, `TimelineView`, `ItemForm`,
+  `CategoriesEditView`
 - Applied `.trailingBar` / `.leadingBar` in `DayView` and `CardDeckView` toolbar items
-- Fixed `.listStyle(.insetGrouped)` → `#if os(macOS) .inset #else .insetGrouped #endif` in `TimelineView`
+- Fixed `.listStyle(.insetGrouped)` → `#if os(macOS) .inset #else .insetGrouped #endif` in
+  `TimelineView`
 - **Deferred**: keyboard shortcuts, VoiceOver testing — deferred until post-iCloud sync when the
   Mac workflow can be exercised end-to-end (menu bar integration and window minimum size moved to
   Phase 1.0.1 — Full-App UX Audit)
@@ -206,72 +328,133 @@ Items identified during early real-world use.
 ### ✅ Phase 0.1.19 — UX and Usability Sprint
 Mac and iCloud sync usability testing, plus day-view UX experiments and aviation-themed polish.
 
-- **Mac Calendar/Reminders fix**: Added `com.apple.security.personal-information.calendars` and `com.apple.security.personal-information.reminders-data` sandbox entitlements to the macOS app — EventKit access was silently blocked without them
-- **ItemForm scrollable on macOS**: Categories section wrapped in a `ScrollView` with `maxHeight: 200` so the form fits on screen regardless of category count
-- **Flight Plan view** (`FlightDeckView.swift`, struct `FlightPlanView`) — new primary day view replacing the Cockpit tab:
-  - Left/right swipe between days: `TabView(.page)` infinite-reset pattern on iOS (3 pages: yesterday/today/tomorrow; snap back to center page silently after each swipe); `DragGesture` fallback on macOS
-  - Card-based layout: one collapsible `RoundedRectangle(cornerRadius: 18)` card per day section, matching `CardDeckView` style
-  - "Today" label in the date header when viewing today (accent colored); `scope` go-to-today button appears on non-today dates at the leading edge
-  - Section cards: collapsed (header only, with count and AI summary text) / expanded (full item list, `+ Add item` link); full-area tap target on the entire header
-  - Progress ring per section: always shows raw `completed/total` plan-item counts, unaffected by filters; green when all done
+- **Mac Calendar/Reminders fix**: Added `com.apple.security.personal-information.calendars` and
+  `com.apple.security.personal-information.reminders-data` sandbox entitlements to the macOS app —
+  EventKit access was silently blocked without them
+- **ItemForm scrollable on macOS**: Categories section wrapped in a `ScrollView` with `maxHeight:
+  200` so the form fits on screen regardless of category count
+- **Flight Plan view** (`FlightDeckView.swift`, struct `FlightPlanView`) — new primary day view
+  replacing the Cockpit tab:
+  - Left/right swipe between days: `TabView(.page)` infinite-reset pattern on iOS (3 pages:
+    yesterday/today/tomorrow; snap back to center page silently after each swipe); `DragGesture`
+    fallback on macOS
+  - Card-based layout: one collapsible `RoundedRectangle(cornerRadius: 18)` card per day section,
+    matching `CardDeckView` style
+  - "Today" label in the date header when viewing today (accent colored); `scope` go-to-today button
+    appears on non-today dates at the leading edge
+  - Section cards: collapsed (header only, with count and AI summary text) / expanded (full item
+    list, `+ Add item` link); full-area tap target on the entire header
+  - Progress ring per section: always shows raw `completed/total` plan-item counts, unaffected by
+    filters; green when all done
   - `HFlow` for non-deadline items (pills); `DeadlineItemRow`-style rows for timed items
-  - Filter-driven expand/collapse: when a filter is active, sections with matching items auto-expand; sections with no matches collapse; user can still manually override afterward
-  - Calendar events and Reminders: shown in expanded section cards (`CalendarEventRow`, `ReminderItemRow`) and in the Open card; passed from `DayView` (which already fetches them); only shown for the currently-selected date (side swipe pages get plan items only)
-  - Drag-and-drop between sections: pills are `.draggable`; each section card and the Open card are `.dropDestination`; drop target highlights with accent border
+  - Filter-driven expand/collapse: when a filter is active, sections with matching items
+    auto-expand; sections with no matches collapse; user can still manually override afterward
+  - Calendar events and Reminders: shown in expanded section cards (`CalendarEventRow`,
+    `ReminderItemRow`) and in the Open card; passed from `DayView` (which already fetches them);
+    only shown for the currently-selected date (side swipe pages get plan items only)
+  - Drag-and-drop between sections: pills are `.draggable`; each section card and the Open card are
+    `.dropDestination`; drop target highlights with accent border
   - Filter menu includes Calendar Events and Reminders toggles (with Divider before them)
 - **Tab restructure**: Cockpit and Cards tabs commented out; four active tabs:
   - **Day** (`airplane`) — Flight Plan view (primary day view)
   - **Log** (`checklist`) — Nav Log / Timeline
   - **Routine** (`infinity`) — `ContentUnavailableView` placeholder for future routine editing
   - **Comm** (`apple.intelligence`) — `ContentUnavailableView` placeholder for future AI chat
-- **macOS keyboard shortcuts**: `Cmd+1`–`Cmd+4` switch between the four active tabs; implemented as hidden zero-size `opacity(0)` buttons in an `.overlay` (`.hidden()` would disable keyboard shortcut dispatch)
-- **Routine items row**: in expanded section cards, recurring (routine) pills are separated from regular pills onto their own `HFlow` row with a single `∞` icon at the leading edge; per-pill infinity badge suppressed (`showRecurringBadge: false`); regular pills get a matching `calendar.day.timeline.left` icon for visual symmetry
-- **Notes indicator on pills**: `ItemPillView` shows a `note.text` icon (`.tertiary`) after the title when `item.notes` is non-empty — a subtle at-a-glance signal that notes exist
-- **Progress row in Flight Plan view**: `progressRow(for:)` shows a `ProgressRingView` + completion text ("All done!" / "N of M complete" / "No items planned") at the bottom of each day's scroll content
-- **Overdue section badge**: when viewing today and a section's time window has passed with pending items remaining, the header count shows `! N/M` in orange; all-done sections show `✓ N/N` in green
-- **Reminders deep link**: tapping a `ReminderItemRow` opens the Reminders app via `x-apple-reminderkit://` URL; an `arrow.up.right.square` icon at the trailing edge signals the deep link; "Open in Reminders" also in the context menu
+- **macOS keyboard shortcuts**: `Cmd+1`–`Cmd+4` switch between the four active tabs; implemented as
+  hidden zero-size `opacity(0)` buttons in an `.overlay` (`.hidden()` would disable keyboard
+  shortcut dispatch)
+- **Routine items row**: in expanded section cards, recurring (routine) pills are separated from
+  regular pills onto their own `HFlow` row with a single `∞` icon at the leading edge; per-pill
+  infinity badge suppressed (`showRecurringBadge: false`); regular pills get a matching
+  `calendar.day.timeline.left` icon for visual symmetry
+- **Notes indicator on pills**: `ItemPillView` shows a `note.text` icon (`.tertiary`) after the
+  title when `item.notes` is non-empty — a subtle at-a-glance signal that notes exist
+- **Progress row in Flight Plan view**: `progressRow(for:)` shows a `ProgressRingView` + completion
+  text ("All done!" / "N of M complete" / "No items planned") at the bottom of each day's scroll
+  content
+- **Overdue section badge**: when viewing today and a section's time window has passed with pending
+  items remaining, the header count shows `! N/M` in orange; all-done sections show `✓ N/N` in green
+- **Reminders deep link**: tapping a `ReminderItemRow` opens the Reminders app via
+  `x-apple-reminderkit://` URL; an `arrow.up.right.square` icon at the trailing edge signals the
+  deep link; "Open in Reminders" also in the context menu
 
 ### ✅ Phase 0.1.20 — Routine View
 - `RoutineView.swift` — recurring habit template management
-- Items grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); each pattern is a card
-- Within each card, items are subdivided by day segment; timed items get a full-width deadline row, untimed items flow as `HFlow` pills
-- Tap any pill/row → opens `ItemForm(item:)` to edit the template; long-press → Edit / Delete context menu
+- Items grouped by weekday pattern (Every Day / Weekdays / Weekends / custom); each pattern is a
+  card
+- Within each card, items are subdivided by day segment; timed items get a full-width deadline row,
+  untimed items flow as `HFlow` pills
+- Tap any pill/row → opens `ItemForm(item:)` to edit the template; long-press → Edit / Delete
+  context menu
 - Drag pills between cards to reassign their weekday pattern
 - `+` button in toolbar and per-card add button → `ItemForm` pre-wired for that weekday pattern
-- Custom weekday sections: `+` in toolbar opens a weekday-circle picker; delete with confirmation (severs templates from historical instances, which become standalone records)
+- Custom weekday sections: `+` in toolbar opens a weekday-circle picker; delete with confirmation
+  (severs templates from historical instances, which become standalone records)
 - Empty card state shows "No routines yet." inline
 - Wires into the existing `Routine` tab (`AppTab.routines`) in `DayView`
-- **Visual refinements (post-initial):** card backgrounds match FlightPlanView (`.background` fill, 0.5pt border, subtle shadow); headers use `.title2.bold()` font and `accentColor.opacity(0.04)` tint; tap header to expand/collapse each card (all start expanded; collapsed state shows name + item count in `.headline` + `.caption`)
+- **Visual refinements (post-initial):** card backgrounds match FlightPlanView (`.background` fill,
+  0.5pt border, subtle shadow); headers use `.title2.bold()` font and `accentColor.opacity(0.04)`
+  tint; tap header to expand/collapse each card (all start expanded; collapsed state shows name +
+  item count in `.headline` + `.caption`)
 
 ### ✅ Phase 0.1.21 — Markdown Import
-Paste markdown or plain text (e.g. a Things export) → Foundation Models parses it → modal review list → save or cancel.
+Paste markdown or plain text (e.g. a Things export) → Foundation Models parses it → modal review
+list → save or cancel.
 
-- **Entry point**: `arrow.down.doc` button in the Flight Plan toolbar (leading bar, next to the gear)
+- **Entry point**: `arrow.down.doc` button in the Flight Plan toolbar (leading bar, next to the
+  gear)
 - **Two-step sheet** (`MarkdownImportView`):
-  1. **Paste step**: `TextEditor` pre-populated from the clipboard; "Parse" button triggers the AI parse
-  2. **Review step**: list of proposed items with section chip and recurring badge; swipe-to-delete; "Add N" commits and dismisses; "← Back to text" returns to step 1
-- **Foundation Models structured generation**: `@Generable ParsedTask` (title, section, isRecurring, schedule) wrapped in `@Generable ParsedTaskList`; `LanguageModelSession` with task-extraction instructions; graceful fallback (regex strip) when `SystemLanguageModel.default.isAvailable` is false
-- **Date handling**: all imported items land on `viewModel.selectedDate` regardless of any date string in the input (e.g. "08/22/2026" is stripped, not parsed as the item's date)
-- **Recurring items**: items marked recurring by the model are saved as templates with `isTemplate: true`; non-recurring items saved as one-off `PlanItem`s; weekday schedule parsed from "everyday" / "weekdays" / "weekends" / comma-separated abbreviations (mon, tue…)
-- **Section mapping**: AI outputs one of firstThing / morning / midday / afternoon / evening / bedtime / open; "open" (or unknown) → `daySection = nil` (any time)
-- Wired into `DayView` via `onShowImport` callback on `FlightPlanView`; sheet dismissal triggers `materializeRecurringInstances` so any new templates immediately appear as today's instances
+  1. **Paste step**: `TextEditor` pre-populated from the clipboard; "Parse" button triggers the AI
+     parse
+  2. **Review step**: list of proposed items with section chip and recurring badge; swipe-to-delete;
+     "Add N" commits and dismisses; "← Back to text" returns to step 1
+- **Foundation Models structured generation**: `@Generable ParsedTask` (title, section, isRecurring,
+  schedule) wrapped in `@Generable ParsedTaskList`; `LanguageModelSession` with task-extraction
+  instructions; graceful fallback (regex strip) when `SystemLanguageModel.default.isAvailable` is
+  false
+- **Date handling**: all imported items land on `viewModel.selectedDate` regardless of any date
+  string in the input (e.g. "08/22/2026" is stripped, not parsed as the item's date)
+- **Recurring items**: items marked recurring by the model are saved as templates with `isTemplate:
+  true`; non-recurring items saved as one-off `PlanItem`s; weekday schedule parsed from "everyday" /
+  "weekdays" / "weekends" / comma-separated abbreviations (mon, tue…)
+- **Section mapping**: AI outputs one of firstThing / morning / midday / afternoon / evening /
+  bedtime / open; "open" (or unknown) → `daySection = nil` (any time)
+- Wired into `DayView` via `onShowImport` callback on `FlightPlanView`; sheet dismissal triggers
+  `materializeRecurringInstances` so any new templates immediately appear as today's instances
 
 ### ✅ Phase 0.1.22 — Chat / Quick Entry (Natural Language) *(removed — see Phase 0.2.2)*
-Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation Models tool calling added in a follow-up pass. The Comm tab and all code below were removed in Phase 0.2.2 — too buggy and not useful enough to keep, especially with Markdown Import (Phase 0.1.21) already covering the "get my stuff into the app quickly" need. Left here for history.
+Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation Models tool calling
+added in a follow-up pass. The Comm tab and all code below were removed in Phase 0.2.2 — too buggy
+and not useful enough to keep, especially with Markdown Import (Phase 0.1.21) already covering the
+"get my stuff into the app quickly" need. Left here for history.
 
 - **`CommView`** (`CommViewModel`) replaces the placeholder on the Comm tab
-- **Context injection**: today's and tomorrow's plan items (with section, status, deadline) are serialized into the `LanguageModelSession` system prompt on tab appear; pre-computed aggregate counts (completed/canceled/pending) prevent model from miscounting; "ghost" recurring habits from templates included in tomorrow's context
-- **Streaming responses**: `streamResponse(to:)` → `for try await snapshot in stream` — response text streams live into the bubble as it generates
+- **Context injection**: today's and tomorrow's plan items (with section, status, deadline) are
+  serialized into the `LanguageModelSession` system prompt on tab appear; pre-computed aggregate
+  counts (completed/canceled/pending) prevent model from miscounting; "ghost" recurring habits from
+  templates included in tomorrow's context
+- **Streaming responses**: `streamResponse(to:)` → `for try await snapshot in stream` — response
+  text streams live into the bubble as it generates
 - **Typing indicator**: three animated dots while awaiting the first token
-- **Unavailability**: `ContentUnavailableView` shown when `SystemLanguageModel.default.isAvailable` is false
-- **Tool calling — item creation**: `CreateItemTool` (`Tool` protocol) with `@Generable Arguments` (title, section, isRecurring, schedule, isTomorrow); results queued via `ItemCreationQueue` actor and committed to SwiftData after each streaming response; supports both one-off and recurring (template) items for today or tomorrow
+- **Unavailability**: `ContentUnavailableView` shown when `SystemLanguageModel.default.isAvailable`
+  is false
+- **Tool calling — item creation**: `CreateItemTool` (`Tool` protocol) with `@Generable Arguments`
+  (title, section, isRecurring, schedule, isTomorrow); results queued via `ItemCreationQueue` actor
+  and committed to SwiftData after each streaming response; supports both one-off and recurring
+  (template) items for today or tomorrow
 
-- Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural language to do whatever:
-  - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy milk — flagged"
+**Original quick-entry brainstorm (never built as written; kept because Phase 0.2.7's single-item
+AI quick-add reuses the `@Generable` shape sketched here):**
+
+- Consider adding a local AI-based chat mode *on its own new tab*, where you can use natural
+  language to do whatever:
+  - Quick-enter new items — e.g. "Call dentist tomorrow at 2pm", "Run every weekday morning", "Buy
+    milk — flagged"
   - Ask questions about your day
 - Replace (or augment) the "Add Item" button with a free-text entry field?
 - Possible paid upgrade eventually — make sure the quality is good first!
-- On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework, on-device) using a `@Generable` struct for structured output:
+- On submit, pass the raw text to **Apple Foundation Models** (`FoundationModels` framework,
+  on-device) using a `@Generable` struct for structured output:
   - `title: String`
   - `notes: String?`
   - `date: String?` (relative, e.g. "tomorrow", "next Monday" — resolved to `Date` post-generation)
@@ -281,17 +464,20 @@ Implemented as a focused Q&A chat on the Comm tab; item creation via Foundation 
   - `recurringWeekdays: [String]?`
   - `isFlagged: Bool`
 - Resolve relative date strings to concrete `Date` values after generation
-- Create and save a `PlanItem` from the structured output, applying it to the current day (or the parsed date if explicit)
-- Show a brief inline confirmation row (the created item) after each submission, allowing the user to keep entering more items — repeat until dismissed
-- Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast and open `ItemForm` instead
+- Create and save a `PlanItem` from the structured output, applying it to the current day (or the
+  parsed date if explicit)
+- Show a brief inline confirmation row (the created item) after each submission, allowing the user
+  to keep entering more items — repeat until dismissed
+- Fall back gracefully if Foundation Models is unavailable (device too old, OS < 26): show a toast
+  and open `ItemForm` instead
 - Full `ItemForm` remains available via a detail button on the confirmation row for tweaks
 
 ---
 
 ## Version 0.2 — UX Refinements (not release-ready)
 
-Improves existing features based on real use — mostly better UX on the three tabs (Flight,
-Routine, Timeline), but a few small new capabilities rode along because they were too small or too
+Improves existing features based on real use — mostly better UX on the three tabs (Cockpit,
+Maintenance, Nav Log), but a few small new capabilities rode along because they were too small or too
 tied to the refinement work to wait for a dedicated feature phase:
 - Phase 0.2.5: the past-day Flight Report, all-day Calendar events, and the persisted day
   intention/flight name (`Day` model)
@@ -303,14 +489,43 @@ tied to the refinement work to wait for a dedicated feature phase:
 - Phase 0.2.9: the missed-items review flow that replaces automatic spillover
 
 ### ✅ Phase 0.2.1 — Routine View Refinements
-- **Segment cards match Day view visual language**: within each schedule card, day-segment groups (Morning, Midday, etc.) are now their own collapsible `RoundedRectangle(cornerRadius: 14)` cards with `.background(.background)` fill, matching `FlightPlanView`'s section cards; header shows segment name + time range + item-count badge; title enlarges (`.headline` vs. `.subheadline.bold()`) when expanded
-- **Per-segment "Add item" button**: each expanded segment has an `+ Add item` button that opens `ItemForm` pre-filled with both the schedule's weekday pattern and that segment's `DaySection` — required a new combined `ItemForm(templateWeekdays:section:)` / `ItemFormViewModel` initializer (previously only one or the other could be set at once)
-- **AI summary on collapsed segments**: collapsed segment headers show a one-line summary of routine content, generated via Foundation Models (`LanguageModelSession`) — same pattern as the Day view's section summaries; cache is keyed by schedule name + day-segment and invalidated whenever any template's title, section, deadline, or weekday pattern changes; empty segments show "No routines"
-- **`quickSummary(for:)` deterministic fallback**: `SystemLanguageModel` (Apple Intelligence) is unavailable in the iOS Simulator, so a local fallback joins item titles/times (e.g. "Coffee · Stretch · Journal 7:00 AM +1 more") and is shown whenever no AI summary is cached yet — also covers AI failures/guardrail rejections on real devices, not just the Simulator
-- **Tab reorder**: Routine now appears before Log in the tab bar (Day / Routine / Log / Comm). macOS keyboard shortcuts in `DayView.swift` match this order (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log, `Cmd+4` Comm) *(Comm tab and its shortcut removed in Phase 0.2.2)*
-- **Drag and drop between segments**: each segment card is now its own `.dropDestination`, nested inside the schedule card's existing one — dropping directly on a segment sets `daySection` (and clears `deadline`, matching `FlightPlanView`'s drop convention); since the segment target sits in front of the card-level one, a cross-card drop landing on a segment reassigns weekday pattern *and* day-section in one motion via the new `reassignSegment(uuidString:to:pattern:)`, while dropping on the card's header/padding (outside any segment) still falls through to the original card-level `reassign(uuidString:to:)` for a pattern-only move
-- **Fix: empty schedule cards had no segment drop targets**: `scheduleCard` used to render just a "No routines yet." placeholder — no `segmentCard`s at all — whenever a weekday pattern had zero items, since `sortedSegments(for:)` already returns all six segments regardless of item count. That made an empty card's segments unreachable for drops, so a drag onto e.g. an empty "Weekends" card could only hit the outer card-level handler (pattern-only, `daySection` untouched) — placing an item into a specific segment on an empty card took two drags. Now segment cards always render (each showing its own "No routines yet." + Add item when empty), so every segment is a drop target from the start
-- **Note**: the open-ended "UX audit and fix" item originally tracked here was folded into a holistic full-app UX pass — see Phase 1.0.1 under Version 1.0
+- **Segment cards match Day view visual language**: within each schedule card, day-segment groups
+  (Morning, Midday, etc.) are now their own collapsible `RoundedRectangle(cornerRadius: 14)` cards
+  with `.background(.background)` fill, matching `FlightPlanView`'s section cards; header shows
+  segment name + time range + item-count badge; title enlarges (`.headline` vs.
+  `.subheadline.bold()`) when expanded
+- **Per-segment "Add item" button**: each expanded segment has an `+ Add item` button that opens
+  `ItemForm` pre-filled with both the schedule's weekday pattern and that segment's `DaySection` —
+  required a new combined `ItemForm(templateWeekdays:section:)` / `ItemFormViewModel` initializer
+  (previously only one or the other could be set at once)
+- **AI summary on collapsed segments**: collapsed segment headers show a one-line summary of routine
+  content, generated via Foundation Models (`LanguageModelSession`) — same pattern as the Day view's
+  section summaries; cache is keyed by schedule name + day-segment and invalidated whenever any
+  template's title, section, deadline, or weekday pattern changes; empty segments show "No routines"
+- **`quickSummary(for:)` deterministic fallback**: `SystemLanguageModel` (Apple Intelligence) is
+  unavailable in the iOS Simulator, so a local fallback joins item titles/times (e.g. "Coffee ·
+  Stretch · Journal 7:00 AM +1 more") and is shown whenever no AI summary is cached yet — also
+  covers AI failures/guardrail rejections on real devices, not just the Simulator
+- **Tab reorder**: Routine now appears before Log in the tab bar (Day / Routine / Log / Comm). macOS
+  keyboard shortcuts in `DayView.swift` match this order (`Cmd+1` Day, `Cmd+2` Routine, `Cmd+3` Log,
+  `Cmd+4` Comm) *(Comm tab and its shortcut removed in Phase 0.2.2)*
+- **Drag and drop between segments**: each segment card is now its own `.dropDestination`, nested
+  inside the schedule card's existing one — dropping directly on a segment sets `daySection` (and
+  clears `deadline`, matching `FlightPlanView`'s drop convention); since the segment target sits in
+  front of the card-level one, a cross-card drop landing on a segment reassigns weekday pattern
+  *and* day-section in one motion via the new `reassignSegment(uuidString:to:pattern:)`, while
+  dropping on the card's header/padding (outside any segment) still falls through to the original
+  card-level `reassign(uuidString:to:)` for a pattern-only move
+- **Fix: empty schedule cards had no segment drop targets**: `scheduleCard` used to render just a
+  "No routines yet." placeholder — no `segmentCard`s at all — whenever a weekday pattern had zero
+  items, since `sortedSegments(for:)` already returns all six segments regardless of item count.
+  That made an empty card's segments unreachable for drops, so a drag onto e.g. an empty "Weekends"
+  card could only hit the outer card-level handler (pattern-only, `daySection` untouched) — placing
+  an item into a specific segment on an empty card took two drags. Now segment cards always render
+  (each showing its own "No routines yet." + Add item when empty), so every segment is a drop target
+  from the start
+- **Note**: the open-ended "UX audit and fix" item originally tracked here was folded into a
+  holistic full-app UX pass — see Phase 1.0.1 under Version 1.0
 
 ### ✅ Phase 0.2.2 — Remove Comm Tab
 Superseded by this decision all the open refinement items originally listed here (terminal-style
@@ -331,13 +546,13 @@ disclaimer) — none apply to a feature that no longer exists.
 Full design in `docs/plans/global-filter-sheet-plan.md` and `docs/plans/category-selector-plan.md`;
 implementation notes/deviations are recorded at the end of each.
 
-- **Filter button**: a single toolbar `FilterToolbarButton` on each tab (Day/Routine/Timeline),
+- **Filter button**: a single toolbar `FilterToolbarButton` on each tab (Cockpit/Maintenance/Nav Log),
   not a floating button or `Tab(role: .search)` — opens `FilterSheetView` as a true anchored
   popover on iPhone (see implementation notes for the explicit sizing this needed)
 - **Filter sheet**: a **General** section (category selection via an embedded
   `CategoriesSelectFlow`, flagged-only) plus a **Specific** section that adapts to whichever tab
-  is active (Day: completed/routines/calendar/reminders; Timeline: completed-only/missed-only;
-  Routine: none) — replaces the old per-view filter menus (FlightPlanView's toolbar menu,
+  is active (Cockpit: completed/routines/calendar/reminders; Nav Log: completed-only/missed-only;
+  Maintenance: none) — replaces the old per-view filter menus (FlightPlanView's toolbar menu,
   Timeline's inline filter bar) outright
 - **Category editing lives in the same sheet**: the "Edit" button inside the embedded
   `CategoriesSelectFlow` presents the existing `CategoriesEditView` as a sheet
@@ -346,12 +561,13 @@ implementation notes/deviations are recorded at the end of each.
   `TimelineView`, matching the Day view's "NOW" treatment
 - **Search moved out of the shared sheet onto each tab individually** *(2026-10-05)*: search
   originally lived as a General-section text field in `FilterSheetView`, applying to
-  Day/Routine/Timeline alike. Felt awkward sharing a popover that disappears with filter toggles
+  Cockpit/Maintenance/Nav Log alike. Felt awkward sharing a popover that disappears with filter toggles
   that persist, so it was pulled out entirely and rebuilt as a per-tab feature — a dedicated
   `magnifyingglass` toolbar button toggles a small `TextField` pinned above the content via
   `.safeAreaInset(edge: .top)`, filtering in real time with no Form/sheet chrome. Shipped on
-  Timeline first; `SearchToggleButton`/`InlineSearchField` (`Views/Components/InlineSearchBar.swift`)
-  were then extracted and reused to bring the same feature to Day and Routine too, each with its
+  Nav Log first; `SearchToggleButton`/`InlineSearchField`
+  (`Views/Components/InlineSearchBar.swift`) were then extracted and reused to bring the same
+  feature to Cockpit and Maintenance too, each with its
   own local search state (not shared across tabs). See `global-filter-sheet-plan.md`'s
   implementation notes for detail.
 - **Day's "Go to Today" button moved into the toolbar** *(2026-10-05)*: previously an inline
@@ -373,9 +589,10 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   dynamic providers), switching to a near-black background, dark slate card surfaces, and light
   borders/text automatically with the system appearance.
 - **Day tab retired, not deleted**: `FlightPlanView` and its `Tab("Day", …)` entry are commented
-  out in `DayView.swift` (not removed) in case of revival. The renamed **Flight** tab (formerly
-  "Paper") moved to the first position; tab order is now Flight / Routine / Timeline. macOS
-  shortcuts renumbered (`Cmd+1` Flight, `Cmd+2` Routine, `Cmd+3` Timeline).
+  out in `DayView.swift` (not removed) in case of revival. The renamed **Cockpit** tab (formerly
+  "Paper" and, briefly, "Flight") moved to the first position; tab order is now Cockpit /
+  Maintenance / Nav Log. macOS shortcuts renumbered (`Cmd+1` Cockpit, `Cmd+2` Maintenance,
+  `Cmd+3` Nav Log).
 - **Day navigation via buttons, not swipe**: `FlightPlanView`'s 3-page `TabView(.page)` pager
   (yesterday/today/tomorrow) was dropped in favor of a single `ScrollView` plus explicit `←`/`→`
   arrow buttons flanking the date heading. Root cause: a paging `TabView` wrapping multiple
@@ -413,11 +630,13 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   - **Up Next**: every timed entry that isn't over, in one list. Sources: Calendar events,
     Reminders with a time, and plan items with a time (deadline items). Sorted by time; each
     source keeps its existing row style (see the Calendar/Reminders visual-treatment bullet
-    in Phase 1.0.1). The next upcoming item gets a highlighter bar and a countdown ("in 42 min"); the
+    in Phase 1.0.1). The next upcoming item gets a highlighter bar and a countdown ("in 42 min");
+    the
     rest are compact rows beneath it. Drawn directly on the page background — no card, border,
     shadow or header fill — so it doesn't look like a day segment. The header collapses and
     expands like a segment's (chevron, spring animation; open by default), and the countdown
-    chip stays visible while it's collapsed. A Calendar event stays here until it ends. Entries appear
+    chip stays visible while it's collapsed. A Calendar event stays here until it ends. Entries
+    appear
     here only, not also in their day section, so there are no duplicates. Plan items and
     reminders stay completable from the list. Respects the View-menu toggles (Calendar Events,
     Reminders, Completed, Flagged Only) and the category filter.
@@ -434,7 +653,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
       neither reads as a day segment. No count in the header.
     - *Layout:* plan items are the same flow-layout pills as the segments, draggable onto any
       segment (italic, with the time they were due); Reminders are read-only so stay as rows,
-      interleaved in oldest-first order (neighboring plan items share one flow layout). Dropping an open item onto an already-ended segment is refused (it would just
+      interleaved in oldest-first order (neighboring plan items share one flow layout). Dropping an
+      open item onto an already-ended segment is refused (it would just
       count as passed again); the drag springs back.
     - *AI summary:* while collapsed, the header shows a one-line on-device summary of what's
       left (like a collapsed segment), with the loading dots while it generates. It regenerates
@@ -492,7 +712,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     (Maintenance), completed items, and similar display options — so they can be flipped in
     one tap without opening the filter sheet. Candidates: Routines, Completed, Calendar
     events, Reminders, Flagged only. Reuses the existing filter state in `DayViewModel`;
-    the filter sheet keeps whatever doesn't fit a quick toggle. Also a view option to toggle UPPERCASEd items on/off.
+    the filter sheet keeps whatever doesn't fit a quick toggle. Also a view option to toggle
+    UPPERCASEd items on/off.
   - Replaces the earlier generic "Clean up toolbar" bullet; coordinate with "Clean up
     filtering" below.
   - *Done:* `CategoriesToolbarButton` (a `tag` icon opening `CategoriesSelectFlow` alone in a
@@ -500,7 +721,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     Maintenance, Calendar Events, Reminders, and UPPERCASE toggles) replace the Cockpit's
     `FilterToolbarButton`. Both icons accent-fill when non-default. **Deviations:** the menu
     toggles share the existing `@AppStorage` keys rather than going through `DayViewModel`;
-    `FilterToolbarButton`/`FilterSheetView` remain for Routine and Timeline. The new
+    `FilterToolbarButton`/`FilterSheetView` remain for Maintenance and Nav Log. The new
     `uppercaseText` key drives a `cockpitUppercase()` modifier (`ViewExtensions.swift`) that
     replaced every hard-coded `.textCase(.uppercase)` in `CockpitView`; `CategoryCapsule`'s own
     uppercasing is unchanged.
@@ -513,8 +734,10 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   layout. Done in `CockpitView.dayLabelText(for:)`: the date and the relative-day label now
   share one `HStack` row above the weekday; the date stays muted and the label keeps its
   existing styling.
-- **✅ Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way; switched to a wrench icon that matches the Maintenance tab with a wrench icon.
-- **✅ Call the routine items area "Maintenance"**: the recurring-items row in each segment (currently
+- **✅ Visual treatment of recurring items / habits**: make habits stand out in a more intuitive way;
+  switched to a wrench icon that matches the Maintenance tab with a wrench icon.
+- **✅ Call the routine items area "Maintenance"**: the recurring-items row in each segment
+  (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
   analogy.
 - **Search: swipe-down gesture and focus**: replace the Cockpit toolbar's Search button with a
@@ -540,16 +763,21 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 - Request notification permission on first use of a deadline item
 - Schedule a `UNUserNotificationCenter` notification when a deadline item is saved
 - Cancel/reschedule notifications when item is edited, completed, canceled, or deferred
-- Notification times respect custom day section boundaries from Phase 0.3.1 (Settings), once that ships
+- Notification times respect custom day section boundaries from Phase 0.3.1 (Settings), once that
+  ships
 
 ### Phase 0.2.7 - Import UX Refinements
-- **Flag dups on import**: This seems to be a common source of dups - re-importing items from Things. Let's flag those as possible dups and maybe even show the other item.
-- **Detect duplicates in import**: It's going to be faily common for me to defer an item to the next day and then also import that same item the next day via Things. Flag/detect the resulting dup.
-- **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the markdown 
+- **Flag dups on import**: This seems to be a common source of dups - re-importing items from
+  Things. Let's flag those as possible dups and maybe even show the other item.
+- **Detect duplicates in import**: It's going to be faily common for me to defer an item to the next
+  day and then also import that same item the next day via Things. Flag/detect the resulting dup.
+- **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the
+  markdown
 - **Add a flag toggle on import**: The import can't automatically know if this item should be
   flagged, but make it easy.
 - **Add categorization on import**: Allow tagging items on import, automatically or manually.
-- **Import Calendar events as a plan item**: long-press a `CalendarEventRow` to import it as a `PlanItem`, the same way Reminders already can (see "Import Reminder as PlanItem" in Phase 0.1.14)
+- **Import Calendar events as a plan item**: long-press a `CalendarEventRow` to import it as a
+  `PlanItem`, the same way Reminders already can (see "Import Reminder as PlanItem" in Phase 0.1.14)
   — a Calendar event is read-only, so this turns it into something that can be checked off.
 - **Remove 'routine' options from import**: Routine import should be its own flow rather than
   cluttering a normal day import. **Sequencing:** that flow is the "Routine Markdown import" in
@@ -572,85 +800,180 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   This keeps only that second part: one button, one text field, one `@Generable` call, no
   conversation, no tab, no streaming.
 
-### Phase 0.2.8 — Routine Refinements / paper treatment
+### Phase 0.2.8 — Maintenance Refinements / paper treatment
 - **Give `RoutineView` the "paper" treatment**: adopt `CockpitStyle`/patterns from `CockpitView`
-  (Phase 0.2.4) so Routine matches the Cockpit tab's (and, once Phase 0.2.10 lands, Timeline's) visual
-  language, rather than being the only tab still on the old card style.
+  (Phase 0.2.4) so Maintenance matches the Cockpit tab's (and, once Phase 0.2.10 lands, Nav
+  Log's) visual language, rather than being the only tab still on the old card style.
 - **Addition (decided during catch-up planning)**: scope beyond "match the paper aesthetic" is
-  still open. **Sequencing:** do this together with Timeline's paper treatment in Phase 0.2.10 —
+  still open. **Sequencing:** do this together with Nav Log's paper treatment in Phase 0.2.10 —
   factor the shared styling components (cards, headers, rows) out of `CockpitView` once and apply
   them to both tabs, rather than restyling each separately and reconciling afterward.
-- **Show only segments that actaully have a routine**:get rid of all those empty segments; it's a lot when combined with all the day combos.
+- **Show only segments that actaully have a routine**:get rid of all those empty segments; it's a
+  lot when combined with all the day combos.
 
 ### Phase 0.2.9 — Missed Items Review & Pull-Forward
-**Note**: this phase replaces the automatic "Spillover" behavior from Phase 0.1.9, which was removed entirely (see that phase's note). After a real-world gap in usage (app not opened for several days), spillover silently moved every pending item from every skipped day onto "today" in one shot, with no cap on how far back it looked — the result was a today view flooded with old items, including apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
+**Note**: this phase replaces the automatic "Spillover" behavior from Phase 0.1.9, which was removed
+entirely (see that phase's note). After a real-world gap in usage (app not opened for several days),
+spillover silently moved every pending item from every skipped day onto "today" in one shot, with no
+cap on how far back it looked — the result was a today view flooded with old items, including
+apparent duplicates (multiple stale per-day instances of the same recurring item all landing on the
+same date at once). Every day should now start fresh by default; nothing moves automatically, ever.
 
-- Entry point: a way to review pending items left behind on past days — modeled on the Markdown Import flow (Phase 0.1.21)'s paste → review-list → commit shape, but sourced from existing overdue items instead of pasted text
-- Review list: past pending one-off items (not recurring instances — each day already gets its own fresh instance via materialization, so a stale recurring instance isn't a "missed" item in the same sense), grouped by original date, most recent first
-- Per-item choice, not all-or-nothing: select which items to pull forward to today, which to cancel outright, and which to leave alone (still visible/actionable via Timeline)
-- Pulling an item forward sets `date = today`; clear any stale `deadline` the same way spillover used to (becomes an "any time" item unless the user re-times it)
-- Surface a lightweight indicator (badge on the Flight tab, or a banner in the Cockpit view) when missed items exist, so the review flow is discoverable without being forced
-- Consider whether this should also run automatically prompt-on-launch after a detected gap (e.g. "You were away N days — review N missed items?") vs. purely user-initiated via a toolbar button
+- Entry point: a way to review pending items left behind on past days — modeled on the Markdown
+  Import flow (Phase 0.1.21)'s paste → review-list → commit shape, but sourced from existing overdue
+  items instead of pasted text
+- Review list: past pending one-off items (not recurring instances — each day already gets its own
+  fresh instance via materialization, so a stale recurring instance isn't a "missed" item in the
+  same sense), grouped by original date, most recent first
+- Per-item choice, not all-or-nothing: select which items to pull forward to today, which to cancel
+  outright, and which to leave alone (still visible/actionable via Nav Log)
+- Pulling an item forward sets `date = today`; clear any stale `deadline` the same way spillover
+  used to (becomes an "any time" item unless the user re-times it)
+- Surface a lightweight indicator (badge on the Cockpit tab, or a banner in the Cockpit view) when
+  missed items exist, so the review flow is discoverable without being forced
+- Consider whether this should also run automatically prompt-on-launch after a detected gap (e.g.
+  "You were away N days — review N missed items?") vs. purely user-initiated via a toolbar button
 
-### Phase 0.2.10 — Timeline Refinements
-- **✅ The Nav Log should show *all* days, past, present, and future** — a time machine of sorts; starts on today (`ScrollViewReader` scrolls to today's section on appear)
-- **✅ Past days show a history of what was completed (and canceled)** — all non-template items, including materialized routine instances, for any past day within the loaded window
-- **Deviation**: future days show only one-off scheduled items, **not** projected recurring items — routines could still change before the date arrives, so a "ghost" preview would be misleading; revisit if we want a non-interactive preview later
-- **✅ Lazy-load past days**: starts with a 7-day pre-cached window behind today; `pastDaysWindow` grows by 7 more each time the oldest loaded section scrolls into view
-- **✅ Lazy-load future days**: starts with a 7-day pre-cached window ahead of today; `futureDaysWindow` grows the same way as the newest loaded section scrolls into view
-- **✅ Dropped, then restored, the "Done" filter** — initially removed in favor of always showing completed/canceled items by default; once search shipped, using search surfaced real value in being able to hide completed/canceled items to cut down noise in results, so the toggle came back, defaulting to off/hidden like it did originally
+### Phase 0.2.10 — Nav Log Refinements
+- **✅ The Nav Log should show *all* days, past, present, and future** — a time machine of sorts;
+  starts on today (`ScrollViewReader` scrolls to today's section on appear)
+- **✅ Past days show a history of what was completed (and canceled)** — all non-template items,
+  including materialized routine instances, for any past day within the loaded window
+- **Deviation**: future days show only one-off scheduled items, **not** projected recurring items —
+  routines could still change before the date arrives, so a "ghost" preview would be misleading;
+  revisit if we want a non-interactive preview later
+- **✅ Lazy-load past days**: starts with a 7-day pre-cached window behind today; `pastDaysWindow`
+  grows by 7 more each time the oldest loaded section scrolls into view
+- **✅ Lazy-load future days**: starts with a 7-day pre-cached window ahead of today;
+  `futureDaysWindow` grows the same way as the newest loaded section scrolls into view
+- **✅ Dropped, then restored, the "Done" filter** — initially removed in favor of always showing
+  completed/canceled items by default; once search shipped, using search surfaced real value in
+  being able to hide completed/canceled items to cut down noise in results, so the toggle came back,
+  defaulting to off/hidden like it did originally
 - **✅ Fix: "Done" + "Missed" together showed items, contradicting their apparent meaning**
-  - "Missed" isolates (only pending+overdue pass), but "Done" originally only revealed (it never excluded pending items) — so with both on, "Done" contributed no restriction and results were just whatever "Missed" alone would show, not the empty set a user would expect from two seemingly opposite filters
+  - "Missed" isolates (only pending+overdue pass), but "Done" originally only revealed (it never
+    excluded pending items) — so with both on, "Done" contributed no restriction and results were
+    just whatever "Missed" alone would show, not the empty set a user would expect from two
+    seemingly opposite filters
   - First patched at the UX level (tapping either turns the other off)
-  - Then properly fixed at the root: "Done" surfaced the exact same mismatch again when combined with search (completed *and* pending search results both showing with "Done" on) — because it was sharing `AppStorageKeys.showCompleted` with the Day view's reveal-style filter of the same name
-  - Gave Timeline its own dedicated `showCompletedOnly` key with true isolate semantics (`(status is completed/canceled) == showCompletedOnly`), matching Flagged/Missed's isolate-when-on pattern, instead of reinterpreting a shared boolean two different ways depending on which screen reads it
-  - The mutual-exclusion tap behavior with Missed stays, now redundant-but-harmless since true isolation already makes both-on logically show nothing on its own
-- **✅ Added a "Missed" filter** — pending items whose deadline, day-section window, or entire day has already passed (up to the current time); reuses the same missed-item logic as the Day view (`clock.badge.exclamationmark`)
-- **✅ Segmented by time of day**: each day's items are grouped under small bold/secondary sub-headers ("First Thing", "Morning", … "Open") instead of one flat list, for readability
-- **✅ Per-segment "Add item"**: today and future days show every segment (even empty ones) with a `+` button to the right of the segment title, opening `ItemForm(date:section:)` pre-filled; past days only show segments that already have items, with no add affordance (the log doesn't allow adding to the past)
-- **✅ Fix: empty future days were invisible**: `groupedByDate` used to only create a section for a date if it had items (plus a forced entry for today), so an empty future day never got a section — and never got its per-segment add buttons — until something was scheduled on it. Now every day from today through the loaded `futureDaysWindow` gets a section unconditionally; past days stay sparse (items-only) since a week of "Nothing planned" history rows would just be clutter. This also fixed a related bug where, with only one section on screen (e.g. a brand-new log with no data), that single section matched both `groupedByDate.first` and `.last`, so its `onAppear` grew `pastDaysWindow` and `futureDaysWindow` simultaneously on first render instead of only when scrolling to an edge — guarded with `groupedByDate.count > 1`
+  - Then properly fixed at the root: "Done" surfaced the exact same mismatch again when combined
+    with search (completed *and* pending search results both showing with "Done" on) — because it
+    was sharing `AppStorageKeys.showCompleted` with the Day view's reveal-style filter of the same
+    name
+  - Gave Timeline its own dedicated `showCompletedOnly` key with true isolate semantics (`(status is
+    completed/canceled) == showCompletedOnly`), matching Flagged/Missed's isolate-when-on pattern,
+    instead of reinterpreting a shared boolean two different ways depending on which screen reads it
+  - The mutual-exclusion tap behavior with Missed stays, now redundant-but-harmless since true
+    isolation already makes both-on logically show nothing on its own
+- **✅ Added a "Missed" filter** — pending items whose deadline, day-section window, or entire day
+  has already passed (up to the current time); reuses the same missed-item logic as the Day view
+  (`clock.badge.exclamationmark`)
+- **✅ Segmented by time of day**: each day's items are grouped under small bold/secondary
+  sub-headers ("First Thing", "Morning", … "Open") instead of one flat list, for readability
+- **✅ Per-segment "Add item"**: today and future days show every segment (even empty ones) with a
+  `+` button to the right of the segment title, opening `ItemForm(date:section:)` pre-filled; past
+  days only show segments that already have items, with no add affordance (the log doesn't allow
+  adding to the past)
+- **✅ Fix: empty future days were invisible**: `groupedByDate` used to only create a section for a
+  date if it had items (plus a forced entry for today), so an empty future day never got a section —
+  and never got its per-segment add buttons — until something was scheduled on it. Now every day
+  from today through the loaded `futureDaysWindow` gets a section unconditionally; past days stay
+  sparse (items-only) since a week of "Nothing planned" history rows would just be clutter. This
+  also fixed a related bug where, with only one section on screen (e.g. a brand-new log with no
+  data), that single section matched both `groupedByDate.first` and `.last`, so its `onAppear` grew
+  `pastDaysWindow` and `futureDaysWindow` simultaneously on first render instead of only when
+  scrolling to an edge — guarded with `groupedByDate.count > 1`
 - **Further break each day into day segments** *(builds on "Segmented by time of day" above)*: make
   the per-segment grouping a stronger visual unit — e.g. collapsible segments or more distinct
   segment containers — so a day is easier to chunk and process at a glance.
-- **✅ Removed dead date-header navigation**: the per-day header's tap-to-navigate + `arrow.up.right` icon did nothing in production (`DayView` always passes no-op `onSelectDate`/`onDismiss` since the Log view became a permanent tab, not a sheet) — removed the icon, the `Button` wrapper, and the now-unused `onSelectDate` parameter
-- **✅ Tab renamed "Log" → "Timeline"**: tab label in `DayView.swift` and the view's `navigationTitle` both now read "Timeline" (was "Log" / "Nav Log")
-- **✅ Search** *(UI superseded: first built as `.searchable(text:)`, since replaced by the shared `InlineSearchField`/`SearchToggleButton` toolbar toggle from Phase 0.2.3, which Timeline, Cockpit, and Routine all use now; the behavior below still holds)*: Timeline search deliberately reaches every date. Matches title and notes, case-insensitive, deliberately reaching every date rather than just the pre-cached `minLoadedDate...maxLoadedDate` window. Results replace the date-grouped list with a flat, date-sorted list (each row shows its date via `TimelineItemRow(showDate: true)`); empty state uses `ContentUnavailableView.search(text:)`; tapping a result opens the same edit sheet as a normal row. Respects the active Flagged/Done/Missed/category filters.
-- **✅ Fix: search field wasn't visible at all** *(historical — moot now that Timeline uses the inline search field instead of `.searchable`)* — two stacked issues. First, `.searchable` was attached deep inside the `ScrollViewReader`/`List` chain, where it contended with the filter bar's own `.safeAreaInset(edge: .top)` for the same slot; moved it to the outer `NavigationStack` instead. Second, even after that, the field was still invisible on a physical device on iOS 26 (but fine in the iOS 27 simulator) — `.searchable`'s default `.automatic` placement apparently resolves differently between those OS builds (always-visible drawer vs. a minimized tap-to-expand button). Fixed by forcing an explicit `.navigationBarDrawer(displayMode: .always)` placement instead of leaving it to automatic resolution.
-- **✅ Search now runs a real database fetch, not an in-memory filter**: `searchResults` used to call `.filter` on the `allItems` `@Query` array (already fully materialized in memory). Switched to a fresh `FetchDescriptor<PlanItem>` with a `#Predicate` using `localizedStandardContains` (case/diacritic-insensitive, pushed down to the store) and `sortBy: [SortDescriptor(\.date)]`, so search performance and memory use no longer scale with total item count as the database grows over years of use. Verified at runtime (not just compile-time) that the predicate translates correctly and both matching and non-matching queries behave as expected.
+- **✅ Removed dead date-header navigation**: the per-day header's tap-to-navigate + `arrow.up.right`
+  icon did nothing in production (`DayView` always passes no-op `onSelectDate`/`onDismiss` since the
+  Log view became a permanent tab, not a sheet) — removed the icon, the `Button` wrapper, and the
+  now-unused `onSelectDate` parameter
+- **✅ Tab naming**: the tab label is "Nav Log" (`DayView.swift`); earlier renames to "Log" and
+  "Timeline" were superseded. The view type is still `TimelineView`.
+- **✅ Search** *(UI superseded: first built as `.searchable(text:)`, since replaced by the shared
+  `InlineSearchField`/`SearchToggleButton` toolbar toggle from Phase 0.2.3, which Nav Log, Cockpit,
+  and Maintenance all use now; the behavior below still holds)*: Nav Log search deliberately reaches
+  every date. Matches title and notes, case-insensitive, deliberately reaching every date rather
+  than just the pre-cached `minLoadedDate...maxLoadedDate` window. Results replace the date-grouped
+  list with a flat, date-sorted list (each row shows its date via `TimelineItemRow(showDate:
+  true)`); empty state uses `ContentUnavailableView.search(text:)`; tapping a result opens the same
+  edit sheet as a normal row. Respects the active Flagged/Done/Missed/category filters.
+- **✅ Fix: search field wasn't visible at all** *(historical — moot now that Nav Log uses the
+  inline search field instead of `.searchable`)* — two stacked issues. First, `.searchable` was
+  attached deep inside the `ScrollViewReader`/`List` chain, where it contended with the filter bar's
+  own `.safeAreaInset(edge: .top)` for the same slot; moved it to the outer `NavigationStack`
+  instead. Second, even after that, the field was still invisible on a physical device on iOS 26
+  (but fine in the iOS 27 simulator) — `.searchable`'s default `.automatic` placement apparently
+  resolves differently between those OS builds (always-visible drawer vs. a minimized tap-to-expand
+  button). Fixed by forcing an explicit `.navigationBarDrawer(displayMode: .always)` placement
+  instead of leaving it to automatic resolution.
+- **✅ Search now runs a real database fetch, not an in-memory filter**: `searchResults` used to call
+  `.filter` on the `allItems` `@Query` array (already fully materialized in memory). Switched to a
+  fresh `FetchDescriptor<PlanItem>` with a `#Predicate` using `localizedStandardContains`
+  (case/diacritic-insensitive, pushed down to the store) and `sortBy: [SortDescriptor(\.date)]`, so
+  search performance and memory use no longer scale with total item count as the database grows over
+  years of use. Verified at runtime (not just compile-time) that the predicate translates correctly
+  and both matching and non-matching queries behave as expected.
 - Editing on today/future items with swipe gestures (cancel, defer, flag, delete)
 - **✅ Land on *today* + scroll to today**: already covered by the existing `ScrollViewReader`
   auto-scroll-on-appear and the toolbar "Go to Today" (`scope`) button — confirmed during catch-up
   planning that no new code was needed here, just closing out the line item.
-- **Give `TimelineView` the "paper" treatment** *(added during catch-up planning)*: adopt
-  `CockpitStyle`/patterns from `CockpitView` (Phase 0.2.4) so Timeline matches the Cockpit tab's
+- **Give `TimelineView` (Nav Log) the "paper" treatment** *(added during catch-up planning)*:
+  adopt `CockpitStyle`/patterns from `CockpitView` (Phase 0.2.4) so Nav Log matches the Cockpit tab's
   visual language instead of its original, pre-Paper-Plan look. A first pass (restyling the
   existing `List` in place rather than rebuilding it as free-floating cards) was tried and rolled
   back — needs a fresh design pass once updated Figma mocks are ready before trying again. Do it
-  together with Routine's paper treatment (Phase 0.2.8) so both tabs share the same extracted
+  together with Maintenance's paper treatment (Phase 0.2.8) so both tabs share the same extracted
   components.
 
 ---
 
 ## Version 0.3 — Settings & Device Expansion
 
-Adds the features needed before wider release: user-configurable settings (Calendar/Reminders selection, section time boundaries), rich item content (web links and photos), a full iPad layout with adaptive split view, a general sharing/export pass (including the Routine Markdown import flow), and a spike on whether projects are needed alongside categories.
+Adds the features needed before wider release: user-configurable settings (Calendar/Reminders
+selection, section time boundaries), rich item content (web links and photos), a full iPad layout
+with adaptive split view, a general sharing/export pass (including the Routine Markdown import
+flow), and a spike on whether projects are needed alongside categories.
 
 ### Phase 0.3.1 — Settings
 - `SettingsView` navigated to from ⚙ button
-- **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of available calendars (uses `CalendarService.availableCalendars()` + `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted, show a link to open Settings
-- **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery link
-- **Permission prompt on first filter tap**: when the user taps the Calendar or Reminders filter pill for the first time, prompt for permission then and there (rather than waiting for the day to load); on grant, show the calendar/list selector immediately
-- **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`; `DaySection.containing(_:)` reads from stored values instead of hardcoded hours; also update `DaySection.timeRangeLabel` to compute dynamically from stored boundaries instead of hardcoded strings
-- **"Rise & Shine" pre-morning section**: consider adding an early-morning section (e.g. 5–6 AM) for first-thing-out-of-bed habits; or expose Morning's start time as a user-adjustable boundary so the section stretches to cover it
-- **✅ Rename "Night" → "Bedtime"**: `DaySection` already has no `.night` case — the six cases are firstThing/morning/midday/afternoon/evening/bedtime; making section names fully user-editable alongside their time boundaries remains open
+- **Calendar settings**: toggle to enable/disable calendar event display; multi-select list of
+  available calendars (uses `CalendarService.availableCalendars()` +
+  `AppStorageKeys.selectedCalendarIDs`; empty = all); if permission was denied or not yet granted,
+  show a link to open Settings
+- **Reminders settings**: similar toggle + list picker for reminder lists; same permission recovery
+  link
+- **Permission prompt on first filter tap**: when the user taps the Calendar or Reminders filter
+  pill for the first time, prompt for permission then and there (rather than waiting for the day to
+  load); on grant, show the calendar/list selector immediately
+- **Day section boundaries**: edit start/end hours for each day section; store in `@AppStorage`;
+  `DaySection.containing(_:)` reads from stored values instead of hardcoded hours; also update
+  `DaySection.timeRangeLabel` to compute dynamically from stored boundaries instead of hardcoded
+  strings
+- **"Rise & Shine" pre-morning section**: consider adding an early-morning section (e.g. 5–6 AM) for
+  first-thing-out-of-bed habits; or expose Morning's start time as a user-adjustable boundary so the
+  section stretches to cover it
+- **✅ Rename "Night" → "Bedtime"**: `DaySection` already has no `.night` case — the six cases are
+  firstThing/morning/midday/afternoon/evening/bedtime; making section names fully user-editable
+  alongside their time boundaries remains open
 - Any other preferences surfaced here as phases are completed
 
 ### Phase 0.3.2 — Rich Item Content
-- **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link" row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have a link; include URL in any export/share output
-- **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a local file URL referenced from the model, not raw data in SwiftData) to avoid hitting SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync of assets; consider storage implications and warn the user if iCloud storage is low
+- **Web links**: add an optional `url: URL?` field to `PlanItem`; surface in `ItemForm` as a "Link"
+  row (paste or type a URL); display as a tappable row in the day view and nav log (opens in-app
+  browser via `SFSafariViewController` or system browser); show a globe icon on pills/rows that have
+  a link; include URL in any export/share output
+- **Photos**: add photo attachments to items — store images externally (CloudKit `CKAsset` or a
+  local file URL referenced from the model, not raw data in SwiftData) to avoid hitting
+  SwiftData/CloudKit record size limits; allow one or more photos per item; show a thumbnail strip
+  in the edit form and a compact camera icon badge on pills; photo viewer on tap; full iCloud sync
+  of assets; consider storage implications and warn the user if iCloud storage is low
 
 ### Phase 0.3.3 — iPad Extras
-- Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split (e.g. date/section list on left, day detail on right)
+- Adopt adaptive layout using `horizontalSizeClass` — on regular width, consider a two-column split
+  (e.g. date/section list on left, day detail on right)
 - Verify `HFlow` pill layouts scale well on wider screens
 - Keyboard navigation and hardware keyboard shortcuts (arrow keys to navigate days, etc.)
 - Test with Stage Manager and multitasking split views
@@ -658,12 +981,17 @@ Adds the features needed before wider release: user-configurable settings (Calen
 
 ### Phase 0.3.4 — Sharing & Export
 A general look at sharing across the app, rather than one-off share buttons per view.
-- **Per-day share icon in the Timeline view** *(originally tracked in Phase 0.2.10, moved here)*: share a day's plan as text (or richer format — TBD) via the standard `ShareLink`/share sheet
-- What else is worth sharing? A single item, a date range, search results, a whole routine/schedule from the Routine view — figure out the right scope(s) rather than just the one Timeline case
-- Decide on output format(s): plain text summary, Markdown, something richer (PDF? image?) — consider round-tripping with Markdown Import (Phase 0.1.21) for a plain-text/Markdown format, since that's already a supported input format
+- **Per-day share icon in the Nav Log view** *(originally tracked in Phase 0.2.10, moved here)*:
+  share a day's plan as text (or richer format — TBD) via the standard `ShareLink`/share sheet
+- What else is worth sharing? A single item, a date range, search results, a whole routine/schedule
+  from the Maintenance view — figure out the right scope(s) rather than just the one Nav Log case
+- Decide on output format(s): plain text summary, Markdown, something richer (PDF? image?) —
+  consider round-tripping with Markdown Import (Phase 0.1.21) for a plain-text/Markdown format,
+  since that's already a supported input format
 - Standard `ShareLink` throughout rather than bespoke share-sheet plumbing per view
-- See also the "Web links" item in Phase 0.3.2 (Rich Item Content), which mentions including a URL in "any export/share output" — make sure that lands here once this phase is scoped
-- ✅ *(implemented ahead of this phase being fully scoped)* Routine-tab export: a toolbar button
+- See also the "Web links" item in Phase 0.3.2 (Rich Item Content), which mentions including a URL
+  in "any export/share output" — make sure that lands here once this phase is scoped
+- ✅ *(implemented ahead of this phase being fully scoped)* Maintenance-tab export: a toolbar button
   renders every routine item as Markdown — grouped by schedule (`## Every Day`/`Weekdays`/
   `Weekends`/custom, same as the schedule cards), then by day segment as a `###` subsection
   (`First Thing`…`Bedtime`, then `Open`) — with each item listing flagged status, categories, and
@@ -673,7 +1001,7 @@ A general look at sharing across the app, rather than one-off share buttons per 
   title/section/recurrence/weekdays (flagged status, categories, and notes aren't read back), and
   its fallback parser (used when Foundation Models is unavailable) would treat every nonempty
   export line — headings and `- ` metadata alike — as its own item rather than reconstructing the
-  original ones. Other scopes (Timeline day, single item, date range, search results) are still
+  original ones. Other scopes (Nav Log day, single item, date range, search results) are still
   open.
 - **Routine Markdown import** *(not yet implemented)*: a dedicated import flow for the Routine
   tab. The current Markdown Import (Phase 0.1.21) has no parser capable of reconstructing
@@ -703,7 +1031,8 @@ A general look at sharing across the app, rather than one-off share buttons per 
   covered by `RoutineMarkdownExporterTests`/`DayPlanMarkdownExporterTests`.
 
 ### Phase 0.3.5 — Projects support
-- Spike / POC to determine if supporting the idea of projects would help to organize items into more purposeful groupings.
+- Spike / POC to determine if supporting the idea of projects would help to organize items into more
+  purposeful groupings.
 - Does this work with or replace categories? In theory, you could use a category as a project.
 - So maybe categories instead of projects, but fuller/dedicated category management?
 
@@ -711,43 +1040,82 @@ A general look at sharing across the app, rather than one-off share buttons per 
 
 ## Version 1.0 — Core Features Complete
 
-The core-features-complete milestone. Addresses usability findings from real-world use, pays down tech debt, adds aviation-themed polish, completes the user's guide and app icon, and closes out with beta testing. This is not an App Store release — nothing is being sold (see "In-App Purchases POC" under Future Plans).
+The core-features-complete milestone. Addresses usability findings from real-world use, pays down
+tech debt, adds aviation-themed polish, completes the user's guide and app icon, and closes out with
+beta testing. This is not an App Store release — nothing is being sold (see "In-App Purchases POC"
+under Future Plans).
+
+**Suggested execution order:** the numbering below groups work by theme, not by sequence. Start with
+the structural parts of Phase 1.0.4 (the `RoutineTemplate` split, deleting the retired Day/Cards
+views, and the section → segment rename) *before* the UX audit (1.0.1), polish (1.0.2), and
+performance audit (1.0.3) — otherwise those passes get partly redone against code that's about to
+change. The test-related items in 1.0.4 (ViewInspector, UI tests) stay late, once the views stop
+churning.
 
 ### Phase 1.0.1 — Full-App UX Audit
-A holistic pass across the three active tabs (Flight, Routine, and Timeline), rather than scattering open-ended "UX audit" items across individual view phases. Best done by using the app for a real stretch of time (à la Phase 0.1.14) and noting friction points, then fixing what's found.
+A holistic pass across the three active tabs (Cockpit, Maintenance, and Nav Log), rather than scattering
+open-ended "UX audit" items across individual view phases. Best done by using the app for a real
+stretch of time (à la Phase 0.1.14) and noting friction points, then fixing what's found.
 - **Cockpit tab** (formerly the Paper Plan view): general UX audit and fix
-- **Routine tab**: general UX audit and fix *(originally tracked in Phase 0.2.1)*
-- **Timeline tab**: general UX audit and fix
-- **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for cleaning and syncing data — we need to hide that for production builds.
-- **Timeline top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row, search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 0.2.10)*. Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate '+' button to thumb zone" idea in Phase 1.0.2) — no clean built-in SwiftUI way to do this with `.searchable` today, would likely need a custom search bar.
-- **Per-filter "only" option**: generalize the Timeline Missed/Flagged isolate-style toggles (see Phase 0.2.10) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders, category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
+- **Maintenance tab**: general UX audit and fix *(originally tracked in Phase 0.2.1)*
+- **Nav Log tab**: general UX audit and fix
+- **Toolbars**: general UX audit and fix for toolbars across the app — are they consistent? Are they
+  intuitive? Useful? Ready to ship? For one thing, there may still be a "developer" button for
+  cleaning and syncing data — we need to hide that for production builds.
+- **Nav Log top area (Liquid Glass pass)**: the current top area (nav title, filter capsules row,
+  search field) was hand-rolled before Liquid Glass conventions solidified and reads as visually
+  inconsistent with the rest of the app's Liquid Glass toolbars *(moved here from Phase 0.2.10)*.
+  Consider: moving Flagged/Done/Missed/category filters into a proper Liquid Glass
+  `ToolbarItemGroup` (menu or filter icon, matching `FlightPlanView`'s filter menu pattern) instead
+  of a custom `safeAreaInset` capsule row; and exploring whether the search field could live at the
+  bottom of the screen instead of the top (closer to thumb reach, similar in spirit to the "Relocate
+  '+' button to thumb zone" idea in Phase 1.0.2) — no clean built-in SwiftUI way to do this with
+  `.searchable` today, would likely need a custom search bar.
+- **Per-filter "only" option**: generalize the Nav Log Missed/Flagged isolate-style toggles (see
+  Phase 0.2.10) into a general `FilterSheetView` affordance — each filter (Calendar, Reminders,
+  category, etc.) could offer a "show only this" mode, not just show/hide. Originated from wanting
+  to view just Calendar events or just Reminders at a glance; audit whether Calendar/Reminders
   specifically need this most, then decide how general to make the underlying mechanism.
-- **Mac menu bar integration + window minimum size** *(moved here from Phase 0.1.18)*: proper menu bar items (not just the hidden `Cmd+1`–`Cmd+3` tab-switch buttons) and a sensible minimum window size for the macOS build.
-- **Per-section add button**: add a small `+` button on each segment of the Day view (header or content area) so the user can add an item directly into that segment without going through the main Add form and re-selecting the segment. (Timeline already has this for today and future days — see Phase 0.2.10.)
-- **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the lower portion of the screen (within thumb reach), similar to the floating compose button in Mail and the new-reminder button in Reminders; explore options that don't conflict with the system tab bar
-- **Progress indicator tweak**: Color-code the main progress indicator based on status/time, e.g. green/yellow/red; use the same colors/calculation the segments
-- **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from plan items — for example, italic font or a distinct row style
-- **Reward when completing everything for today**: When you complete all the items for a day, replace the open section with a summary of everything you accomplished today and a nice little celebration animation or icon.
+- **Mac menu bar integration + window minimum size** *(moved here from Phase 0.1.18)*: proper menu
+  bar items (not just the hidden `Cmd+1`–`Cmd+3` tab-switch buttons) and a sensible minimum window
+  size for the macOS build.
+- **Per-segment add button on every Cockpit segment**: the Cockpit only offers "Add item" in the
+  current segment (Phase 0.2.5), and Nav Log already has a per-segment `+` for today and future
+  days (Phase 0.2.10). Extend the Cockpit so every non-ended segment has one, so the user can add an
+  item directly into that segment without going through the main Add form and re-selecting the
+  segment.
+- **Relocate "+" button to thumb zone**: move Add Item out of the top navigation bar and into the
+  lower portion of the screen (within thumb reach), similar to the floating compose button in Mail
+  and the new-reminder button in Reminders; explore options that don't conflict with the system tab
+  bar
+- **Progress indicator tweak**: Color-code the main progress indicator based on status/time, e.g.
+  green/yellow/red; use the same colors/calculation the segments
+- **Visual treatment of Calendar events and Reminders**: make them stand out more (or less) from
+  plan items — for example, italic font or a distinct row style
 
 ### Phase 1.0.2 — Fit and Finish
 - Address findings from Phase 0.1.14 usability testing
 - Bug fixes, UX tweaks, visual polish
-- **Categories rework?** Make the categories selector work just like MapsPlus? It's really nice in MapsPlus.
-- **Aviation-themed day-view additions**: Add a place to give the day a "name" (like "Aircraft
-  Identification" in a real flight plan; default to YYYYMMDD); explore "Flight Rules" and "Type of
-  Flight" (work day / weekend / vacation?) fields. (The "Today's Destination" / day-intention
-  field originally scoped here has moved to Phase 0.2.5 — see "Day intention note" there; this
-  bullet now covers only Aircraft Identification, Flight Rules, and Type of Flight.)
+- **Categories rework?** Make the categories selector work just like MapsPlus? It's really nice in
+  MapsPlus. Decide this together with the Phase 0.3.5 projects spike, which asks the same "fuller
+  category management" question.
+- **Aviation-themed day-view additions**: explore "Flight Rules" and "Type of Flight" (work day /
+  weekend / vacation?) fields on `Day`. (The editable flight name — "Aircraft Identification" — and
+  the "Today's Destination" day intention shipped in Phase 0.2.5, see "Day intention note" there.)
 - **Note**: the "Day note area" freeform-intention-field item originally tracked here has moved to
-  Phase 0.2.5 ("Day intention note") — same idea, consolidated into one roadmap entry rather than two.
-- Get a nice AI summary of the day once it's complete, in the day view, as a sort of reward
-- Are we hiding day segments that have passed?
-- **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes; sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern: font sizes and contrast are too small/dim — prioritize this.**
-- **Missed item rule to consider**: when a day section has passed and items are left in it, move everything to "Open"
-- **Summary vs. full view**: reconsider the collapsed/expanded section toggle as a "summary vs. full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded state shows the full item list; more flight-plan-like than a simple show/hide
+  Phase 0.2.5 ("Day intention note") — same idea, consolidated into one roadmap entry rather than
+  two.
+- **Readability & accessibility**: Dynamic Type support across all text styles; VoiceOver labels on
+  interactive elements (pills, rows, filter toggles, progress ring); minimum tap target sizes;
+  sufficient color contrast in all themes; test with Accessibility Inspector. **Immediate concern:
+  font sizes and contrast are too small/dim — prioritize this.**
+- **Summary vs. full view**: reconsider the collapsed/expanded section toggle as a "summary vs.
+  full" mode — the collapsed state could show a compact AI-generated summary card, and the expanded
+  state shows the full item list; more flight-plan-like than a simple show/hide
 - **Fix all `docs/known-bugs.md` entries** before this phase is considered done
 - **Make Calendar and Reminders access read-only**: no need for read/write access anymore
-- **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions; `UINotificationFeedbackGenerator` on completion celebration
+- **Haptics**: `UIImpactFeedbackGenerator` on complete, cancel, and defer actions;
+  `UINotificationFeedbackGenerator` on completion celebration
 - **Bounce-back animation for refused drops**: dragging an open item (e.g. out of the Cockpit's
   Passed area) onto an already-ended segment is refused in `CockpitView.handlePillDrop` via
   `DayViewModel.canMove`, but the pill still animates as if it landed in the segment before
@@ -759,36 +1127,72 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
   destinations with `dropDestination(for:isEnabled:action:)` while an open item is dragged, or
   moving the segments to a `DropDelegate` whose `dropUpdated` proposes `.cancel`. Needs on-device
   testing; watch for flicker from re-rendering mid-drag and for a changed default drag badge.
-- **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast color pairs
-- **Completion celebration**: when the last pending item is checked off for the day, trigger a reward moment — confetti burst or similar animation, progress ring transforms into a large checkmark (or full green fill), brief haptic feedback
-- **Aviation UI spike**: explore a "flight plan" visual style — monospace/typewriter fonts, cockpit-dark palette, section headers styled like flight log rows, checklist-style rendering. Could be a new `DFPTheme` case or a separate `UIStyle` dimension. Prototype freely; keep what feels right, discard the rest. Findings feed into Future Plans.
-- **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`; add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware formatters (already done via `.dateTime` format style)
-- **iCloud sync status indicator**: surface iCloud sync state to the user — detect whether iCloud is signed in and whether the CloudKit container is reachable; show a subtle banner or Settings badge if sync is unavailable (signed out, iCloud Drive disabled, or network unreachable); explain what it means for cross-device data (not lost, just not synced yet); deep-link to Settings for remediation
-- **iCloud sync error handling**: handle and surface CloudKit error conditions gracefully — out-of-storage (prompt to manage iCloud storage), network offline (silent retry with status indicator), container initialization failure (fallback to local-only mode with a clear explanation); avoid silent data loss or confusing missing-item states
-- **Startup freeze**: app visibly freezes for a moment on cold launch before becoming interactive; profile with Instruments (Time Profiler + SwiftUI) to find the bottleneck — likely candidates are SwiftData store initialization, initial `@Query` evaluation, or first-run materialization happening on the main thread
-- **Calendar/Reminders load delay on day switch**: noticeable lag when navigating to a new day because `fetchCalendarEvents()` and `fetchReminderItems()` are triggered by `.task(id: viewModel.selectedDate)` and run sequentially; consider prefetching adjacent days, caching results, or showing a subtle loading state while data arrives
-- **Tap-to-complete feels sluggish on the Day view**: tapping an item pill/row to mark it
-  complete has a noticeable delay before the checkmark/strikethrough responds. Profile the
-  tap path (model mutation, `.animation` modifiers, and surrounding `@Query` re-evaluation) to
-  find where the latency is coming from.
-- **Section header expand/collapse animation gets sluggish**: the collapse/expand animation on
-  day-section headers (`FlightPlanView`/`CardDeckView`) degrades over time/use. Profile with
-  Instruments to see whether it's animation-count buildup, view-identity churn forcing
-  unnecessary re-renders, or something else.
-- **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or replaced with a minimal, generic example set before shipping
+- **High contrast theme**: new `DFPTheme` case with larger text, stronger borders, and high-contrast
+  color pairs
+- **Completion celebration and day summary**: when the last pending item is checked off for the day,
+  trigger a reward moment — confetti burst or similar animation, progress ring transforms into a
+  large checkmark (or full green fill), brief haptic feedback — and replace the Open area with a
+  summary of everything accomplished that day (an on-device AI summary, falling back to a plain
+  list)
+- ✅ **Aviation UI spike**: shipped as the Paper Plan Cockpit view in Phase 0.2.4 (monospace type,
+  flat borders, hard shadows, "Paper Night" dark mode). Remaining question is whether Maintenance and
+  Nav Log adopt it — see Phases 0.2.8 and 0.2.10.
+- **Localization**: wrap all user-visible strings in `String(localized:)` or `LocalizedStringKey`;
+  add a base `Localizable.xcstrings` catalog; verify date/time formatting uses locale-aware
+  formatters (already done via `.dateTime` format style)
+- **iCloud sync status indicator**: surface iCloud sync state to the user — detect whether iCloud is
+  signed in and whether the CloudKit container is reachable; show a subtle banner or Settings badge
+  if sync is unavailable (signed out, iCloud Drive disabled, or network unreachable); explain what
+  it means for cross-device data (not lost, just not synced yet); deep-link to Settings for
+  remediation
+- **iCloud sync error handling**: handle and surface CloudKit error conditions gracefully —
+  out-of-storage (prompt to manage iCloud storage), network offline (silent retry with status
+  indicator), container initialization failure (fallback to local-only mode with a clear
+  explanation); avoid silent data loss or confusing missing-item states
+- **Clean up seed data**: personal test habits in `ModelContainers.swift` must be removed or
+  replaced with a minimal, generic example set before shipping
 - ✅ Add an app icon — see `app-icon.md` for the design description
 - **New app icon**: replace the current icon with a fresh design; update `app-icon.md` and the
   asset catalog to match.
-- **User's guide**: write a short guide covering the core concepts (flight plan metaphor, sections, recurring habits, Markdown import) and the key gestures/actions; ship it as an in-app help sheet or a public web page linked from Settings
+- **User's guide**: write a short guide covering the core concepts (flight plan metaphor, sections,
+  recurring habits, Markdown import) and the key gestures/actions; ship it as an in-app help sheet
+  or a public web page linked from Settings
 
 ### Phase 1.0.3 — Performance & Stability Audit
-- Performance audit — run through Instruments to find hangs, glitches, memory issues, energy efficiency, Core Data issues, etc.
+- Performance audit — run through Instruments to find hangs, glitches, memory issues, energy
+  efficiency, Core Data issues, etc.
+- **Startup freeze** *(moved here from Phase 1.0.2)*: app visibly freezes for a moment on cold
+  launch before becoming interactive; profile with Instruments (Time Profiler + SwiftUI) to find the
+  bottleneck — likely candidates are SwiftData store initialization, initial `@Query` evaluation, or
+  first-run materialization happening on the main thread
+- **Calendar/Reminders load delay on day switch** *(moved here from Phase 1.0.2)*: noticeable lag
+  when navigating to a new day because `fetchCalendarEvents()` and `fetchReminderItems()` are
+  triggered by `.task(id: viewModel.selectedDate)` and run sequentially; consider prefetching
+  adjacent days, caching results, or showing a subtle loading state while data arrives
+- **Tap-to-complete feels sluggish** *(moved here from Phase 1.0.2)*: tapping an item pill/row to
+  mark it complete has a noticeable delay before the checkmark/strikethrough responds. Profile the
+  tap path (model mutation, `.animation` modifiers, and surrounding `@Query` re-evaluation) to find
+  where the latency is coming from.
+- **Section header expand/collapse animation gets sluggish** *(moved here from Phase 1.0.2)*: the
+  collapse/expand animation on day-segment headers degrades over time/use. Profile with Instruments
+  to see whether it's animation-count buildup, view-identity churn forcing unnecessary re-renders,
+  or something else. Re-check against `CockpitView`, since `FlightPlanView`/`CardDeckView` are
+  slated for deletion in Phase 1.0.4.
 - Make sure it runs well on older phones
 - Make sure it runs okay on iPhone SE, which is as slow and small as we're going to support.
 - Fix all compile-time warnings 
 - Fix all runtime warnings.
 - Confirm cross-device syncing is working as expected and bug-free
-- **Timeline browsing view still loads everything in memory** *(moved here from Phase 0.2.10)*: `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself already runs a proper `FetchDescriptor` predicate against the store) still fetches every non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough to matter in practice.
+- **Nav Log browsing view still loads everything in memory** *(moved here from Phase 0.2.10)*:
+  `allItems` (the `@Query` backing the normal day-windowed browsing view, not search — search itself
+  already runs a proper `FetchDescriptor` predicate against the store) still fetches every
+  non-template `PlanItem` regardless of `minLoadedDate`/`maxLoadedDate` — the day-window filtering
+  happens in Swift on the full in-memory result, not via a narrower predicate. Not addressed yet
+  since `@Query`'s predicate is fixed at initialization time; a real fix means restructuring to a
+  dynamic predicate (e.g. a child view whose `init` takes the date range and constructs its own
+  `@Query`, recreated when the window grows) or dropping `@Query` here in favor of manual
+  `FetchDescriptor` calls like search now uses. Worth revisiting if item counts become large enough
+  to matter in practice.
 
 ### Phase 1.0.4 — Tech Debt
 - **Split `PlanItem` into `RoutineTemplate` + `PlanItem`**: see
@@ -796,24 +1200,55 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
   roles (template / instance / one-off) via `isTemplate`/`template` flags, which is the root cause
   behind several drag-and-drop and dedup bugs fixed in the `day-segment-dup-item-bug` work. Since
   the app hasn't shipped, no CloudKit migration cost to worry about.
-- Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab, etc.)
+- Drop old Focus/Cards view code once no longer needed (CardDeckView, commented-out Cockpit tab,
+  etc.)
 - **Check whether the retired Day tab is still unused; if so, delete it**: `FlightPlanView.swift`
   and its commented-out `Tab("Day", …)` entry in `DayView.swift` (see Phase 0.2.4) were kept around
   after the Paper Plan view replaced it, in case it was worth reviving. If nobody's gone back to
   it by now, remove `FlightPlanView.swift` and the commented-out tab entry outright instead of
   carrying dead code forward.
-- Audit and fix architectural issues — too much logic in views that belongs in view models, or view model logic that belongs in services
+- Audit and fix architectural issues — too much logic in views that belongs in view models, or view
+  model logic that belongs in services
 - Check and clean up file and class organization; update the architecture doc
 - Architecture review & refactor
-- **Rename code to match final view names**: Rename day "section" to "segment" in the code. Also check backing code for Timeline view, Day view, etc.
-- **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`, `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right, extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views), `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable — premature extraction adds friction with no user benefit.
-- **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled / habits rows), summary generation triggers, and section visibility conditions have been iterated heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it belongs in `DayViewModel` instead of the view
-- **✅ CloudKit dedup for user-created templates**: `deduplicateItems` now performs a second pass matching `title + daySection + recurringWeekdays`, merging instances onto the canonical copy before deleting duplicates.
-- **✅ Unit tests (Swift Testing framework)**: `DaySection`, `DayViewModel`, `ItemFormViewModel`, `CategorySelectionService`, `CategoriesEditViewModel`, and `ModelContainers` (dedup/seed logic) — 154 parameterized test cases across 6 files in `DailyFlightPlanTests/`; ~82% combined line coverage on the tested files (~96% on `DaySection`/`ModelContainers`, ~97% on `ItemFormViewModel`/`CategorySelectionService`, 58% on `DayViewModel` since its FoundationModels AI-summary and live-clock code paths are intentionally untested).
-  - **Deviation**: `CalendarService`/`RemindersService` skipped — both are thin EventKit wrappers with no independent logic to test; `MockCalendarService`/`MockRemindersService` are the test doubles themselves, not test subjects.
-  - **Addition**: `ModelContainers` wasn't in the original list but had real, previously-untested logic (`deduplicateItems`/`deduplicateInstances`/`deduplicateCategories`/`seedSampleDataIfNeeded`) worth covering.
-  - **Production change for testability**: `DayViewModel.currentTime` gained an `init(currentTime:)` parameter (defaults to `.now`) so clock-dependent logic (missed items, current section, auto-collapse, past sections) can be tested deterministically instead of racing the real clock.
-  - **Environment note**: the default Xcode-autocreated scheme was replaced with an explicit shared scheme (`DailyFlightPlan.xcscheme`) to disable the placeholder UI test stubs (slow to run) and enable code coverage. `ItemFormViewModelTests`/`DayViewModelTests`/`CategoriesEditViewModelTests`/`ModelContainersTests` are marked `@Suite(.serialized)` — parallel SwiftData/`@Model` access across suites was crashing the test process on this beta OS/Xcode combo.
+- **Rename code to match final view names**: Rename day "section" to "segment" in the code. Also
+  check backing code for Timeline view, Day view, etc.
+- **Shared component library with MapsPlus** *(tech note)*: `DFPTheme`/`DFPThemeViewModifier`,
+  `CategoryCapsule`, `CategorySelectionService`/`SelectedCategories`, `CategoriesEditView`, and
+  `AppStorageKeys` are near-identical to their MapsPlus counterparts. When the time is right,
+  extract these into a local Swift Package (e.g. `AppSharedUI`) shared by both targets. Candidate
+  modules: `Theming` (theme enum + modifier), `CategorySelection` (service + views),
+  `CommonPreferences` (AppStorageKeys pattern). Do NOT do this until both apps are stable —
+  premature extraction adds friction with no user benefit.
+- **`DaySectionView` / `DayView` cleanup**: the pill grouping logic (regular / done / cancelled /
+  habits rows), summary generation triggers, and section visibility conditions have been iterated
+  heavily — audit for redundant conditionals, simplify padding logic, and consider whether any of it
+  belongs in `DayViewModel` instead of the view
+- **✅ CloudKit dedup for user-created templates**: `deduplicateItems` now performs a second pass
+  matching `title + daySection + recurringWeekdays`, merging instances onto the canonical copy
+  before deleting duplicates.
+- **✅ Unit tests (Swift Testing framework)**: `DaySection`, `DayViewModel`, `ItemFormViewModel`,
+  `CategorySelectionService`, `CategoriesEditViewModel`, and `ModelContainers` (dedup/seed logic) —
+  154 parameterized test cases across 6 files in `DailyFlightPlanTests/`; ~82% combined line
+  coverage on the tested files (~96% on `DaySection`/`ModelContainers`, ~97% on
+  `ItemFormViewModel`/`CategorySelectionService`, 58% on `DayViewModel` since its FoundationModels
+  AI-summary and live-clock code paths are intentionally untested).
+  - **Deviation**: `CalendarService`/`RemindersService` skipped — both are thin EventKit wrappers
+    with no independent logic to test; `MockCalendarService`/`MockRemindersService` are the test
+    doubles themselves, not test subjects.
+  - **Addition**: `ModelContainers` wasn't in the original list but had real, previously-untested
+    logic
+    (`deduplicateItems`/`deduplicateInstances`/`deduplicateCategories`/`seedSampleDataIfNeeded`)
+    worth covering.
+  - **Production change for testability**: `DayViewModel.currentTime` gained an `init(currentTime:)`
+    parameter (defaults to `.now`) so clock-dependent logic (missed items, current section,
+    auto-collapse, past sections) can be tested deterministically instead of racing the real clock.
+  - **Environment note**: the default Xcode-autocreated scheme was replaced with an explicit shared
+    scheme (`DailyFlightPlan.xcscheme`) to disable the placeholder UI test stubs (slow to run) and
+    enable code coverage.
+    `ItemFormViewModelTests`/`DayViewModelTests`/`CategoriesEditViewModelTests`/`ModelContainersTests`
+    are marked `@Suite(.serialized)` — parallel SwiftData/`@Model` access across suites was crashing
+    the test process on this beta OS/Xcode combo.
 - **✅ CI unit tests (GitHub Actions)**: `.github/workflows/tests.yml` runs the unit tests on an
   iOS 27 simulator (the `xcode-27` runner image, since the deployment target is now iOS 27) on
   every PR and push to `main`, with a per-file coverage table in each run's summary (mirrors
@@ -831,20 +1266,30 @@ A holistic pass across the three active tabs (Flight, Routine, and Timeline), ra
   workflow.
 
 ### Phase 1.0.5 — Beta Testing
-- Get this in other people's hands for initial impressions, questions, bugs, and—do they find it useful?
+- **First, complete the CloudKit initialization steps below** — TestFlight builds use the
+  Production CloudKit environment, so skipping them means beta testers get sync failures.
+- Get this in other people's hands for initial impressions, questions, bugs, and—do they find it
+  useful?
 
 #### CloudKit initialization
-CloudKit needs its schema initialized once. Steps:
+CloudKit needs its schema initialized once (the `iCloud.com.patmcg.DailyFlightPlan` container and
+entitlement were set up in Phase 0.1.17). Steps:
 
-Run a DEBUG build (once the entitlement above is fixed) on a device signed into a real iCloud account — this creates the record types/fields in the Development environment of the CloudKit dashboard automatically, inferred from your SwiftData models.
-Check CloudKit Console → your container → Schema, confirm CD_PlanItem/CD_PlanCategory (or similar) record types appear under Development.
-Before you ship to the App Store, use Console's Deploy Schema Changes to Production — Production schema doesn't auto-update from a release build, so skipping this step means TestFlight/App Store users get failures.
+1. Run a DEBUG build on a device signed into a real iCloud account — this creates the record
+   types/fields in the Development environment of the CloudKit dashboard automatically, inferred
+   from your SwiftData models.
+2. Check CloudKit Console → your container → Schema, and confirm the `CD_PlanItem`,
+   `CD_PlanCategory`, and `CD_Day` (or similar) record types appear under Development.
+3. Before TestFlight or the App Store, use Console's Deploy Schema Changes to Production —
+   Production schema doesn't auto-update from a release build.
 
 ---
 
 ## Future Plans
 
-Platform expansion beyond iPhone and Mac — Siri integration for voice entry and on-device AI awareness, home screen and lock screen widgets, Live Activity for the Dynamic Island, and an Apple Watch companion app for wrist-based progress and completion.
+Platform expansion beyond iPhone and Mac — Siri integration for voice entry and on-device AI
+awareness, home screen and lock screen widgets, Live Activity for the Dynamic Island, and an Apple
+Watch companion app for wrist-based progress and completion.
 
 ### Other Device Support
 - Foldable iPhone ("Duo") support: resizable windows and layouts that adapt to the fold/split
@@ -858,14 +1303,16 @@ Platform expansion beyond iPhone and Mac — Siri integration for voice entry an
 ### Widget + Live Activity
 - Home screen widget: show today's next upcoming item or a compact progress ring + item count
 - Lock screen widget: minimal glanceable version (next item, section, time)
-- Live Activity (Dynamic Island + Lock Screen): show the current/next item during the day, update as items are completed
+- Live Activity (Dynamic Island + Lock Screen): show the current/next item during the day, update as
+  items are completed
 - Uses `WidgetKit` + `ActivityKit`; shares SwiftData read access via App Group container
 
 ### Apple Watch App
 - Companion Watch app showing today's items in a scrollable list
 - Complication showing progress ring or next item title
 - Tap to complete items directly from the wrist
-- Syncs via Watch Connectivity (`WCSession`) or shared CloudKit container (depends on iCloud sync status)
+- Syncs via Watch Connectivity (`WCSession`) or shared CloudKit container (depends on iCloud sync
+  status)
 - Keep it read + complete only; add/edit stays on iPhone
 
 ### In-App Purchases POC
@@ -876,16 +1323,23 @@ monetization *would* work via StoreKit 2 — Pro Themes, Unlimited Categories, a
 individual unlocks, bundled as Daily Flight Plan Pro. An `EntitlementManager` service would gate
 premium features across the app. Any prototype stays out of release builds.
 - **Monetization model TBD** — likely a free tier with limits + optional unlock
-- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at $2.49
+- **Pricing model:** three individual unlocks at $0.99 each, bundled as "Daily Flight Plan Pro" at
+  $2.49
 - **Individual unlocks:**
-  - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes; Standard/Cupertino always free
+  - **Pro Themes** ($0.99) — unlocks 8-Bit, Kerby, Flamingo, and any future themes;
+    Standard/Cupertino always free
   - **Unlimited Categories** ($0.99) — free tier capped at 5 categories; this removes the cap
-  - **Markdown Import** ($0.99) — Foundation Models text-to-plan import (paste any text → AI parses titles, sections, and schedules → review and commit); gate the Parse button behind this entitlement
+  - **Markdown Import** ($0.99) — Foundation Models text-to-plan import (paste any text → AI parses
+    titles, sections, and schedules → review and commit); gate the Parse button behind this
+    entitlement
 - **Daily Flight Plan Pro bundle** ($2.49) — all three unlocks; $0.48 savings vs. buying separately
 - **StoreKit 2** for purchase flow (`Product`, `Transaction`, `EntitlementManager` pattern)
-- Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet if at limit and no entitlement
+- Gate category creation in `CategoriesEditViewModel`: count existing categories, show upsell sheet
+  if at limit and no entitlement
 - Gate theme picker in the theme menu: dim/lock unpurchased themes, show purchase prompt on tap
 - Gate Markdown Import Parse button: show upsell sheet when tapped without entitlement
-- `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same pattern as `CalendarService` and `RemindersService`
+- `EntitlementManager` service (protocol + live StoreKit + mock) injected via `@Environment` — same
+  pattern as `CalendarService` and `RemindersService`
 - Restore purchases flow (required for App Store)
-- **Note**: a "Comm AI Chat" unlock was originally planned here; dropped when the Comm tab itself was removed in Phase 0.2.2
+- **Note**: a "Comm AI Chat" unlock was originally planned here; dropped when the Comm tab itself
+  was removed in Phase 0.2.2

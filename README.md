@@ -79,7 +79,7 @@ I turned a Day One routine I'd refined for years into a native iOS app: a Figma 
 
 ## Concept
 
-Combines one-off and recurring tasks, organized into five time-of-day sections (Morning, Midday, Afternoon, Evening, Night). Items with specific deadlines appear as timed rows; items assigned to a section appear in a horizontal flow; items with no time at all land in an "Open" area at the bottom. A "now" bar tracks your current position in the day. Calendar events and Reminders from the system appear inline alongside your own tasks. All five sections are always visible — past sections stay on screen as a day-at-a-glance reference. Inactive sections auto-collapse with a one-line AI summary; items past a specific deadline surface in a "Missed" area. Navigate to a future date to see a ghosted preview of your expected recurring habits.
+Combines one-off and recurring tasks, organized into six time-of-day segments (First Thing, Morning, Midday, Afternoon, Evening, Bedtime). The Cockpit puts time-specific commitments first: an **Up Next** list gathers every timed Calendar event, Reminder and deadline item, with a countdown on the next one, while all-day events get their own card above it. Items whose moment has gone (a missed deadline, or an untimed item in a segment that has ended) move into a quiet **Passed** area, where you can move them to now or cancel them in bulk. Everything else stays in its segment: items assigned to a segment appear in a horizontal flow, routine ("Maintenance") items get their own row, and items with no time at all land in an "Open" area at the bottom. A "now" bar tracks your current position in the day. Past days become a read-only **Flight Report**, and future days show a "Scheduled" list of what's already timed.
 
 ## Tech stack
 
@@ -99,51 +99,67 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - **Cockpit** — primary day view, styled like a filed paper flight plan (monospaced type, flat
   black borders, hard offset shadows, cream background; adapts to a dark "Paper Night" palette)
   - Day navigation via `←`/`→` buttons flanking the date heading (not swipe — a single `ScrollView`
-    is used instead of a paging `TabView` so Liquid Glass bar transparency/blur tracks correctly)
+    is used instead of a paging `TabView` so Liquid Glass bar transparency/blur tracks correctly);
+    tap the date heading to jump to any date
   - "Today" label on a yellow highlighter badge; flagged items get the same highlighter treatment
     behind their title instead of a flag icon
-  - Flight Status card: square `completed/total` progress indicator, status line, mock flight
-    number (`DFP` + date), "Next up at HH:MM", and a Route/Intentions line listing all six day
-    sections, bolding each once fully complete
+  - Flight Status card: square `completed/total` progress indicator, tap-to-edit flight name
+    (defaults to `DFP` + date), an editable "Destination" note for the day's intention (both
+    persisted and synced), "Next up at HH:MM", and a Route/Intentions line listing all six day
+    segments, bolding each once fully complete
   - Briefing row: live clock, live countdown to midnight, and outstanding-flagged-item count
-  - Past days show a read-only "Flight Report" instead: Completed, Missed and Canceled items,
-    with no Add button, NOW marker, Calendar events or Reminders
-  - Collapsible section cards with per-section progress ring (`completed/total`, filter-independent)
-  - `HFlow` pills for non-deadline items (regular items and routine items on separate rows); timed rows for deadline items
+  - **All Day** card: all-day Calendar events, collapsible
+  - **Up Next**: every timed entry that isn't over — Calendar events, timed Reminders, and deadline
+    plan items — in one list sorted by time; the next one gets a highlighter bar and a countdown.
+    Plan items and Reminders stay completable from the list. On future days it's titled
+    "Scheduled"
+  - **Passed** (today only): open items whose moment has gone, oldest first, with an AI summary
+    when collapsed; "Move to Now" per item, plus "Move all to now" and "Cancel all"
+  - Collapsible segment cards with per-segment progress ring (`completed/total`, excluding items
+    shown in Up Next or Passed); regular items and routine ("Maintenance", wrench icon) items
+    flow in separate rows
   - Notes indicator icon on pills when notes are populated
-  - Calendar events and Reminders shown inline in expanded section cards
-  - Drag-and-drop items between section cards; drop on Open card to clear section assignment
-  - Filter-driven expand/collapse: active filters auto-expand sections with matches
+  - Drag-and-drop items between segment cards; drop on the Open card to clear segment assignment
+  - Past days show a read-only **Flight Report** instead: Completed, Missed and Canceled items,
+    with no Add button, NOW marker, Calendar events or Reminders
+  - Toolbar: a leading "More" menu (Developer settings, Import, Export); trailing Search, a View
+    Options menu (Flagged Only, Completed, Maintenance, Calendar Events, Reminders, Empty Segments,
+    UPPERCASE), and a Categories button
   - The original "Day" tab (`FlightPlanView`, swipe-pager-based) is retired in favor of this view —
     commented out, not deleted, in `DayView.swift` in case it's worth reviving
 
 - **Maintenance** — recurring habit template management
-  - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom patterns (e.g. Mon/Wed/Fri)
-  - Tap a card header to expand/collapse; collapsed state shows section name and item count
-  - Each card subdivided by day segment (First Thing, Morning, …); each segment is its own collapsible card matching the Day view's look — tap to expand/collapse, title enlarges when expanded, `+ Add item` button pre-filled with that weekday pattern and segment
+  - Collapsible cards grouped by weekday pattern: Every Day, Weekdays, Weekends, plus any custom
+    patterns (e.g. Mon/Wed/Fri)
+  - Tap a card header to expand/collapse; collapsed state shows the pattern name and item count
+  - Each card subdivided by day segment (First Thing, Morning, …); each segment is its own
+    collapsible card — tap to expand/collapse, title enlarges when expanded, `+ Add item` button
+    pre-filled with that weekday pattern and segment
   - Timed items get their own row, untimed items flow as `HFlow` pills
-  - Collapsed segments show a one-line AI-generated summary of their routines (falls back to a plain title/time preview when Apple Intelligence is unavailable, e.g. in Simulator)
+  - Collapsed segments show a one-line AI-generated summary of their routines (falls back to a
+    plain title/time preview when Apple Intelligence is unavailable, e.g. in Simulator)
   - Tap any item to edit; long-press for Edit / Delete context menu
   - Drag items between cards to reassign their weekday pattern
-  - Add custom sections via a weekday picker; delete sections (severs templates from historical instances)
+  - Add custom weekday patterns via a weekday picker; delete them (severs templates from
+    historical instances)
 
 - **Nav Log** — chronological multi-day list
   - Shows one-off and already-materialized plan items across all dates, lazily loaded 7 days at a
     time in each direction, with a filter bar and dedicated search; future dates show only
-    one-off scheduled items, not projected recurring habits (those remain a Cockpit tab preview,
-    since a routine could still change before the date arrives)
+    one-off scheduled items, not projected recurring habits (a routine could still change before
+    the date arrives)
   - Fully interactive: checkbox completes, tap to edit, long-press for cancel
 
-**macOS keyboard shortcuts:** `Cmd+1` Flight · `Cmd+2` Routine · `Cmd+3` Timeline
+**macOS keyboard shortcuts:** `Cmd+1` Cockpit · `Cmd+2` Maintenance · `Cmd+3` Nav Log
 
 **Shared across tabs:**
 - Add and edit items via a full-featured form (title, notes, flag, deadline, section, recurring days, categories)
 - Long-press any item for a context menu: cancel, defer to tomorrow, edit
 - Recurring habit templates with weekday picker; per-day instances materialized lazily
-- Deadline-based items with clock-time rows; missed deadlines surface in a "Missed" area
-- Filter menu: flagged, done, calendar, reminders, routines, and category filters
+- Deadline-based items appear in Up Next; once a deadline passes, a still-open item moves to Passed
+- Filtering: a View Options menu (flagged, completed, maintenance, calendar, reminders) and a separate category picker on the Cockpit; a filter sheet on Maintenance and Nav Log
 - **Markdown / text import**: paste any text (e.g. a Things export) → Foundation Models parses titles, sections, and recurring schedules → review list with swipe-to-delete → commit or cancel
-- **Markdown export**: a toolbar button on the Cockpit and Maintenance tabs renders items as Markdown (title, flagged/completion status, categories, notes, plus day-section grouping and — on Routine — schedule grouping) in a sheet with a Preview/Raw toggle, one-tap Copy, and a `ShareLink` (AirDrop, Messages, Save to Files, etc.)
+- **Markdown export**: a toolbar action on the Cockpit and Maintenance tabs renders items as Markdown (title, flagged/completion status, categories, notes, plus day-segment grouping and — on Maintenance — schedule grouping) in a sheet with a Preview/Raw toggle, one-tap Copy, and a `ShareLink` (AirDrop, Messages, Save to Files, etc.)
 - Category management (add, rename, delete)
 - Theme switcher (Cupertino, 8-Bit, Kerby, Flamingo) — currently dormant: its toolbar menu lived
   only on the now-retired Day tab; `DFPTheme`/`ThemeViewModifier` are still wired up for when a
@@ -151,7 +167,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 - Calendar events from EventKit shown inline, with calendar color indicator
 - Reminders from EventKit shown inline, with list color indicator; live-updates on store changes
 - **Fresh start each day**: no automatic carry-forward — pending items stay on their original date unless you move them yourself; a dedicated missed-items review flow is planned (see Phase 0.2.9)
-- **Future date preview**: recurring habits for a future weekday appear ghosted in their section
+- **Future days**: the Cockpit lists what's already scheduled (timed items, Calendar events and Reminders); recurring habits are materialized only for today
 - iCloud sync via CloudKit (plan on Mac, execute on iPhone)
 
 ## Project structure
@@ -159,7 +175,7 @@ Combines one-off and recurring tasks, organized into five time-of-day sections (
 ```
 DailyFlightPlan/
 ├── Common/              — App entry point, Environment.swift, service injection
-├── Persistence/         — SwiftData models (PlanItem, PlanCategory, DaySection, ItemStatus)
+├── Persistence/         — SwiftData models (PlanItem, PlanCategory, Day, DaySection, ItemStatus)
 ├── Preferences/         — AppStorageKeys enum
 ├── Services/
 │   ├── Calendar/        — CalendarService protocol + EventKit + mock
@@ -171,8 +187,11 @@ DailyFlightPlan/
 │   └── Fonts/                — bundled IBM Plex Mono (.ttf), registered via Info.plist UIAppFonts
 └── Views/
     ├── Components/      — DaySectionView, ItemPillView, DeadlineItemRow, CalendarEventRow,
-    │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule
-    ├── View Models/     — DayViewModel, ItemFormViewModel, CategoriesEditViewModel
+    │                      ReminderItemRow, NowBarView, ProgressRingView, CategoryCapsule,
+    │                      CockpitViewMenu, CategoriesToolbarButton, DatePickerButton,
+    │                      InlineSearchBar
+    ├── View Models/     — DayViewModel (+Agenda: Up Next / Passed / Flight Report),
+    │                      ItemFormViewModel, CategoriesEditViewModel
     ├── DayView.swift          — TabView host; manages shared state, fetches calendar/reminders
     ├── CockpitView.swift    — Cockpit tab (primary day view, paper-plan styling)
     ├── FlightPlanView.swift   — retired Day tab (swipe pager); commented out in DayView, kept for reference
@@ -195,36 +214,36 @@ Version 0.1 (Phases 0.1.1–0.1.22) is feature-complete — core functionality i
 
 | Phase | Description |
 |-------|-------------|
-| 2.1 | ✅ Routine view refinements |
-| 2.2 | ✅ Remove Comm tab (too buggy, superseded by Markdown Import) |
-| 2.3 | ✅ Global filter sheet + category management |
-| 2.4 | ✅ Paper Plan view — replaces Day tab as the primary view |
-| 2.5 | Day/Flight view refinements (consolidated timed-items list, toolbar rework: categories vs. view settings) |
-| 2.6 | Local notifications |
-| 2.7 | Import UX refinements (flag duplicates, notes, tagging) |
-| 2.8 | Routine refinements + paper treatment |
-| 2.9 | Missed items review & pull-forward |
-| 2.10 | Nav Log / Timeline refinements + paper treatment |
+| 0.2.1 | ✅ Maintenance (Routine) view refinements |
+| 0.2.2 | ✅ Remove Comm tab (too buggy, superseded by Markdown Import) |
+| 0.2.3 | ✅ Global filter sheet + category management |
+| 0.2.4 | ✅ Paper Plan view — replaces Day tab as the primary view (the Cockpit) |
+| 0.2.5 | Cockpit refinements — ✅ Up Next + Passed, Flight Report, toolbar rework, day intention, Maintenance label; search gesture still open |
+| 0.2.6 | Local notifications |
+| 0.2.7 | Import UX refinements (duplicates, notes, flag, categories) + single-item AI quick-add |
+| 0.2.8 | Maintenance refinements + paper treatment |
+| 0.2.9 | Missed items review & pull-forward |
+| 0.2.10 | Nav Log refinements + paper treatment (all days, search, filters shipped; paper treatment open) |
 
 **Version 0.3** expands device support and adds missing features:
 
 | Phase | Description |
 |-------|-------------|
-| 3.1 | Settings (calendar/reminders selection, section boundaries) |
-| 3.2 | Rich item content (web links, photo attachments) |
-| 3.3 | iPad support (adaptive layout, Stage Manager, keyboard nav) |
-| 3.4 | Sharing & export (Markdown export shipped ahead of schedule; share scope/format still open) |
-| 3.5 | Projects support (spike — does this replace or complement categories?) |
+| 0.3.1 | Settings (calendar/reminders selection, segment boundaries) |
+| 0.3.2 | Rich item content (web links, photo attachments) |
+| 0.3.3 | iPad support (adaptive layout, Stage Manager, keyboard nav) |
+| 0.3.4 | Sharing & export (Markdown export shipped ahead of schedule; Routine Markdown import and wider share scope still open) |
+| 0.3.5 | Projects support (spike — does this replace or complement categories?) |
 
 **Version 1.0** is the core-features-complete milestone:
 
 | Phase | Description |
 |-------|-------------|
-| 1.1 | Full-app UX audit |
-| 1.2 | Fit and finish + aviation UI spike |
-| 1.3 | Performance & stability audit (incl. smooth day swipe navigation) |
-| 1.4 | Tech debt (unit tests, UI tests, architecture review) |
-| 1.5 | Beta testing |
+| 1.0.1 | Full-app UX audit |
+| 1.0.2 | Fit and finish (accessibility, haptics, celebration, localization, iCloud status) |
+| 1.0.3 | Performance & stability audit (startup, tap and animation latency, Instruments) |
+| 1.0.4 | Tech debt (model split, dead-code removal, renames, view and UI tests) — start with the structural items |
+| 1.0.5 | Beta testing (after CloudKit schema initialization) |
 
 See [`docs/implementation-plan.md`](DailyFlightPlan/docs/implementation-plan.md) for full details including Future Plans (Siri, Widgets, Apple Watch, In-App Purchases POC).
 
