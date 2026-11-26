@@ -622,7 +622,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   add the Flight Status/briefing/Route rows, and drop swipe navigation — the view ended up a
   genuine redesign, not a reskin.
 
-### Phase 0.2.5 — Day/Flight View Refinements
+### ✅ Phase 0.2.5 — Cockpit View Refinements
 - **✅ Up Next + Passed: consolidated timed items and missed items** *(priority — do first)*: put
   time-specific commitments front and center at the top of the Cockpit view, ahead of the day
   sections, and pull open items whose moment has passed into one quiet place. Replaces the
@@ -728,7 +728,8 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
     Follow-up to declutter: Export Day Plan moved into a leading "More" menu (with Settings and
     Import), and the toolbar date picker was removed in favor of tapping the date heading
     (`DatePickerToolbarButton` generalized and renamed `DatePickerButton`, taking a label closure).
-    The trailing toolbar is now Search, View, and Categories.
+    The trailing toolbar is now Search, View, and Categories (Search was later replaced by a
+    pull-down gesture, below).
 - **✅ Move the date** (e.g. "OCT 20") *above* the day of week in the title area, next to
   yesterday/today/tomorrow if applicable. This creates a more consistent and space-efficient
   layout. Done in `CockpitView.dayLabelText(for:)`: the date and the relative-day label now
@@ -740,10 +741,19 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   (currently
   marked with the `∞` icon) gets the user-facing label "Maintenance", in keeping with the flight
   analogy.
-- **Search: swipe-down gesture and focus**: replace the Cockpit toolbar's Search button with a
+- **✅ Search: swipe-down gesture and focus**: replace the Cockpit toolbar's Search button with a
   swipe-down (pull-to-reveal) gesture that brings up the inline search bar, then remove the
   button so the trailing toolbar is just View and Categories. While search and filters are
-  active, consider hiding unmatched segments.
+  active, hide unmatched segments.
+  - *Done:* overscrolling the Cockpit's `ScrollView` past 70 pt (`onScrollGeometryChange`)
+    reveals `InlineSearchField` and focuses it. The Search button is gone, so the trailing toolbar
+    is now just View and Categories. **Deviations:** the field gained an optional Cancel button
+    (`onCancel`, which clears the text) since there's no toolbar toggle to dismiss it; VoiceOver
+    users, who can't pull down, get a "Search" accessibility action on the date heading. While
+    searching, or with Flagged Only or a category filter on, only segments with matches show
+    (overriding the Empty Segments setting and the always-visible current segment). Maintenance
+    and Nav Log keep their toolbar search toggle. Needs on-device testing for threshold feel and
+    for any interaction with the Liquid Glass bar tracking.
 - **✅ Clean up filtering**: The filtering needs some UX updates
 - **✅ Day intention note**: a short freeform text field on the Day view for what the user wants to
   get out of the day — consolidates the "Day note area" and "Today's Destination" ideas previously

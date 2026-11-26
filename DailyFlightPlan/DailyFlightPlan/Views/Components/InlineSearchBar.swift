@@ -27,11 +27,14 @@ struct SearchToggleButton: View {
 }
 
 /// Minimal search field pinned above a view's content via `.safeAreaInset(edge: .top)` — no
-/// Form/sheet chrome, filters whatever's on screen in real time as you type.
+/// Form/sheet chrome, filters whatever's on screen in real time as you type. Views that reveal it
+/// without a toolbar button (e.g. the Cockpit's pull-down gesture) pass `onCancel` to get a
+/// Cancel button for dismissing it again.
 struct InlineSearchField: View {
 
     @Binding var text: String
     var isFocused: FocusState<Bool>.Binding
+    var onCancel: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 6) {
@@ -51,6 +54,11 @@ struct InlineSearchField: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear Search")
+            }
+            if let onCancel {
+                Button("Cancel", action: onCancel)
+                    .buttonStyle(.plain)
+                    .padding(.leading, 4)
             }
         }
         .padding(8)

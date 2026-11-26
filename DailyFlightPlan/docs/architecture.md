@@ -175,7 +175,9 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
   a routine). Collapsing these into one control frees width so the trailing items aren't pushed
   into the system overflow menu
 - Trailing `ToolbarItemGroup` — system groups it into a single Liquid Glass capsule on iOS 26:
-  - Search toggle (`SearchToggleButton`/`InlineSearchField`, local to the tab)
+  - No search button: pulling the page down past its top edge reveals `InlineSearchField`
+    (with a Cancel button) and focuses it; VoiceOver gets a "Search" action on the date heading.
+    While searching or filtering to flagged/categories, only segments with matches are shown
   - **View Options** (`CockpitViewMenu`, `camera.filters`): a `Menu` of toggles — Flagged Only,
     Completed, Maintenance, Calendar Events, Reminders, Empty Segments, UPPERCASE — sharing the
     `@AppStorage` keys; disabled or fixed on past days, where the report ignores them
