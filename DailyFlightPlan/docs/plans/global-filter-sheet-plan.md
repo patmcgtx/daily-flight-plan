@@ -1,6 +1,6 @@
 # Global Filter Button + Sheet — Design Plan
 
-Design doc for Phase 2.3 (see `../implementation-plan.md`). Written during planning on 2026-10-02.
+Design doc for Phase 0.2.3 (see `../implementation-plan.md`). Written during planning on 2026-10-02.
 
 **✅ Implemented 2026-10-03.** See "Implementation notes" at the end of this doc for what actually
 shipped and where it deviated from the plan below.
@@ -178,7 +178,7 @@ No changes needed — confirmed all required keys and the shared service already
   - `BuildProject` to confirm compiles; `RunAllTests` for the new filtering unit tests.
 
 ## Follow-up (once implemented)
-Mark Phase 2.3 ✅ in `../implementation-plan.md` with a note on the General/Specific sheet design and
+Mark Phase 0.2.3 ✅ in `../implementation-plan.md` with a note on the General/Specific sheet design and
 the Routine-now-respects-category/search deviation from the original placeholder notes.
 
 ## Corrected placement/presentation (supersedes the floating-button sections above)

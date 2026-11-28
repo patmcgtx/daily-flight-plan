@@ -82,6 +82,13 @@ struct CockpitView: View {
             || (categorySelectionService?.hasSelectedCategories ?? false)
     }
 
+    /// Search text or a narrowing filter (flagged only, categories) is limiting what's shown.
+    private var isNarrowing: Bool {
+        showFlaggedOnly
+            || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || (categorySelectionService?.hasSelectedCategories ?? false)
+    }
+
     var body: some View {
         NavigationStack {
             dayContent(for: viewModel.selectedDate)
@@ -90,7 +97,10 @@ struct CockpitView: View {
                 }
                 .safeAreaInset(edge: .top) {
                     if isShowingSearch {
-                        InlineSearchField(text: $searchText, isFocused: $isSearchFieldFocused)
+                        InlineSearchField(
+                            text: $searchText, isFocused: $isSearchFieldFocused,
+                            onCancel: hideSearch
+                        )
                     }
                 }
                 .inlineNavigationTitle()
@@ -100,6 +110,11 @@ struct CockpitView: View {
                     // system overflow menu.
                     ToolbarItem(placement: .leadingBar) {
                         Menu {
+                            // Clickable alternative to the pull-down gesture; Cmd+F is wired up
+                            // by the hidden button in the overlay below.
+                            Button { revealSearch() } label: {
+                                Label("Search", systemImage: "magnifyingglass")
+                            }
                             Button { onShowSettings() } label: {
                                 Label("Developer", systemImage: "hammer")
                             }
@@ -116,11 +131,6 @@ struct CockpitView: View {
                     }
 
                     ToolbarItemGroup(placement: .trailingBar) {
-                        SearchToggleButton(
-                            isShowingSearch: $isShowingSearch, searchText: $searchText,
-                            isFocused: $isSearchFieldFocused
-                        )
-
                         CockpitViewMenu(isPastDay: viewModel.isPastDay)
 
                         CategoriesToolbarButton()
@@ -146,6 +156,16 @@ struct CockpitView: View {
                 .padding(.bottom, 16)
                 .accessibilityLabel("Add Item")
             }
+        }
+        .overlay(alignment: .topLeading) {
+            // Hidden button so Cmd+F reveals search for keyboard users (Mac, iPad). opacity(0)
+            // keeps the shortcut active; hidden() would disable it. Same pattern as the tab
+            // shortcuts in DayView.
+            Button("") { revealSearch() }
+                .keyboardShortcut("f", modifiers: .command)
+                .opacity(0)
+                .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
         }
         .environment(\.editItem) { item in itemToEdit = item }
         .sheet(isPresented: $isAddingItem) {
@@ -235,8 +255,11 @@ struct CockpitView: View {
                         // Empty segments can be hidden from the View menu. Past segments tend to go
                         // empty on their own, since their open items move to Passed. The current
                         // segment always stays: it carries the NOW marker and the Add item button.
-                        if showEmptySegments || section == viewModel.currentSection
-                            || viewModel.hasContent(section, in: agenda) {
+                        // While searching or narrowing with filters, only segments with matches show.
+                        if isNarrowing
+                            ? viewModel.hasContent(section, in: agenda)
+                            : (showEmptySegments || section == viewModel.currentSection
+                                || viewModel.hasContent(section, in: agenda)) {
                             sectionCard(
                                 section, date: date, items: agenda.sectionItems, raw: rawSectionItems
                             )
@@ -257,9 +280,32 @@ struct CockpitView: View {
             .padding(.bottom, 16)
         }
         .scrollDismissesKeyboard(.interactively)
+        // Pulling the page down past its top edge reveals the search field and focuses it.
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top < -Self.searchPullThreshold
+        } action: { _, isPulledDown in
+            if isPulledDown { revealSearch() }
+        }
         .background {
             CockpitStyle.background.ignoresSafeArea()
         }
+    }
+
+    /// How far (in points) the page must be overscrolled downward to reveal search.
+    private static let searchPullThreshold: CGFloat = 70
+
+    private func revealSearch() {
+        guard !isShowingSearch else { return }
+        withAnimation { isShowingSearch = true }
+        isSearchFieldFocused = true
+    }
+
+    private func hideSearch() {
+        withAnimation {
+            isShowingSearch = false
+            searchText = ""
+        }
+        isSearchFieldFocused = false
     }
 
     private func dayLabel(for date: Date) -> some View {
@@ -284,6 +330,8 @@ struct CockpitView: View {
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
             .accessibilityLabel("Choose Date")
+            // The pull-down gesture isn't reachable with VoiceOver, so offer search as an action.
+            .accessibilityAction(named: "Search") { revealSearch() }
             dayArrowButton(systemImage: "chevron.right") {
                 withAnimation(.easeInOut(duration: 0.25)) { viewModel.goToTomorrow() }
             }
