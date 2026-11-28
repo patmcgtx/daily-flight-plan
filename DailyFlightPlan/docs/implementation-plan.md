@@ -779,7 +779,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
 ### Phase 0.2.7 - Import UX Refinements
 - **Flag dups on import**: This seems to be a common source of dups - re-importing items from
   Things. Let's flag those as possible dups and maybe even show the other item.
-- **Detect duplicates in import**: It's going to be faily common for me to defer an item to the next
+- **Detect duplicates in import**: It's going to be fairly common for me to defer an item to the next
   day and then also import that same item the next day via Things. Flag/detect the resulting dup.
 - **Allow for notes in import**: Maybe you want to manually add a note, or pull one from the
   markdown
@@ -818,7 +818,7 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   still open. **Sequencing:** do this together with Nav Log's paper treatment in Phase 0.2.10 —
   factor the shared styling components (cards, headers, rows) out of `CockpitView` once and apply
   them to both tabs, rather than restyling each separately and reconciling afterward.
-- **Show only segments that actaully have a routine**:get rid of all those empty segments; it's a
+- **Show only segments that actually have a routine**:get rid of all those empty segments; it's a
   lot when combined with all the day combos.
 
 ### Phase 0.2.9 — Missed Items Review & Pull-Forward
