@@ -122,9 +122,9 @@ Combines one-off and recurring tasks, organized into six time-of-day segments (F
   - Drag-and-drop items between segment cards; drop on the Open card to clear segment assignment
   - Past days show a read-only **Flight Report** instead: Completed, Missed and Canceled items,
     with no Add button, NOW marker, Calendar events or Reminders
-  - Toolbar: a leading "More" menu (Developer settings, Import, Export); trailing a View
+  - Toolbar: a leading "More" menu (Search, Developer settings, Import, Export); trailing a View
     Options menu (Flagged Only, Completed, Maintenance, Calendar Events, Reminders, Empty Segments,
-    UPPERCASE) and a Categories button. Pull the page down to reveal search
+    UPPERCASE) and a Categories button. Pull the page down (or press Cmd+F) to reveal search
   - The original "Day" tab (`FlightPlanView`, swipe-pager-based) is retired in favor of this view —
     commented out, not deleted, in `DayView.swift` in case it's worth reviving
 

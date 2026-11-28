@@ -169,14 +169,15 @@ For SwiftData CRUD, views use `@Query` + `modelContext` directly.
   its `Tab(…)` entry is commented out in `DayView.swift`, not deleted, in case it's worth reviving
 
 **Navigation bar toolbar (Cockpit tab, inside `NavigationStack`):**
-- Leading: a single `ellipsis.circle` "More" menu — Developer (settings), Import
+- Leading: a single `ellipsis.circle` "More" menu — Search, Developer (settings), Import
   (`MarkdownImportView`), and Export (`MarkdownExportView` via `DayPlanMarkdownExporter`, scoped to
   the selected date, grouped by day segment, including completion status and whether each item is
   a routine). Collapsing these into one control frees width so the trailing items aren't pushed
   into the system overflow menu
 - Trailing `ToolbarItemGroup` — system groups it into a single Liquid Glass capsule on iOS 26:
   - No search button: pulling the page down past its top edge reveals `InlineSearchField`
-    (with a Cancel button) and focuses it; VoiceOver gets a "Search" action on the date heading.
+    (with a Cancel button, also bound to Esc) and focuses it. Non-gesture entry points: a Search
+    item in the More menu, Cmd+F, and a VoiceOver "Search" action on the date heading.
     While searching or filtering to flagged/categories, only segments with matches are shown
   - **View Options** (`CockpitViewMenu`, `camera.filters`): a `Menu` of toggles — Flagged Only,
     Completed, Maintenance, Calendar Events, Reminders, Empty Segments, UPPERCASE — sharing the

@@ -57,6 +57,7 @@ struct InlineSearchField: View {
             }
             if let onCancel {
                 Button("Cancel", action: onCancel)
+                    .keyboardShortcut(.cancelAction)
                     .buttonStyle(.plain)
                     .padding(.leading, 4)
             }

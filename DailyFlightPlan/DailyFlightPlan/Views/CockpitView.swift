@@ -110,6 +110,11 @@ struct CockpitView: View {
                     // system overflow menu.
                     ToolbarItem(placement: .leadingBar) {
                         Menu {
+                            // Clickable alternative to the pull-down gesture; Cmd+F is wired up
+                            // by the hidden button in the overlay below.
+                            Button { revealSearch() } label: {
+                                Label("Search", systemImage: "magnifyingglass")
+                            }
                             Button { onShowSettings() } label: {
                                 Label("Developer", systemImage: "hammer")
                             }
@@ -151,6 +156,16 @@ struct CockpitView: View {
                 .padding(.bottom, 16)
                 .accessibilityLabel("Add Item")
             }
+        }
+        .overlay(alignment: .topLeading) {
+            // Hidden button so Cmd+F reveals search for keyboard users (Mac, iPad). opacity(0)
+            // keeps the shortcut active; hidden() would disable it. Same pattern as the tab
+            // shortcuts in DayView.
+            Button("") { revealSearch() }
+                .keyboardShortcut("f", modifiers: .command)
+                .opacity(0)
+                .frame(width: 0, height: 0)
+                .accessibilityHidden(true)
         }
         .environment(\.editItem) { item in itemToEdit = item }
         .sheet(isPresented: $isAddingItem) {

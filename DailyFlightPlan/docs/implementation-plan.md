@@ -748,8 +748,10 @@ Day tab) and ended up good enough to keep as the app's primary view, retiring th
   - *Done:* overscrolling the Cockpit's `ScrollView` past 70 pt (`onScrollGeometryChange`)
     reveals `InlineSearchField` and focuses it. The Search button is gone, so the trailing toolbar
     is now just View and Categories. **Deviations:** the field gained an optional Cancel button
-    (`onCancel`, which clears the text) since there's no toolbar toggle to dismiss it; VoiceOver
-    users, who can't pull down, get a "Search" accessibility action on the date heading. While
+    (`onCancel`, which clears the text; Esc triggers it) since there's no toolbar toggle to
+    dismiss it. Because a gesture alone isn't reachable by keyboard, mouse, or VoiceOver users,
+    there are also a "Search" item in the leading More menu, a Cmd+F shortcut (hidden button, as
+    with the tab shortcuts), and a "Search" accessibility action on the date heading. While
     searching, or with Flagged Only or a category filter on, only segments with matches show
     (overriding the Empty Segments setting and the always-visible current segment). Maintenance
     and Nav Log keep their toolbar search toggle. Needs on-device testing for threshold feel and
